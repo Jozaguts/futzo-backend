@@ -21,8 +21,8 @@ Route::middleware('auth:sanctum')->get('/me', function (Request $request) {
     return $request->user();
 });
 
-Route::get('/auth/{provider}/redirect', function () {
-    $url  = Socialite::driver('facebook')->stateless()->redirect()->getTargetUrl();
+Route::get('/auth/{provider}/redirect', function ($provider) {
+    $url  = Socialite::driver($provider)->stateless()->redirect()->getTargetUrl();
 
     return response()->json(['url' => $url]);
 });

@@ -1,0 +1,33 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Auth\AuthenticateController;
+use Laravel\Socialite\Facades\Socialite;
+use App\Models\User;
+use Illuminate\Support\Facades\Auth;
+
+Route::prefix('auth')->group(function () {
+    Route::post('/login', [AuthenticateController::class, 'login']);
+    Route::post('/register', [AuthenticateController::class, 'register']);
+    Route::get('/{provider}/redirect', function ($provider) {
+        $url  = Socialite::driver($provider)->stateless()->redirect()->getTargetUrl();
+
+        return response()->json(['url' => $url]);
+    });
+    Route::get('/{provider}/callback', function ($provider) {
+
+        $user = Socialite::driver($provider)->stateless()->user();
+        $authUser = User::updateOrCreate(
+            [
+                'email' => $user->getEmail(),
+            ],
+            [
+                'name' => $user->getName(),
+                "{$provider}_id" => $user->getId()
+            ]);
+
+        $token = $authUser->createToken('auth_token');
+
+        return response()->json(['success' => (bool)$token, 'token'=> $token->plainTextToken]);
+    });
+});

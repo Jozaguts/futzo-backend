@@ -12,38 +12,15 @@ class RolesTableSeeder extends Seeder
      * Run the database seeds.
      */
     protected $roles = [
-        [
-            'guard_name' => 'root',
-            'name' => 'super admin',
-        ],
-        [
-            'guard_name' => 'admin',
-            'name' => 'admin',
-        ],
-        [
-            'guard_name' => 'team_owner',
-            'name' => 'team owner',
-        ],
-        [
-            'guard_name' => 'coach',
-            'name' => 'coach',
-        ],
-        [
-            'guard_name' => 'player',
-            'name' => 'player',
-        ],
-        [
-            'guard_name' => 'referee',
-            'name' => 'referee',
-        ],
-        [
-            'guard_name' => 'league_admin_staff',
-            'name' => 'league admin staff',
-        ],
-        [
-            'guard_name' => 'fan',
-            'name' => 'fan',
-        ],
+        ['name' => 'super admin'],
+        ['name' => 'admin'],
+        ['name' => 'team owner',],
+        ['name' => 'coach'],
+        ['name' => 'player'],
+        ['name' => 'referee' ],
+        ['name' => 'league admin staff'],
+        ['name' => 'fan'],
+        ['name' => 'default']
     ];
     public function run(): void
     {

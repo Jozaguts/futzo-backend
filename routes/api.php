@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Middleware\CheckUserHasRole;
+use App\Http\Controllers\Auth\AuthenticateController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -15,15 +15,9 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware(['auth:sanctum','hasRole'])->get('/me', function (Request $request) {
-    return $request->user();
-});
-
-
-
-
-Route::middleware('auth:sanctum')->post('/logout', function (Request $request) {
-    return $request->user()->tokens()->delete();
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('/me', [AuthenticateController::class, 'me']);
+    Route::post('/logout', [AuthenticateController::class, 'logout']);
 });
 
 include __DIR__ . '/auth/routes.php';

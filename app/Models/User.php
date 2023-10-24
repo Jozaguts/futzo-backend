@@ -9,6 +9,14 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
+/**
+ * @property string $name
+ * @property string $lastname
+ * @property string $email
+ * @property string $password
+ * @property int $facebook_id
+ * @property int $google_id
+ */
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable, HasRoles;

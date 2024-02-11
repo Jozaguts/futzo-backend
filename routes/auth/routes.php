@@ -7,7 +7,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 
 Route::prefix('auth')->group(function () {
-    Route::post('/login', [AuthenticateController::class, 'login']);
+
     Route::post('/register', [AuthenticateController::class, 'register']);
     Route::get('/{provider}/redirect', function ($provider) {
         $url  = Socialite::driver($provider)->stateless()->redirect()->getTargetUrl();

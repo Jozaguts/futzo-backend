@@ -14,6 +14,7 @@ use App\Http\Controllers\PlayersController;
 use App\Http\Controllers\RefereeController;
 use App\Http\Controllers\RoleAndPermissionsController;
 use App\Http\Controllers\TeamsController;
+use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -27,11 +28,13 @@ use Illuminate\Support\Facades\Route;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
-include __DIR__ . '/auth/routes.php';
 
 Route::middleware(['auth:sanctum'])->group(function () {
-    Route::get('/me', [AuthenticateController::class, 'me']);
-    Route::post('/logout', [AuthenticateController::class, 'logout']);
+
+    Route::get('/me', function(Request $request){
+        return new UserResource($request->user());
+    });
+
     Route::prefix('/admin')->group(function () {
         Route::apiResource('/roles', RoleAndPermissionsController::class);
         Route::apiResources(['genders'=> GenderController::class]);

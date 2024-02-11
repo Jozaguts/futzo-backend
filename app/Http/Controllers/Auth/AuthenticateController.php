@@ -1,16 +1,23 @@
 <?php
 
 namespace App\Http\Controllers\Auth;
+use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class AuthenticateController extends Controller
 {
+    public function __construct()
+    {
+
+
+    }
     public function register(StoreUserRequest $request)
     {
         $validated = $request->validated();
@@ -30,30 +37,25 @@ class AuthenticateController extends Controller
         return response()->json(['success' => true, 'token' => $token]);
     }
 
-    public function login(Request $request)
+    public function login(LoginRequest $request)
     {
+        $request->authenticate();
 
-        $request->validate([
-            'email' => 'required',
-            'password'=> 'required'
-        ],$request->only('email', 'password'));
+        $request->session()->regenerate();
 
-        $user = User::where('email', $request->email)->first();
-        if(!$user || !Hash::check($request->password, $user->password)){
-            return response()->json(['success' => false, 'message' => 'Invalid credentials'], 401);
-        }
-        $token = $user->createToken('auth_token')->plainTextToken;
-        return response()->json(['success' => true, 'token' => $token]);
+        return response()->noContent();
     }
 
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
-        return response()->json(['success' => true]);
-    }
+        Auth::guard('web')->logout();
 
-    public function me(Request $request)
-    {
-        return new UserResource(User::find($request->user()->id));
+        $request->session()->invalidate();
+
+        $request->session()->regenerateToken();
+
+        return redirect('/');
+//        $request->user()->currentAccessToken()->delete();
+//        return response()->json(['success' => true]);
     }
 }

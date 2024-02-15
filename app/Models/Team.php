@@ -11,5 +11,5 @@ class Team extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = ['name', 'group', 'category_id', 'won', 'draw', 'lost', 'goals_against', 'goals_for',
-        'goals_difference', 'points'];
+        'goals_difference', 'points','tournament_id'];
 }

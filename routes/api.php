@@ -49,6 +49,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::apiResources(['game-time-details' => GameTimeDetailsController::class]);
         Route::apiResources(['game-action-details' => GameActionDetailController::class]);
         Route::apiResources(['lineups' => LineupsController::class]);
+        Route::apiResources(['tournaments' => \App\Http\Controllers\TournamentController::class]);
     });
 });
 

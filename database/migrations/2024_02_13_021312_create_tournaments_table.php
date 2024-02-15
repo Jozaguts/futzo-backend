@@ -17,12 +17,12 @@ return new class extends Migration
             $table->string('location');
             $table->date('start_date');
             $table->date('end_date')->nullable();
-            $table->integer('prize');
-            $table->integer('winner');
+            $table->integer('prize')->nullable();
+            $table->integer('winner')->nullable();
             $table->longText('description')->nullable();
             $table->string('logo')->nullable();
             $table->string('banner')->nullable();
-            $table->string('status')->default('created');
+            $table->string('status')->nullable()->default('created');
             $table->softDeletes();
             $table->timestamps();
         });

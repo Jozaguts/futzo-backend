@@ -21,4 +21,8 @@ class Tournament extends Model
         'banner',
         'status'
     ];
+    protected $casts = [
+        'start_date' => 'datetime',
+        'end_date' => 'datetime',
+    ];
 }

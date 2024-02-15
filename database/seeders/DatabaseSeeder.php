@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use App\Models\Player;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Sequence;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
@@ -19,8 +20,9 @@ class DatabaseSeeder extends Seeder
        $this->call([
            RolesTableSeeder::class,
        ]);
-       $user =  \App\Models\User::factory()->create([
-            'name' => 'Test User',
+       $user = User::create([
+            'name' => 'Sagit',
+            'lastname' => 'Gutierrez',
             'email' => 'admin@sls.com',
             'email_verified_at' => now(),
             'phone' => '3221231231',
@@ -32,6 +34,7 @@ class DatabaseSeeder extends Seeder
         $this->call(PositionsTableSeeder::class);
         $this->call(GendersTableSeeder::class);
         $this->call(CategoriesTableSeeder::class);
+        $this->call(TournamentTableSeeder::class);
         $this->call(TeamsTableSeeder::class);
         $this->call(ActionsTableSeeder::class);
         $players = Player::factory()

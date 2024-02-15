@@ -21,6 +21,8 @@ return new class extends Migration
             $table->foreign('away_team_id')->references('id')->on('teams')->onDelete('cascade');
             $table->unsignedBigInteger('category_id');
             $table->foreign('category_id')->references('id')->on('categories')->onDelete('cascade');
+            $table->unsignedBigInteger('winner_team_id')->nullable();
+            $table->foreign('winner_team_id')->references('id')->on('teams');
             $table->softDeletes();
             $table->timestamps();
         });

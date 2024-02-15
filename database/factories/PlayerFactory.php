@@ -23,7 +23,6 @@ class PlayerFactory extends Factory
     {
 
         return [
-
             'jersey_num'=> $this->faker->numberBetween(1, 25),
             'team_id' => 3,
             'position_id' => rand(1,12)

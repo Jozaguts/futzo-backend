@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\League;
 use App\Models\Player;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Sequence;
@@ -29,6 +30,14 @@ class DatabaseSeeder extends Seeder
             'password' => '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
             'remember_token' => Str::random(10),
         ]);
+      $league = League::create([
+            'name' => 'Liga de futbol',
+            'description' => 'Liga de futbol de la ciudad de Medellin',
+            'creation_date' => '2021-01-01',
+            'logo' => 'https://ui-avatars.com/api/?name=Liga+de+futbol&size=64',
+            'status' => 'Activa',
+        ]);
+       $user->league_id = $league->id;
        $user->assignRole('super administrador');
         \App\Models\User::factory()->count(175)->create();
         $this->call(PositionsTableSeeder::class);

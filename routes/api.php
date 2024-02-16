@@ -50,6 +50,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::apiResources(['game-action-details' => GameActionDetailController::class]);
         Route::apiResources(['lineups' => LineupsController::class]);
         Route::apiResources(['tournaments' => \App\Http\Controllers\TournamentController::class]);
+        Route::apiResources(['leagues' => \App\Http\Controllers\LeaguesController::class]);
     });
 });
 

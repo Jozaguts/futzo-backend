@@ -26,6 +26,7 @@ class TeamsTableSeeder extends Seeder
                 'points'=> 0,
                 'category_id'=> 1,
                 'tournament_id' => 1,
+                'league_id' => 1
             ],
             [
                 'name'=> 'America',
@@ -39,6 +40,7 @@ class TeamsTableSeeder extends Seeder
                 'points'=> 0,
                 'category_id'=> 1,
                 'tournament_id' => 1,
+                'league_id' => 1
             ],
             [
                 'name'=> 'Chivas',
@@ -52,6 +54,7 @@ class TeamsTableSeeder extends Seeder
                 'points'=> 0,
                 'category_id'=> 1,
                 'tournament_id' => 1,
+                'league_id' => 1
             ],
             [
                 'name'=> 'Pumas',
@@ -65,6 +68,7 @@ class TeamsTableSeeder extends Seeder
                 'points'=> 0,
                 'category_id'=> 1,
                 'tournament_id' => 1,
+                'league_id' => 1
             ],
             [
                 'name'=> 'Toluca',
@@ -78,6 +82,7 @@ class TeamsTableSeeder extends Seeder
                 'points'=> 0,
                 'category_id'=> 1,
                 'tournament_id' => 1,
+                'league_id' => 1
             ],
             [
                 'name'=> 'Santos',
@@ -91,6 +96,7 @@ class TeamsTableSeeder extends Seeder
                 'points'=> 0,
                 'category_id'=> 1,
                 'tournament_id' => 1,
+                'league_id' => 1
             ],
             [
                 'name'=> 'Pachuca',
@@ -104,6 +110,7 @@ class TeamsTableSeeder extends Seeder
                 'points'=> 0,
                 'category_id'=> 1,
                 'tournament_id' => 1,
+                'league_id' => 1
             ],
             // add teams of MLS league
             [
@@ -118,6 +125,7 @@ class TeamsTableSeeder extends Seeder
                 'points'=> 0,
                 'category_id'=> 1,
                 'tournament_id' => 2,
+                'league_id' => 2,
             ],
             [
                 'name'=> 'LAFC',
@@ -131,6 +139,7 @@ class TeamsTableSeeder extends Seeder
                 'points'=> 0,
                 'category_id'=> 1,
                 'tournament_id' => 2,
+                'league_id' => 2,
             ],
             [
                 'name'=> 'Seattle Sounders',
@@ -144,6 +153,7 @@ class TeamsTableSeeder extends Seeder
                 'points'=> 0,
                 'category_id'=> 1,
                 'tournament_id' => 2,
+                'league_id' => 2,
             ],
             [
                 'name'=> 'Portland Timbers',
@@ -157,6 +167,7 @@ class TeamsTableSeeder extends Seeder
                 'points'=> 0,
                 'category_id'=> 1,
                 'tournament_id' => 2,
+                'league_id' => 2,
             ],
             [
                 'name'=> 'New York City FC',
@@ -170,6 +181,7 @@ class TeamsTableSeeder extends Seeder
                 'points'=> 0,
                 'category_id'=> 1,
                 'tournament_id' => 2,
+                'league_id' => 2,
             ],
             [
                 'name'=> 'Atlanta United',
@@ -183,6 +195,7 @@ class TeamsTableSeeder extends Seeder
                 'points'=> 0,
                 'category_id'=> 1,
                 'tournament_id' => 2,
+                'league_id' => 2,
             ]
         ];
 

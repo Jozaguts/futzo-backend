@@ -25,9 +25,15 @@ class LeagueStoreRequest extends FormRequest
     {
         return[
             'name' => 'string|min:6|required',
+            'location' => 'string|nullable',
             'description' => 'string|nullable',
             'creation_date' =>'string|nullable',
             'logo' => [
+                ...$this->isPrecognitive() ? [] : ['nullable'],
+                'image',
+                'mimes:jpg,png',
+            ],
+            'banner' => [
                 ...$this->isPrecognitive() ? [] : ['nullable'],
                 'image',
                 'mimes:jpg,png',

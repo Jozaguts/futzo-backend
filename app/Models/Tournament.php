@@ -10,15 +10,13 @@ class Tournament extends Model
 {
     use HasFactory, SoftDeletes;
     protected $fillable = [
+        'league_id',
         'name',
-        'location',
         'start_date',
         'end_date',
         'prize',
         'winner',
         'description',
-        'logo',
-        'banner',
         'status'
     ];
     protected $casts = [

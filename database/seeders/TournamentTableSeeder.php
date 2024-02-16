@@ -17,29 +17,25 @@ class TournamentTableSeeder extends Seeder
         $url = 'https://ui-avatars.com/api/?name=';
         $tournaments = [
             [
-                'name' => 'Liga MX',
-                'location' => 'Mexico',
-                'start_date' => '2021-08-01',
-                'end_date' => '2021-12-01',
+                'league_id' => 1, // Asume Liga MX es ID 1
+                'name' => 'Clausura 2021',
+                'start_date' => '2021-01-08',
+                'end_date' => '2021-05-30',
                 'prize' => '1000000',
                 'winner' => null,
-                'description' => 'Liga MX description',
-                'logo' => $url . 'Liga+MX&size=64',
-                'banner' =>$url . 'Liga+MX&size=256',
+                'description' => 'El torneo Clausura de la temporada 2021 en Liga MX.',
                 'status' => 'active'
             ],
             [
-                'name' => 'MLS',
-                'location' => 'USA',
-                'start_date' => '2021-08-01',
-                'end_date' => '2021-12-01',
+                'league_id' => 2, // Asume MLS es ID 2
+                'name' => 'MLS Cup 2021',
+                'start_date' => '2021-04-17',
+                'end_date' => '2021-11-07',
                 'prize' => '1000000',
                 'winner' => null,
-                'description' => 'MLS description',
-                'logo' => $url . 'MLS&size=64',
-                'banner' =>$url . 'MLS&size=256',
+                'description' => 'El torneo de copa de la temporada 2021 en MLS.',
                 'status' => 'active'
-            ],
+            ]
         ];
         DB::table('tournaments')->insert($tournaments);
     }

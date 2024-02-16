@@ -13,15 +13,14 @@ return new class extends Migration
     {
         Schema::create('tournaments', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('league_id');
+            $table->foreign('league_id')->references('id')->on('leagues')->onDelete('cascade');
             $table->string('name');
-            $table->string('location')->nullable();
             $table->date('start_date')->nullable();
             $table->date('end_date')->nullable();
             $table->integer('prize')->nullable();
             $table->integer('winner')->nullable();
             $table->longText('description')->nullable();
-            $table->string('logo')->nullable();
-            $table->string('banner')->nullable();
             $table->string('status')->nullable()->default('created');
             $table->softDeletes();
             $table->timestamps();

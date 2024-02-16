@@ -19,6 +19,7 @@ class UserResource extends JsonResource
             'lastname' => $this->lastname,
             'email'=> $this->email,
             'roles' => $this->roles()->pluck('name'),
+            'league' => $this->league ?? 'No league assigned',
         ];
     }
 }

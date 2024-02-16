@@ -21,6 +21,8 @@ return new class extends Migration
             $table->string('password')->nullable();
             $table->string('facebook_id')->nullable();
             $table->string('google_id')->nullable();
+            $table->unsignedBigInteger('league_id')->nullable();
+            $table->foreign('league_id')->references('id')->on('league');
             $table->softDeletes();
             $table->rememberToken();
             $table->timestamps();

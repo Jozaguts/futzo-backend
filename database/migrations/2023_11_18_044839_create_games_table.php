@@ -23,6 +23,10 @@ return new class extends Migration
             $table->foreign('category_id')->references('id')->on('categories')->onDelete('cascade');
             $table->unsignedBigInteger('winner_team_id')->nullable();
             $table->foreign('winner_team_id')->references('id')->on('teams');
+            $table->unsignedBigInteger('tournament_id');
+            $table->foreign('tournament_id')->references('id')->on('tournaments')->onDelete('cascade');
+            $table->unsignedBigInteger('league_id');
+            $table->foreign('league_id')->references('id')->on('leagues')->onDelete('cascade');
             $table->softDeletes();
             $table->timestamps();
         });

@@ -2,8 +2,13 @@
 
 namespace App\Models;
 
+use App\Observers\TournamentObserver;
+use App\Scopes\LeagueScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Tournament extends Model
@@ -23,22 +28,28 @@ class Tournament extends Model
         'start_date' => 'datetime',
         'end_date' => 'datetime',
     ];
-
-    // Relación con equipos
-    public function teams()
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new LeagueScope);
+        Tournament::observe(TournamentObserver::class);
+    }
+    public function teams(): HasMany
     {
         return $this->hasMany(Team::class);
     }
 
-    // Relación con jugadores a través de equipos
-    public function players()
+    public function players():HasManyThrough
     {
         return $this->hasManyThrough(Player::class, Team::class);
     }
 
-    // Relación con partidos
-    public function games()
+    public function games(): HasMany
     {
         return $this->hasMany(Game::class);
+    }
+
+    public function league(): BelongsTo
+    {
+        return $this->belongsTo(League::class);
     }
 }

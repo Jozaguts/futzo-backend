@@ -16,8 +16,20 @@ class League extends Model
     protected $casts = [
         'creation_date' => 'datetime',
     ];
+
     public function users(): HasMany
     {
         return $this->hasMany(User::class);
     }
+
+    public function tournaments(): HasMany
+    {
+        return $this->hasMany(Tournament::class);
+    }
+
+    public function teams(): HasMany
+    {
+        return $this->hasMany(Team::class);
+    }
+
 }

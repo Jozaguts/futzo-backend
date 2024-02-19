@@ -10,6 +10,14 @@ use Illuminate\Support\Facades\Storage;
 class LeaguesController extends Controller
 {
     const DEFAULT_STATUS = 'active';
+
+    public function index()
+    {
+        $league = League::withCount('tournaments')->get();
+
+        return LeagueResource::collection($league);
+    }
+
     public function store(LeagueStoreRequest $request)
     {
         $request->validated();

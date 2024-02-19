@@ -20,7 +20,7 @@ class TournamentCollection extends ResourceCollection
             'teams' => $tournament->teams_count,
             'players' => $tournament->players_count,
             'matches' => $tournament->games_count,
-            'image' => $tournament->logo
+            'league' => $tournament->league->name,
         ])->toArray();
     }
 }

@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('name');
             $table->date('start_date')->nullable();
             $table->date('end_date')->nullable();
-            $table->integer('prize')->nullable();
+            $table->string('prize')->nullable();
             $table->integer('winner')->nullable();
             $table->longText('description')->nullable();
             $table->string('status')->nullable()->default('created');

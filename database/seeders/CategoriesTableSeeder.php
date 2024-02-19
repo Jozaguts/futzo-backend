@@ -13,43 +13,22 @@ class CategoriesTableSeeder extends Seeder
      */
     public function run()
     {
-        /*
-         * Genders
-         * Varonil 1
-         * Femenil 2
-         * */
-        $categories = [
+
+        $categories =[
             [
-                'name' => 'amateur',
-                'gender_id' => 1
+                'name' => 'Amateur',
+                'age_range' => '*',
+                'gender' => 'male',
             ],
             [
-                'name' => 'amateur',
-                'gender_id' => 2
+                'name' => 'Ascenso',
+                'age_range' => '*',
+                'gender' => 'male',
             ],
             [
-                'name' => 'asenso',
-                'gender_id' => 1
-            ],
-            [
-                'name' => 'asenso',
-                'gender_id' => 2
-            ],
-            [
-                'name' => 'especial',
-                'gender_id' => 1
-            ],
-            [
-                'name' => 'especial',
-                'gender_id' => 2
-            ],
-            [
-                'name' => 'veteranos',
-                'gender_id' => 1
-            ],
-            [
-                'name' => 'veteranos',
-                'gender_id' => 2
+                'name' => 'Especial',
+                'age_range' => '*',
+                'gender' => 'male',
             ],
         ];
 

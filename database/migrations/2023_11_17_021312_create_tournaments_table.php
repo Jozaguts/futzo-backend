@@ -15,6 +15,8 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('league_id');
             $table->foreign('league_id')->references('id')->on('leagues')->onDelete('cascade');
+            $table->unsignedBigInteger('category_id')->nullable();
+            $table->foreign('category_id')->references('id')->on('categories')->onDelete('set null');
             $table->string('name');
             $table->date('start_date')->nullable();
             $table->date('end_date')->nullable();

@@ -34,7 +34,7 @@ class DatabaseSeeder extends Seeder
         $user->assignRole('super administrador');
         $this->call(LeaguesTableSeeder::class);
         $this->call(PositionsTableSeeder::class);
-        $this->call(GendersTableSeeder::class);
+//        $this->call(GendersTableSeeder::class);
         $this->call(CategoriesTableSeeder::class);
         $this->call(TournamentTableSeeder::class);
         $this->call(TeamsTableSeeder::class);

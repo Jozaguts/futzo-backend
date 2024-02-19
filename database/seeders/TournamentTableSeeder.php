@@ -24,7 +24,8 @@ class TournamentTableSeeder extends Seeder
                 'prize' => '1000000',
                 'winner' => null,
                 'description' => 'El torneo Clausura de la temporada 2021 en Liga MX.',
-                'status' => 'active'
+                'status' => 'active',
+                'category_id' => 1,
             ],
             [
                 'league_id' => 2, // Asume MLS es ID 2
@@ -34,7 +35,8 @@ class TournamentTableSeeder extends Seeder
                 'prize' => '1000000',
                 'winner' => null,
                 'description' => 'El torneo de copa de la temporada 2021 en MLS.',
-                'status' => 'active'
+                'status' => 'active',
+                'category_id' => 1,
             ]
         ];
         DB::table('tournaments')->insert($tournaments);

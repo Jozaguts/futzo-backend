@@ -13,11 +13,11 @@ return new class extends Migration
     {
         Schema::create('categories', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->unsignedBigInteger('gender_id');
-            $table->foreign('gender_id')->references('id')->on('genders')->onDelete('cascade');
-            $table->softDeletes();
+            $table->string('name'); // Nombre de la categoría, ej. "Sub-16 Masculino", "Senior Femenino"
+            $table->string('age_range')->nullable(); // Rango de edad, ej. "10-16", "17-30"
+            $table->enum('gender', ['male', 'female', 'mixed'])->nullable(); // Género
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

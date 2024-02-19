@@ -10,10 +10,14 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Category extends Model
 {
     use HasFactory, SoftDeletes;
-    protected $fillable = ['name','gender_id'];
+    protected $fillable = ['name','age_range','gender'];
 
     public function teams(): HasMany
     {
         return $this->hasMany(Team::class);
+    }
+    public function tournaments(): HasMany
+    {
+        return $this->hasMany(Tournament::class);
     }
 }

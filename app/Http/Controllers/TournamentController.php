@@ -30,7 +30,8 @@ class TournamentController extends Controller
             'prize' => $request->prize,
             'winner' => $request->winner,
             'description' => $request->description,
-            'status' => $request->status,
+            'category_id' => $request->category,
+            'status' => 'active',
         ]);
 
         return response()->json($tournament);

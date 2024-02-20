@@ -24,8 +24,9 @@ class CategoryStoreRequest extends FormRequest
     public function rules()
     {
         return [
-            'name' => 'required|string|max:30|unique:categories,name',
-            'gender_id' => 'required|exists:genders,id'
+            'name' => 'required|string',
+            'age_range' => 'required|string',
+            'gender' => 'required|string'
         ];
     }
 }

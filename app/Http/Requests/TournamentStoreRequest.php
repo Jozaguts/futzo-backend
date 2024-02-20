@@ -31,6 +31,7 @@ class TournamentStoreRequest extends FormRequest
             'prize' => 'string|nullable',
             'winner' => 'string|nullable',
             'description' => 'string|nullable',
+            'category_id' => 'exists:categories,id|nullable',
 //            'logo' => 'i|nullable',
 //            'banner' => 'string|nullable',
             'logo' => [

@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 
@@ -14,7 +15,10 @@ class TournamentCollection extends ResourceCollection
      */
     public function toArray(Request $request): array
     {
-        return $this->collection->map(fn ($tournament) => [
+        $data = [];
+        $data['categories'] = Category::select('id', 'name','age_range')->get()->toArray();
+
+        $data['tournaments'] =  $this->collection->map(fn ($tournament) => [
             'id' => $tournament->id,
             'name' => $tournament->name,
             'teams' => $tournament->teams_count,
@@ -22,5 +26,7 @@ class TournamentCollection extends ResourceCollection
             'matches' => $tournament->games_count,
             'league' => $tournament->league->name,
         ])->toArray();
+
+        return $data;
     }
 }

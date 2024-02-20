@@ -22,7 +22,8 @@ class Tournament extends Model
         'prize',
         'winner',
         'description',
-        'status'
+        'status',
+        'category_id',
     ];
     protected $casts = [
         'start_date' => 'datetime',

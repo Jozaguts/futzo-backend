@@ -7,13 +7,21 @@ use Illuminate\Http\Resources\Json\ResourceCollection;
 
 class TeamCollection extends ResourceCollection
 {
-    /**
-     * Transform the resource collection into an array.
-     *
-     * @return array<int|string, mixed>
-     */
+    protected mixed $categories;
+    protected mixed $tournaments;
+
+    public function __construct($resource, $categories = [], $tournaments = [])
+    {
+        parent::__construct($resource);
+        $this->categories = $categories;
+        $this->tournaments = $tournaments;
+    }
     public function toArray(Request $request): array
     {
-        return parent::toArray($request);
+        return [
+            'teams' => $this->collection,
+            'categories' => $this->categories,
+            'tournaments' => $this->tournaments,
+        ];
     }
 }

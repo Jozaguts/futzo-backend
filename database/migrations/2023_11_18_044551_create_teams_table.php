@@ -14,14 +14,22 @@ return new class extends Migration
         Schema::create('teams', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->enum('group', ['a','b','c','d','e','f','g','h','i','j'])->nullable();
-            $table->integer('won')->default(0);
-            $table->integer('draw')->default(0);
-            $table->integer('lost')->default(0);
-            $table->integer('goals_against')->default(0);
-            $table->integer('goals_for')->default(0);
-            $table->integer('goals_difference')->default(0);
-            $table->integer('points')->default(0);
+            $table->string('address')->nullable();
+            $table->string('location')->nullable();
+            $table->string('city')->nullable();
+            $table->string('email')->nullable();
+            $table->string('phone')->nullable();
+
+            $table->string('image')->nullable();
+
+//            $table->enum('group', ['a','b','c','d','e','f','g','h','i','j'])->nullable();
+//            $table->integer('won')->default(0);
+//            $table->integer('draw')->default(0);
+//            $table->integer('lost')->default(0);
+//            $table->integer('goals_against')->default(0);
+//            $table->integer('goals_for')->default(0);
+//            $table->integer('goals_difference')->default(0);
+//            $table->integer('points')->default(0);
             $table->unsignedBigInteger('category_id');
             $table->foreign('category_id')->references('id')->on('categories')->onDelete('cascade');
             $table->unsignedBigInteger('league_id');

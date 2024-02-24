@@ -15,7 +15,6 @@ class LeagueResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            // 'name', 'description', 'creation_date', 'logo', 'banner','status','location',
             'id' => $this->id,
             'name' => $this->name,
             'description' => $this->description,

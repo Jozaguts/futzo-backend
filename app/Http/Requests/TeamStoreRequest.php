@@ -28,6 +28,7 @@ class TeamStoreRequest extends FormRequest
      */
     public function rules()
     {
+
         return [
             'name' => [
                 'required',
@@ -35,15 +36,30 @@ class TeamStoreRequest extends FormRequest
                     return $q->where('category_id', $this->category_id);
                 }),
             ],
-            'group' => 'string|max:1|nullable',
+            'address' => 'string|nullable',
+            'location' => 'string|nullable',
+            'city' => 'string|nullable',
+            'email' => 'string|nullable',
+            'phone' => 'string|required',
+            'image' => [
+                ...$this->isPrecognitive() ? [] : ['nullable'],
+                'image',
+                'mimes:jpg,png',
+            ],
             'category_id' => 'required|exists:categories,id',
-            'won' => 'integer|nullable',
-            'draw' => 'integer|nullable',
-            'lost' => 'integer|nullable',
-            'goals_against' => 'integer|nullable',
-            'goals_for' => 'integer|nullable',
-            'goals_difference' => 'integer|nullable',
-            'points' => 'integer|nullable',
+            'tournament_id' => 'required|exists:tournaments,id',
+            'locale.short' => 'string|nullable',
+            'locale.jersey' => 'string|nullable',
+            'away.short' => 'string|nullable',
+            'away.jersey' => 'string|nullable',
+
+//            'won' => 'integer|nullable',
+//            'draw' => 'integer|nullable',
+//            'lost' => 'integer|nullable',
+//            'goals_against' => 'integer|nullable',
+//            'goals_for' => 'integer|nullable',
+//            'goals_difference' => 'integer|nullable',
+//            'points' => 'integer|nullable',
         ];
     }
 }

@@ -39,6 +39,10 @@ class TournamentTableSeeder extends Seeder
                 'category_id' => 1,
             ]
         ];
-        DB::table('tournaments')->insert($tournaments);
+        foreach ($tournaments as $tournament) {
+
+            $test = DB::table('tournaments')->insert($tournament);
+            echo $test;
+        }
     }
 }

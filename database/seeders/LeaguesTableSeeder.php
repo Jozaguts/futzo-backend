@@ -21,7 +21,8 @@ class LeaguesTableSeeder extends Seeder
                 'description' => 'La principal competición de fútbol profesional en México.',
                 'logo' => $url . 'Liga+MX&size=64',
                 'banner' => $url . 'Liga+MX&size=256',
-                'status' => 'active'
+                'status' => 'active',
+                'creation_date' => '2021-10-10',
             ],
             [
                 'name' => 'MLS',
@@ -29,9 +30,12 @@ class LeaguesTableSeeder extends Seeder
                 'description' => 'Major League Soccer, la principal liga de fútbol en Estados Unidos.',
                 'logo' => $url . 'MLS&size=64',
                 'banner' => $url . 'MLS&size=256',
-                'status' => 'active'
+                'status' => 'active',
+                'creation_date' => '2021-10-10',
             ]
         ];
-        DB::table('leagues')->insert($leagues);
+        foreach ($leagues as $league) {
+            DB::table('leagues')->insert($league);
+        }
     }
 }

@@ -32,16 +32,6 @@ class TournamentStoreRequest extends FormRequest
             'winner' => 'string|nullable',
             'description' => 'string|nullable',
             'category_id' => 'exists:categories,id|nullable',
-            'logo' => [
-                ...$this->isPrecognitive() ? [] : ['nullable'],
-                'image',
-                'mimes:jpg,png',
-            ],
-            'banner' => [
-                ...$this->isPrecognitive() ? [] : ['nullable'],
-                'image',
-                'mimes:jpg,png',
-            ],
             'status' => 'string|nullable',
         ];
     }

@@ -4,15 +4,16 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\InitUser;
 use Tests\TestCase;
 
 class UserTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, InitUser;
 
     public function test_me_endpoint()
     {
-        $user = User::factory()->create();
+        $user = $this->initUser();
 
 
         $response = $this

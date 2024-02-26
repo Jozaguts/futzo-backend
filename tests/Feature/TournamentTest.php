@@ -8,26 +8,27 @@ use Database\Seeders\LeaguesTableSeeder;
 use Database\Seeders\TournamentTableSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
+use Tests\InitUser;
 use Tests\TestCase;
 
 class TournamentTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, InitUser;
 
     public function test_get_tournaments_with_data()
     {
-        $user = User::factory()->create();
-        Sanctum::actingAs($user);
+//        $user = User::factory()->create();
+//        Sanctum::actingAs($user);
 
-        $this->seed([
-            CategoriesTableSeeder::class,
-            LeaguesTableSeeder::class,
-            TournamentTableSeeder::class,
-        ]);
+//        $this->seed([
+//            CategoriesTableSeeder::class,
+//            LeaguesTableSeeder::class,
+//            TournamentTableSeeder::class,
+//        ]);
 
-        $user->league_id = 1;
-        $user->save();
-
+//        $user->league_id = 1;
+//        $user->save();
+        $this->initUser();
 
         $response = $this->json('GET','/api/v1/admin/tournaments');
 

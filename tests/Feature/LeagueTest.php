@@ -3,24 +3,22 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
+use Tests\InitUser;
 use Tests\TestCase;
 
 class LeagueTest extends TestCase
 {
-    /**
-     * validate store league
-     */
+    use RefreshDatabase, InitUser;
     public function test_store_league()
     {
         Storage::fake('public');
         $logo = UploadedFile::fake()->image('logo-test.jpg');
         $banner = UploadedFile::fake()->image('banner-test.jpg');
-        $user = User::factory()->create();
-
-        Sanctum::actingAs($user);
+        $this->initUser();
 
         $response = $this->json('POST', '/api/v1/admin/leagues', [
             'name' => 'Torneo 1',
@@ -40,9 +38,7 @@ class LeagueTest extends TestCase
 
     public function test_store_league_required_name()
     {
-        $user = User::factory()->create();
-
-        Sanctum::actingAs($user);
+        $this->initUser();
 
         $response = $this->json('POST', '/api/v1/admin/leagues', [
             'location' => 'Acapulco',
@@ -56,9 +52,7 @@ class LeagueTest extends TestCase
 
     public function test_index_league()
     {
-        $user = User::factory()->create();
-
-        Sanctum::actingAs($user);
+        $this->initUser();
 
         $response = $this->json('GET', '/api/v1/admin/leagues');
 

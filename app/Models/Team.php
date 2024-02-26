@@ -12,7 +12,19 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Team extends Model
 {
     use HasFactory, SoftDeletes, HasLeague;
-    protected $fillable = ['name','address','location','city','email','phone','logo','category_id','league_id'];
+    protected $fillable = [
+        'name',
+        'tournament_id',
+        'category_id',
+        'league_id',
+        'president_name',
+        'coach_name',
+        'phone',
+        'email',
+        'address',
+        'image',
+    ];
+
 
     protected static function booted(): void
     {
@@ -27,5 +39,9 @@ class Team extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+    public function colors ()
+    {
+        return $this->hasOne(TeamDetail::class);
     }
 }

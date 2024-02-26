@@ -2,9 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Models\TeamDetail;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Tests\InitUser;
 use Tests\TestCase;
@@ -17,12 +20,49 @@ class TeamTest extends TestCase
      */
     public function test_store_team(): void
     {
-       $this->initUser();
-
-         $response = $this->json('POST', '/api/v1/admin/teams', [
-              'name' => 'Team 1',
-              'tournament_id' => 1,
+        Storage::fake('public');
+        $image = UploadedFile::fake()->image('logo-test.jpg')->mimeType('image/jpeg');
+        $this->initUser();
+        $expectedColors = [
+            'home' => [
+                'jersey' => 'red',
+                'short' => 'red',
+            ],
+            'away' => [
+                'jersey' => 'blue',
+                'short' => 'blue',
+            ],
+        ];
+        $response = $this->json('POST', '/api/v1/admin/teams', [
+            'name' => 'Team 1',
+            'tournament_id' => 1,
+            'category_id' => 1,
+            'president_name' => 'John Doe',
+            'coach_name' => 'John Doe',
+            'phone' => 'John Doe',
+            'email' => 'test@test.com',
+            'address' => 'address',
+            'image' => $image,
+            'colors' => $expectedColors,
          ]);
-         $response->dump();
+
+         $response->assertStatus(201);
+         $this->assertDatabaseHas('teams', [
+            'name' => 'Team 1',
+            'tournament_id' => 1,
+            'category_id' => 1,
+            'president_name' => 'John Doe',
+            'coach_name' => 'John Doe',
+            'phone' => 'John Doe',
+            'email' => 'test@test.com',
+            'address' => 'address',
+            'image' => '/storage/images/'.$image->hashName(),
+         ]);
+
+        $teamDetail = TeamDetail::where('team_id', 1)->first();
+
+        $this->assertNotNull($teamDetail);
+        $this->assertEquals($expectedColors, $teamDetail->colors);
+        Storage::disk('public')->assertExists('/images/'.$image->hashName());
     }
 }

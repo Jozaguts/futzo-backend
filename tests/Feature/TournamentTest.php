@@ -17,17 +17,6 @@ class TournamentTest extends TestCase
 
     public function test_get_tournaments_with_data()
     {
-//        $user = User::factory()->create();
-//        Sanctum::actingAs($user);
-
-//        $this->seed([
-//            CategoriesTableSeeder::class,
-//            LeaguesTableSeeder::class,
-//            TournamentTableSeeder::class,
-//        ]);
-
-//        $user->league_id = 1;
-//        $user->save();
         $this->initUser();
 
         $response = $this->json('GET','/api/v1/admin/tournaments');

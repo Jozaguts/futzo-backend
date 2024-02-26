@@ -36,30 +36,28 @@ class TeamStoreRequest extends FormRequest
                     return $q->where('category_id', $this->category_id);
                 }),
             ],
-            'address' => 'string|nullable',
-            'location' => 'string|nullable',
-            'city' => 'string|nullable',
-            'email' => 'string|nullable',
+            'tournament_id' => 'required|exists:tournaments,id',
+            'category_id' => 'required|exists:categories,id',
+            'president_name' => 'string|required',
+            'coach_name' => 'string|required',
             'phone' => 'string|required',
+            'email' => 'string|email|nullable',
+            'address' => 'string|nullable',
             'image' => [
                 ...$this->isPrecognitive() ? [] : ['nullable'],
                 'image',
                 'mimes:jpg,png',
             ],
-            'category_id' => 'required|exists:categories,id',
-            'tournament_id' => 'required|exists:tournaments,id',
-            'locale.short' => 'string|nullable',
-            'locale.jersey' => 'string|nullable',
-            'away.short' => 'string|nullable',
-            'away.jersey' => 'string|nullable',
-
-//            'won' => 'integer|nullable',
-//            'draw' => 'integer|nullable',
-//            'lost' => 'integer|nullable',
-//            'goals_against' => 'integer|nullable',
-//            'goals_for' => 'integer|nullable',
-//            'goals_difference' => 'integer|nullable',
-//            'points' => 'integer|nullable',
+            'colors' => [
+              'home' => [
+                  'jersey' => 'string|nullable',
+                    'short' => 'string|nullable'
+              ],
+                'away' => [
+                    'jersey' => 'string|nullable',
+                    'short' => 'string|nullable'
+                ]
+            ],
         ];
     }
 }

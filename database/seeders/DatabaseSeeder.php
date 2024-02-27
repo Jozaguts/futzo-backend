@@ -33,11 +33,14 @@ class DatabaseSeeder extends Seeder
 
         $user->assignRole('super administrador');
         $this->call(LeaguesTableSeeder::class);
+        $user->league_id = League::first()->id;
+        $user->save();
+
         $this->call(PositionsTableSeeder::class);
 //        $this->call(GendersTableSeeder::class);
         $this->call(CategoriesTableSeeder::class);
         $this->call(TournamentTableSeeder::class);
-//        $this->call(TeamsTableSeeder::class);
+        $this->call(TeamsTableSeeder::class);
         $this->call(ActionsTableSeeder::class);
 //        Player::factory()
 //            ->count(3)

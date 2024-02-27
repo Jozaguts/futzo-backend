@@ -18,9 +18,8 @@ class TeamsController extends Controller
 
     public function index(Team $team, Request $request)
     {
-        $categories = Category::select('id','name')->get();
-        $tournaments = Tournament::select('id','name')->get();
-        return  new TeamCollection($team::all(),$categories, $tournaments);
+        $team = $team->with('league')->get();
+        return  new TeamCollection($team);
     }
 
     public function show($id)

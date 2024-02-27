@@ -29,4 +29,15 @@ class TournamentCollection extends ResourceCollection
 
         return $data;
     }
+
+    private function positions()
+    {
+       // todo generar la tabla general de posines de los equipos en el torneo
+        // 1. obtener los equipos del torneo
+        // 2. obtener los partidos del torneo
+        // 3. obtener los puntos de cada equipo
+        // 4. ordenar los equipos por puntos
+        // 5. generar la tabla de posiciones
+
+    }
 }

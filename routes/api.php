@@ -51,6 +51,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::apiResources(['lineups' => LineupsController::class]);
         Route::apiResources(['tournaments' => \App\Http\Controllers\TournamentController::class]);
         Route::apiResources(['leagues' => \App\Http\Controllers\LeaguesController::class]);
+        Route::get('leagues/{leagueId}/tournaments', [\App\Http\Controllers\LeaguesController::class, 'getTournaments']);
     });
 });
 

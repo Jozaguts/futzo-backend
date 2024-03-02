@@ -14,7 +14,15 @@ return new class extends Migration
         Schema::create('standings', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('team_id');
-            $table->foreign('team_tournament_id')->references('id')->on('team_tournaments')->cascadeOnDelete();
+            $table->foreign('team_id')
+                ->references('id')
+                ->on('teams')
+                ->cascadeOnDelete();
+            $table->unsignedBigInteger('team_tournament_id');
+            $table->foreign('team_tournament_id')
+                ->references('id')
+                ->on('team_tournaments')
+                ->cascadeOnDelete();
             // played games
             $table->integer('pg')->default(0);
             // won games

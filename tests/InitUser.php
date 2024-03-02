@@ -17,8 +17,6 @@ trait InitUser
         $this->user->league_id = 1;
 
         $this->user->save();
-
         return $this->user;
-
     }
 }

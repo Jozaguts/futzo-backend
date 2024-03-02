@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Database\Factories\LeagueFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -16,7 +17,10 @@ class League extends Model
     protected $casts = [
         'creation_date' => 'datetime',
     ];
-
+    protected static function newFactory(): LeagueFactory
+    {
+        return LeagueFactory::new();
+    }
     public function users(): HasMany
     {
         return $this->hasMany(User::class);

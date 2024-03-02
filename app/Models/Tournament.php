@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Observers\TournamentObserver;
 use App\Scopes\LeagueScope;
+use Database\Factories\TournamentFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -33,6 +34,10 @@ class Tournament extends Model
     {
         static::addGlobalScope(new LeagueScope);
         Tournament::observe(TournamentObserver::class);
+    }
+    protected static function newFactory(): TournamentFactory
+    {
+        return TournamentFactory::new();
     }
     public function teams(): HasMany
     {

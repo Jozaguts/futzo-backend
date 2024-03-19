@@ -9,5 +9,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Location extends Model
 {
     use HasFactory, SoftDeletes;
-    protected $fillable = ['name','city','capacity'];
+    protected $fillable = ['name','city','capacity','availability'];
+
+    protected $casts = [
+        'availability' => 'json'
+    ];
 }

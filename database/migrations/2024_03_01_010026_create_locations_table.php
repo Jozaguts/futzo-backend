@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('locations', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('city')->nullable();
-            $table->integer('capacity')->nullable(); // Capacidad del estadio
+            $table->string('address')->nullable();
+            $table->json('availability')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });
@@ -29,3 +29,5 @@ return new class extends Migration
         Schema::dropIfExists('locations');
     }
 };
+
+

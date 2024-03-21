@@ -24,17 +24,16 @@ class DatabaseSeeder extends Seeder
        $user = User::create([
             'name' => 'Sagit',
             'lastname' => 'Gutierrez',
-            'email' => 'admin@sls.com',
+            'email' => 'admin@futzo.io',
             'email_verified_at' => now(),
             'phone' => '3221231231',
             'password' => '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
             'remember_token' => Str::random(10),
         ]);
-
-        $user->assignRole('super administrador');
-        $this->call(LeaguesTableSeeder::class);
-        $user->league_id = League::first()->id;
-        $user->save();
+       $user->assignRole('super administrador');
+       $this->call(LeaguesTableSeeder::class);
+       $user->league_id = League::first()->id;
+       $user->save();
 
         $this->call(PositionsTableSeeder::class);
 //        $this->call(GendersTableSeeder::class);

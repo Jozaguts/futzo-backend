@@ -15,12 +15,12 @@ return [
     |
     */
 
-//    'paths' => ['api/*', 'sanctum/csrf-cookie','login','logout','register','me'],
-    'paths' => ['*'],
+    'paths' => ['api/*', 'sanctum/csrf-cookie','login','logout','register'],
+//    'paths' => ['*'],
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => [env('FRONTEND_URL', 'http://localhost:3000')],
+    'allowed_origins' => [env('FRONTEND_URL', 'http://localhost:3000'),'http://futzo.test:3000'],
 
     'allowed_origins_patterns' => [],
 

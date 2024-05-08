@@ -34,7 +34,7 @@ class TeamTest extends TestCase
             ],
         ];
         $response = $this->json('POST', '/api/v1/admin/teams', [
-            'name' => 'Team 1',
+            'name' => 'Team test',
             'tournament_id' => 1,
             'category_id' => 1,
             'president_name' => 'John Doe',

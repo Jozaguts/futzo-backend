@@ -44,4 +44,28 @@ class TournamentTest extends TestCase
                 ],
             ]);
     }
+
+    public function test_store_tournament()
+    {
+        $this->initUser();
+
+        $response = $this->json('POST','/api/v1/admin/tournaments', [
+            'name' => 'Tournament 1',
+            'category_id' => 1,
+            'league_id' => 1,
+            'teams' => 10,
+            'players' => 100,
+            'matches' => 45
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJsonStructure([
+                'id',
+                'name',
+                'teams',
+                'players',
+                'matches',
+                'league'
+            ]);
+    }
 }

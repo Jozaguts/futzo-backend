@@ -39,6 +39,11 @@ class Tournament extends Model
     {
         return TournamentFactory::new();
     }
+
+    public function TournamentType(): BelongsTo
+    {
+        return $this->belongsTo(TournamentType::class);
+    }
     public function teams(): HasMany
     {
         return $this->hasMany(Team::class);

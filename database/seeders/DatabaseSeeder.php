@@ -5,6 +5,7 @@ namespace Database\Seeders;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use App\Models\League;
 use App\Models\Player;
+use App\Models\TournamentType;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Sequence;
 use Illuminate\Database\Seeder;
@@ -17,7 +18,6 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // \App\Models\User::factory(10)->create();
        $this->call([
            RolesTableSeeder::class,
        ]);
@@ -31,28 +31,15 @@ class DatabaseSeeder extends Seeder
             'remember_token' => Str::random(10),
         ]);
        $user->assignRole('super administrador');
-       $this->call(LeaguesTableSeeder::class);
-       $user->league_id = League::first()->id;
-       $user->save();
+        $this->call(LeaguesTableSeeder::class);
+        $user->league_id = League::first()->id;
+        $user->save();
 
         $this->call(PositionsTableSeeder::class);
-//        $this->call(GendersTableSeeder::class);
         $this->call(CategoriesTableSeeder::class);
+        $this->call(TournamentTypesTableSeeder::class);
         $this->call(TournamentTableSeeder::class);
         $this->call(TeamsTableSeeder::class);
         $this->call(ActionsTableSeeder::class);
-//        Player::factory()
-//            ->count(3)
-//            ->state(new Sequence(
-//                ['team_id' => 1,],
-//                ['team_id' => 2,],
-//                ['team_id' => 3,],
-//                ['team_id' => 4,],
-//                ['team_id' => 5,],
-//                ['team_id' => 6,],
-//                ['team_id' => 7,],
-//
-//            ))
-//            ->create();
     }
 }

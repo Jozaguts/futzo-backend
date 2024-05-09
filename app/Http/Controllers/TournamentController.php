@@ -25,6 +25,7 @@ class TournamentController extends Controller
 
         $tournament = Tournament::create([
             'name' => $request->name,
+            'tournament_format_id' => $request->tournament_format_id,
             'start_date' => $request->start_date,
             'end_date' => $request->end_date,
             'prize' => $request->prize,
@@ -34,6 +35,6 @@ class TournamentController extends Controller
             'status' => 'active',
         ]);
 
-        return response()->json($tournament);
+        return response()->json($tournament, 201);
     }
 }

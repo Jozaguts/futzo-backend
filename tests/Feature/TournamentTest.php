@@ -52,20 +52,26 @@ class TournamentTest extends TestCase
         $response = $this->json('POST','/api/v1/admin/tournaments', [
             'name' => 'Tournament 1',
             'category_id' => 1,
-            'league_id' => 1,
-            'teams' => 10,
-            'players' => 100,
-            'matches' => 45
+            'tournament_format_id' => 1,
+            'start_date' => '2021-12-12',
+            'end_date' => '2021-12-12',
+            'prize' => 'Prize 1',
+            'winner' => 'Winner 1',
+            'description' => 'Tournament 1 description',
+            'status' => 'active',
         ]);
 
         $response->assertStatus(201)
             ->assertJsonStructure([
-                'id',
                 'name',
-                'teams',
-                'players',
-                'matches',
-                'league'
+                'category_id',
+                'tournament_format_id',
+                'start_date' ,
+                'end_date',
+                'prize',
+                'winner' ,
+                'description',
+                'status',
             ]);
     }
 }

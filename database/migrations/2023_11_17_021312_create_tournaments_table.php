@@ -23,7 +23,7 @@ return new class extends Migration
             $table->date('start_date')->nullable();
             $table->date('end_date')->nullable();
             $table->string('prize')->nullable();
-            $table->integer('winner')->nullable();
+            $table->string('winner')->nullable();
             $table->longText('description')->nullable();
             $table->string('status')->nullable()->default('created');
             $table->softDeletes();

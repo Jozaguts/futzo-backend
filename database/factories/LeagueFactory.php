@@ -25,6 +25,7 @@ class LeagueFactory extends Factory
         return [
             'name' => 'Liga MX',
             'location' => 'Mexico',
+            'football_type_id' => 1,
             'description' => 'La principal competición de fútbol profesional en México.',
             'logo' => 'https://ui-avatars.com/api/?name=Liga+MX&size=64',
             'banner' => 'https://ui-avatars.com/api/?name=Liga+MX&size=256',

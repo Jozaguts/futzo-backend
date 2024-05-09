@@ -25,6 +25,7 @@ class TournamentStoreRequest extends FormRequest
     {
         return[
             'name' => 'required',
+            'tournament_format_id' => 'exists:tournament_formats,id',
             'location' => 'string|nullable',
             'start_date' =>'string|nullable',
             'end_date' => 'string|nullable',

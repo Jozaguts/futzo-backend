@@ -52,20 +52,5 @@ class ScheduleTest extends TestCase
         $response->assertStatus(201);
     }
 
-    public function test_non_admin_cannot_generate_tournament_schedule()
-    {
-        // todo fix this test
-//        $user = User::factory()->create();
-//        Sanctum::actingAs($user);
-//        $league = League::factory()->create();
-//        $user->league_id = $league->id;
-//        $tournament = Tournament::factory()->create();
-//        League::all()->dump();
-//        $response = $this->actingAs($user)->json('POST', '/api/v1/admin/schedule/generate', [
-//            'league_id' => $league->id,
-//            'tournament_id' => $tournament->id,
-//        ]);
-//
-//        $response->assertForbidden();
-    }
+    // todo  test_non_admin_cannot_generate_tournament_schedule
 }

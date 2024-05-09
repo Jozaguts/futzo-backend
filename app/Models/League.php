@@ -12,7 +12,7 @@ class League extends Model
 {
     use HasFactory, SoftDeletes;
     protected $fillable = [
-        'name', 'description', 'creation_date', 'logo', 'banner','status','location',
+        'name', 'description', 'creation_date', 'logo', 'banner','status','location','football_type_id'
     ];
     protected $casts = [
         'creation_date' => 'datetime',

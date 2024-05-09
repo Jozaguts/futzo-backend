@@ -49,9 +49,9 @@ class TeamStoreRequest extends FormRequest
                 'mimes:jpg,png',
             ],
             'colors' => [
-              'home' => [
+                'home' => [
                   'jersey' => 'string|nullable',
-                    'short' => 'string|nullable'
+                  'short' => 'string|nullable'
               ],
                 'away' => [
                     'jersey' => 'string|nullable',

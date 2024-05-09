@@ -28,6 +28,7 @@ class TournamentFactory extends Factory
             'name' => 'Clausura 2021',
             'start_date' => '2021-01-08',
             'end_date' => '2021-05-30',
+            'tournament_format_id' => 1,
             'prize' => '1000000',
             'winner' => null,
             'description' => 'El torneo Clausura de la temporada 2021 en Liga MX.',

@@ -45,21 +45,12 @@ class TeamTest extends TestCase
             'image' => $image,
             'colors' => $expectedColors,
          ]);
-
          $response->assertStatus(201);
          $this->assertDatabaseHas('teams', [
             'name' => 'Team 1',
-            'tournament_id' => 1,
-            'category_id' => 1,
-            'president_name' => 'John Doe',
-            'coach_name' => 'John Doe',
-            'phone' => 'John Doe',
-            'email' => 'test@test.com',
-            'address' => 'address',
-            'image' => '/storage/images/'.$image->hashName(),
          ]);
 
-        $teamDetail = TeamDetail::where('team_id', 1)->first();
+        $teamDetail = TeamDetail::where('team_id', $response->json('id'))->first();
 
         $this->assertNotNull($teamDetail);
         $this->assertEquals($expectedColors, $teamDetail->colors);

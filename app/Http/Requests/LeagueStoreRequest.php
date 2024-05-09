@@ -26,6 +26,7 @@ class LeagueStoreRequest extends FormRequest
         return[
             'name' => 'string|min:6|required',
             'location' => 'string|nullable',
+            'football_type_id' => 'required|integer|exists:football_types,id',
             'description' => 'string|nullable',
             'creation_date' =>'string|nullable',
             'logo' => [

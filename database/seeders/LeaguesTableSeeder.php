@@ -18,6 +18,7 @@ class LeaguesTableSeeder extends Seeder
             [
                 'name' => 'Liga MX',
                 'location' => 'Mexico',
+                'football_type_id'  => 1,
                 'description' => 'La principal competición de fútbol profesional en México.',
                 'logo' => $url . 'Liga+MX&size=64',
                 'banner' => $url . 'Liga+MX&size=256',
@@ -26,6 +27,7 @@ class LeaguesTableSeeder extends Seeder
             ],
             [
                 'name' => 'MLS',
+                'football_type_id'  => 2,
                 'location' => 'USA',
                 'description' => 'Major League Soccer, la principal liga de fútbol en Estados Unidos.',
                 'logo' => $url . 'MLS&size=64',

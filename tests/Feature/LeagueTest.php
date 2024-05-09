@@ -22,6 +22,7 @@ class LeagueTest extends TestCase
 
         $response = $this->json('POST', '/api/v1/admin/leagues', [
             'name' => 'Torneo 1',
+            'football_type_id' => 1,
             'location' => 'Acapulco',
             'description' => 'Torneo de futbol',
             'creation_date' => '2021-10-10',
@@ -61,6 +62,7 @@ class LeagueTest extends TestCase
             '*' => [
                 'id',
                 'name',
+                'football_type_id',
                 'description',
                 'creation_date',
                 'logo',

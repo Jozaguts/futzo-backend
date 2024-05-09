@@ -22,7 +22,6 @@ class LeaguesController extends Controller
 
     public function store(LeagueStoreRequest $request)
     {
-        $request->validated();
 
         if($request->hasFile('logo')){
             $path = $request->file('logo')->store('images', 'public');
@@ -38,6 +37,7 @@ class LeaguesController extends Controller
             'location' => $request->location,
             'description' => $request->description,
             'creation_date' => $request->creation_date,
+            'football_type_id' => $request->football_type_id,
             'logo' => $request->logo,
             'banner' => $request->banner,
             'status' => $request->status ?? self::DEFAULT_STATUS,

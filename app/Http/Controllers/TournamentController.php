@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\TournamentStoreRequest;
 use App\Http\Resources\TournamentCollection;
 use App\Models\Tournament;
+use App\Models\TournamentFormat;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
 
@@ -36,5 +37,12 @@ class TournamentController extends Controller
         ]);
 
         return response()->json($tournament, 201);
+    }
+
+    public function getTournamentTypes(): JsonResponse
+    {
+        $tournamentTypes = TournamentFormat::query()->select('id','name')->get();
+
+        return response()->json($tournamentTypes);
     }
 }

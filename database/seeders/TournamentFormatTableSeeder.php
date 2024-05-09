@@ -5,14 +5,14 @@ namespace Database\Seeders;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
-class TournamentTypesTableSeeder extends Seeder
+class TournamentFormatTableSeeder extends Seeder
 {
     /**
      * Run the database seeds.
      */
     public function run(): void
     {
-        $tournamentTypes = [
+        $tournamentFormats = [
             [
                 'name' => 'Torneo de Liga',
                 'description' => 'En este torneo, conocido también como sistema Round Robin o todos contra todos, cada equipo compite con los demás y acumula puntos a lo largo de la temporada. El equipo con más puntos al final de todos los encuentros se proclama campeón.',
@@ -35,8 +35,8 @@ class TournamentTypesTableSeeder extends Seeder
             ],
         ];
 
-        foreach ($tournamentTypes as $tournamentType) {
-            \App\Models\TournamentType::create($tournamentType);
+        foreach ($tournamentFormats as $tournamentFormat) {
+            \App\Models\TournamentFormat::create($tournamentFormat);
         }
     }
 }

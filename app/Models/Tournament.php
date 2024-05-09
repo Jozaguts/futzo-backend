@@ -25,6 +25,7 @@ class Tournament extends Model
         'description',
         'status',
         'category_id',
+        'tournament_format_id'
     ];
     protected $casts = [
         'start_date' => 'datetime',
@@ -40,9 +41,9 @@ class Tournament extends Model
         return TournamentFactory::new();
     }
 
-    public function TournamentType(): BelongsTo
+    public function TournamentFormat(): BelongsTo
     {
-        return $this->belongsTo(TournamentType::class);
+        return $this->belongsTo(TournamentFormat::class);
     }
     public function teams(): HasMany
     {

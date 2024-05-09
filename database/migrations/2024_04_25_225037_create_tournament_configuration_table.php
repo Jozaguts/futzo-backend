@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('tournament_id');
             $table->foreign('tournament_id')->references('id')->on('tournaments')->onDelete('cascade');
-            $table->unsignedBigInteger('tournament_type_id');
-            $table->foreign('tournament_type_id')->references('id')->on('tournament_types')->onDelete('cascade');
+            $table->unsignedBigInteger('tournament_format_id');
+            $table->foreign('tournament_format_id')->references('id')->on('tournament_formats')->onDelete('cascade');
             $table->integer('max_participants')->nullable();
             $table->integer('min_participants')->nullable();
             $table->integer('max_teams')->nullable();

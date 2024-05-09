@@ -22,6 +22,7 @@ class TournamentTableSeeder extends Seeder
                 'start_date' => '2021-01-08',
                 'end_date' => '2021-05-30',
                 'prize' => '1000000',
+                'tournament_format_id' => 1, // Asume Torneo de Liga es ID 1
                 'winner' => null,
                 'description' => 'El torneo Clausura de la temporada 2021 en Liga MX.',
                 'status' => 'active',
@@ -30,6 +31,7 @@ class TournamentTableSeeder extends Seeder
             [
                 'league_id' => 2, // Asume MLS es ID 2
                 'name' => 'MLS Cup 2021',
+                'tournament_format_id' => 2, // Asume Liga y Eliminatoria es ID 2
                 'start_date' => '2021-04-17',
                 'end_date' => '2021-11-07',
                 'prize' => '1000000',

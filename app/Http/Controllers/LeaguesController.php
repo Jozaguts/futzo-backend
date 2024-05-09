@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\LeagueStoreRequest;
 use App\Http\Resources\LeagueResource;
 use App\Http\Resources\TournamentByLeagueCollection;
+use App\Models\FootballType;
 use App\Models\League;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
@@ -57,5 +58,13 @@ class LeaguesController extends Controller
         $tournament = League::find($leagueId)->tournaments()->withCount('teams')->get();
 
         return new TournamentByLeagueCollection($tournament);
+    }
+    public function getFootballTypes(): JsonResponse
+    {
+        $footBallTypes = FootballType::query()
+            ->select('id', 'name')
+            ->get();
+
+        return response()->json($footBallTypes);
     }
 }

@@ -23,7 +23,9 @@ Route::prefix('auth')->group(function () {
             ],
             [
                 'name' => $user->getName(),
-                "{$provider}_id" => $user->getId()
+                "{$provider}_id" => $user->getId(),
+                'lastname' =>  $user->getName(),
+                'email_verified_at' => now(),
             ]);
 
         $token = $authUser->createToken('auth_token');

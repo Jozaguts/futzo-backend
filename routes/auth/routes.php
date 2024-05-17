@@ -28,10 +28,7 @@ Route::prefix('auth')->group(function () {
                 'email_verified_at' => now(),
             ]);
 
-            request()->authenticate();
-
-            request()->session()->regenerate();
-
+            Auth::login($authUser);
 
         return response()->noContent();
     });

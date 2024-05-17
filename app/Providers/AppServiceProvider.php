@@ -28,15 +28,5 @@ class AppServiceProvider extends ServiceProvider
     {
         JsonResource::withoutWrapping();
         Schema::defaultStringLength(191);
-        VerifyEmail::createUrlUsing(function ($notifiable) {
-            return URL::temporarySignedRoute(
-                'external.verification.verify',
-                now()->addMinutes(60), // Ajusta este tiempo según tus necesidades
-                [
-                    'id' => $notifiable->getKey(),
-                    'hash' => sha1($notifiable->getEmailForVerification())
-                ],
-            );
-        });
     }
 }

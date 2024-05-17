@@ -18,9 +18,5 @@ Route::get('/', function () {
     'message' => 'Welcome to '. env('APP_NAME').' API'
   ]);
 });
-Route::get('/external-verify-email/{id}/{hash}', function ($id, $hash) {
-    $queryString = request()->query();
-    $externalUrl =env('FRONTEND_URL')."/verificar-correo/{$id}/{$hash}?expires={$queryString['expires']}&signature={$queryString['signature']}";
-    return redirect()->to($externalUrl);
-})->name('external.verification.verify');
 require __DIR__.'/auth.php';
+require __DIR__.'/auth/routes.php';

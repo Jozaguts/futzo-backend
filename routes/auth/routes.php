@@ -28,8 +28,11 @@ Route::prefix('auth')->group(function () {
                 'email_verified_at' => now(),
             ]);
 
-        $token = $authUser->createToken('auth_token');
+            request()->authenticate();
 
-        return response()->json(['success' => (bool)$token, 'token'=> $token->plainTextToken]);
+            request()->session()->regenerate();
+
+
+        return response()->noContent();
     });
 });

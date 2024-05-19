@@ -18,6 +18,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string $password
  * @property int $facebook_id
  * @property int $google_id
+ * @property string $email_verification_token
  */
 class User extends Authenticatable  implements MustVerifyEmail
 {
@@ -36,6 +37,7 @@ class User extends Authenticatable  implements MustVerifyEmail
         'name',
         'lastname',
         'email',
+        'email_verification_token',
         'password',
         'facebook_id',
         'google_id',

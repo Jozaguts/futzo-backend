@@ -21,7 +21,7 @@ return [
         'auth/login',
         'auth/logout',
         'auth/register',
-        'verify-email/*',
+        'verify-email',
         'auth/*/redirect',
         'auth/*/callback'
     ],

@@ -5,6 +5,7 @@ use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
@@ -25,16 +26,14 @@ class AuthenticateController extends Controller
         try {
             DB::beginTransaction();
             $user = User::create($validated);
-            $user->assignRole('admin');
+            $user->assignRole('predeterminado');
 
-            $token = $user->createToken('auth_token')->plainTextToken;
+            event(new Registered($user));
             DB::commit();
         }catch(\Exception $e){
             DB::rollBack();
             return response()->json(['success' => false, 'message' => $e->getMessage()], 401);
         }
-
-        return response()->json(['success' => true, 'token' => $token]);
     }
 
     public function login(LoginRequest $request)
@@ -43,7 +42,9 @@ class AuthenticateController extends Controller
 
         $request->session()->regenerate();
 
-        return response()->noContent();
+        return response()->json([
+            'message' => 'Login successful'
+        ]);
     }
 
     public function logout(Request $request)
@@ -54,8 +55,6 @@ class AuthenticateController extends Controller
 
         $request->session()->regenerateToken();
 
-        return redirect('/');
-//        $request->user()->currentAccessToken()->delete();
-//        return response()->json(['success' => true]);
+        return response()->noContent();
     }
 }

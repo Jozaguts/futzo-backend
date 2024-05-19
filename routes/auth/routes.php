@@ -32,4 +32,6 @@ Route::prefix('auth')->group(function () {
 
         return response()->noContent();
     });
+    Route::post('login', [AuthenticateController::class, 'login']);
+    Route::post('logout', [AuthenticateController::class, 'logout']);
 });

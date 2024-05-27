@@ -24,7 +24,6 @@ Route::prefix('auth')->group(function () {
             [
                 'name' => $user->getName(),
                 "{$provider}_id" => $user->getId(),
-                'lastname' =>  $user->getName(),
                 'email_verified_at' => now(),
             ]);
 

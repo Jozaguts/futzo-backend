@@ -11,6 +11,20 @@ class UserTest extends TestCase
 {
     use RefreshDatabase, InitUser;
 
+
+    public function test_register_user()
+    {
+        $this->json('POST', '/auth/register', [
+            'name' => 'John',
+            'email' => 'test@test.com',
+            'password' => 'password'
+            ])->dump();
+
+        $this->assertDatabaseHas('users', [
+            'name' => 'John',
+            'email' => 'test@test.com'
+        ]);
+    }
     public function test_me_endpoint()
     {
         $user = $this->initUser();
@@ -24,12 +38,12 @@ class UserTest extends TestCase
             ->assertStatus(200)
             ->assertJsonStructure([
                 'name',
-                'lastname',
                 'email',
                 'roles',
                 'league'
             ]);
     }
+
 
 
 }

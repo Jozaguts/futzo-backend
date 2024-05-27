@@ -22,8 +22,7 @@ class DatabaseSeeder extends Seeder
            RolesTableSeeder::class,
        ]);
        $user = User::create([
-            'name' => 'Sagit',
-            'lastname' => 'Gutierrez',
+            'name' => 'Sagit Gutierrez',
             'email' => 'admin@futzo.io',
             'email_verified_at' => now(),
             'email_verification_token' => Str::random(25),

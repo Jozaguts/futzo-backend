@@ -16,7 +16,6 @@ class UserResource extends JsonResource
     {
         return [
             'name' => $this->name,
-            'lastname' => $this->lastname,
             'email'=> $this->email,
             'roles' => $this->roles()->pluck('name'),
             'league' => $this->league ?? 'No league assigned',

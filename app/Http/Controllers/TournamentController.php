@@ -45,4 +45,10 @@ class TournamentController extends Controller
 
         return response()->json($tournamentTypes);
     }
+    public function getTournamentFormats(): JsonResponse
+    {
+        $tournamentFormats = TournamentFormat::query()->select('id','name','description')->get();
+
+        return response()->json($tournamentFormats);
+    }
 }

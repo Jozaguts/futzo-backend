@@ -7,8 +7,6 @@ use App\Http\Resources\TournamentCollection;
 use App\Models\Tournament;
 use App\Models\TournamentFormat;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Storage;
-
 class TournamentController extends Controller
 {
     public function index(): TournamentCollection
@@ -32,9 +30,19 @@ class TournamentController extends Controller
             'prize' => $request->prize,
             'winner' => $request->winner,
             'description' => $request->description,
-            'category_id' => $request->category,
+            'category_id' => $request->category_id,
             'status' => 'active',
         ]);
+        if ($request->hasFile('image')) {
+          $media =  $tournament
+               ->addMedia($request->file('image'))
+               ->toMediaCollection('tournament');
+
+            $tournament->update([
+                'image' => $media->getUrl('default'),
+                'thumbnail' => $media->getUrl('thumbnail')
+            ]);
+        }
 
         return response()->json($tournament, 201);
     }

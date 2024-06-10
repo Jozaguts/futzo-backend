@@ -23,6 +23,7 @@ class LocationStoreRequest extends FormRequest
     {
         return [
             'name' => 'required|string',
+            'city' => 'required|string',
             'address' => 'required|string',
             'availability' => 'required',
         ];

@@ -11,10 +11,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
-class Tournament extends Model
+class Tournament extends Model implements HasMedia
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, InteractsWithMedia;
     protected $fillable = [
         'league_id',
         'name',
@@ -25,7 +28,9 @@ class Tournament extends Model
         'description',
         'status',
         'category_id',
-        'tournament_format_id'
+        'tournament_format_id',
+        'image',
+        'thumbnail'
     ];
     protected $casts = [
         'start_date' => 'datetime',
@@ -68,5 +73,25 @@ class Tournament extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+    public function locations()
+    {
+        return $this->belongsToMany(Location::class, 'location_tournament')
+            ->using(LocationTournament::class);
+    }
+
+    public function registerMediaCollections(?Media $media = null): void
+    {
+        $this->addMediaCollection('tournament')
+            ->singleFile()
+            ->storeConversionsOnDisk('s3')
+            ->registerMediaConversions(function (Media $media = null) {
+                $this->addMediaConversion('thumbnail')
+                    ->width(150)
+                    ->height(150);
+                $this->addMediaConversion('default')
+                    ->width(400)
+                    ->height(400);
+            });
     }
 }

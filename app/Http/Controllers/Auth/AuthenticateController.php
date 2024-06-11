@@ -24,7 +24,7 @@ class AuthenticateController extends Controller
 
         try {
             DB::beginTransaction();
-            $validated['email_verification_token'] = str()->random(25);
+            $validated['email_verification_token'] = rand(1000, 9999);
             $user = User::create($validated);
             $user->assignRole('predeterminado');
             event(new Registered($user));

@@ -14,7 +14,7 @@ Route::post('/reset-password', [NewPasswordController::class, 'store'])
     ->middleware('guest')
     ->name('password.store');
 
-Route::get('/verify-email', VerifyEmailController::class)
+Route::post('/verify-email', VerifyEmailController::class)
     ->middleware(['throttle:6,1'])
     ->name('verification.verify');
 

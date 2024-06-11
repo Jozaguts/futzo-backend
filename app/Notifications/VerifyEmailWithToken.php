@@ -38,8 +38,8 @@ class VerifyEmailWithToken extends Notification
         $url = env('FRONTEND_URL') . '/verify-email?token=' . $this->token;
         return (new MailMessage)
                     ->subject('Bienvenido a ' . env('APP_NAME'))
-                    ->line('Por favor pulsa el siguiente botón para confirmar tu correo electrónico.')
-                    ->action('Confirmar correo electrónico', $url)
+                    ->line('Por favor, utiliza el siguiente código para confirmar tu correo electrónico:')
+                    ->line($this->token)
                     ->line('Si no has creado ninguna cuenta, puedes ignorar o eliminar este e-mail.');
     }
 

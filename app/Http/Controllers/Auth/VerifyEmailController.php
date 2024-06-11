@@ -3,37 +3,36 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\VerifyEmailRequest;
 use App\Models\User;
 use Illuminate\Auth\Events\Verified;
-use Illuminate\Foundation\Auth\EmailVerificationRequest;
-use Illuminate\Http\Request;
 
 class VerifyEmailController extends Controller
 {
     /**
      * Mark the authenticated user's email address as verified.
      */
-    public function __invoke(Request $request): \Illuminate\Http\JsonResponse
+    public function __invoke(VerifyEmailRequest $request): \Illuminate\Http\JsonResponse
     {
-        $token = $request->query('token');
-        $message = '';
-        $user = User::where('email_verification_token', $token)->first();
+        $code = $request->validated()['code'];
+
+        $user = User::where('email_verification_token', $code)->first();
 
 
         if (!$user) {
-            $message = 'Invalid token.';
+            $message = 'Código de verificación inválido.';
             return response()->json(['message' => $message], 400);
         }
 
         if ($this->hasVerifiedEmail($user)) {
-            $message = 'Email already verified.';
+            $message = 'Correo electrónico ya ha sido verificado.';
             return response()->json(['message' => $message], 400);
         }
 
         if ($this->markEmailAsVerified($user)) {
             event(new Verified($user));
         }
-        $message = 'Email verified successfully.';
+        $message = 'Correo electrónico verificado correctamente.';
         return response()->json(['message' => $message]);
     }
     private function hasVerifiedEmail($user): bool

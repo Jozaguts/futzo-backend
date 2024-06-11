@@ -20,6 +20,8 @@ return new class extends Migration
             $table->unsignedBigInteger('tournament_format_id');
             $table->foreign('tournament_format_id')->references('id')->on('tournament_formats')->cascadeOnDelete();
             $table->string('name');
+            $table->string('image', 254)->nullable();
+            $table->string('thumbnail', 254)->nullable();
             $table->date('start_date')->nullable();
             $table->date('end_date')->nullable();
             $table->string('prize')->nullable();

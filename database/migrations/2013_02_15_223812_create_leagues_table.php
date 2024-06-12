@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('leagues', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->unsignedBigInteger('football_type_id');
+            $table->unsignedBigInteger('football_type_id')->nullable();
             $table->foreign('football_type_id')->references('id')->on('football_types');
             $table->string('location')->nullable();
             $table->text('description')->nullable();

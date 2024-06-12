@@ -7,6 +7,8 @@ use Database\Seeders\CategoriesTableSeeder;
 use Database\Seeders\LeaguesTableSeeder;
 use Database\Seeders\TournamentTableSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Tests\InitUser;
 use Tests\TestCase;
@@ -48,7 +50,8 @@ class TournamentTest extends TestCase
     public function test_store_tournament()
     {
         $this->initUser();
-
+        Storage::fake('public');
+        $image = UploadedFile::fake()->image('logo-test.jpg')->mimeType('image/jpeg');
         $response = $this->json('POST','/api/v1/admin/tournaments', [
             'name' => 'Tournament 1',
             'category_id' => 1,

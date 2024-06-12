@@ -23,6 +23,7 @@ class VerifyEmailRequest extends FormRequest
     {
         return [
             'code' => 'required',
+            'email' => 'required|email|exists:users,email'
         ];
     }
 }

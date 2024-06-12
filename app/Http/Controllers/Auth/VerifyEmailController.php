@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\VerifyEmailRequest;
 use App\Models\User;
 use Illuminate\Auth\Events\Verified;
+use Illuminate\Support\Facades\Auth;
 
 class VerifyEmailController extends Controller
 {
@@ -14,6 +15,7 @@ class VerifyEmailController extends Controller
      */
     public function __invoke(VerifyEmailRequest $request): \Illuminate\Http\JsonResponse
     {
+        // la verificacion del email fue hecha en el request
         $code = $request->validated()['code'];
 
         $user = User::where('email_verification_token', $code)->first();
@@ -33,6 +35,8 @@ class VerifyEmailController extends Controller
             event(new Verified($user));
         }
         $message = 'Correo electrónico verificado correctamente.';
+        // generate cookie session and login user
+        Auth::login($user);
         return response()->json(['message' => $message]);
     }
     private function hasVerifiedEmail($user): bool

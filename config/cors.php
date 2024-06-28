@@ -18,14 +18,11 @@ return [
     'paths' => [
         'api/*',
         'sanctum/csrf-cookie',
-        'auth/login',
-        'auth/logout',
-        'auth/register',
+        'auth/*',
         'verify-email',
         'auth/*/redirect',
         'auth/*/callback'
     ],
-//    'paths' => ['*'],
 
     'allowed_methods' => ['*'],
 

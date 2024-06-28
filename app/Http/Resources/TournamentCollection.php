@@ -17,10 +17,23 @@ class TournamentCollection extends ResourceCollection
     {
         $data = [];
         $data['categories'] = Category::select('id', 'name','age_range')->get()->toArray();
-
+        logger($this->collection);
         $data['tournaments'] =  $this->collection->map(fn ($tournament) => [
+
             'id' => $tournament->id,
+            'category' => [
+                'id' => $tournament->category->id,
+                'name' => $tournament->category->name,
+            ],
+            'format' => [
+                'id' => $tournament->format->id,
+                'name' => $tournament->format->name,
+            ],
+            'start_date' => $tournament->start_date,
+            'end_date' => $tournament->end_date,
+            'status' => $tournament->status,
             'name' => $tournament->name,
+            'slug' => str($tournament->name)->slug('-'),
             'teams' => $tournament->teams_count,
             'players' => $tournament->players_count,
             'matches' => $tournament->games_count,

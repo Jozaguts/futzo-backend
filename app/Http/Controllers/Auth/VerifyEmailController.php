@@ -16,19 +16,16 @@ class VerifyEmailController extends Controller
     public function __invoke(VerifyEmailRequest $request): \Illuminate\Http\JsonResponse
     {
         // la verificacion del email fue hecha en el request
-        $code = $request->validated()['code'];
+        $data = $request->validated();
 
-        $user = User::where('email_verification_token', $code)->first();
-
-
-        if (!$user) {
-            $message = 'Código de verificación inválido.';
-            return response()->json(['message' => $message], 400);
-        }
+        $user = User::query()
+            ->where('email_verification_token', $data['code'])
+            ->where('email', $data['email'])
+            ->first();
 
         if ($this->hasVerifiedEmail($user)) {
             $message = 'Correo electrónico ya ha sido verificado.';
-            return response()->json(['message' => $message], 400);
+            return response()->json(['message' => $message], 401);
         }
 
         if ($this->markEmailAsVerified($user)) {

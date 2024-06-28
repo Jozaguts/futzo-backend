@@ -22,8 +22,19 @@ class VerifyEmailRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'code' => 'required',
+            'code' => 'required|exists:users,email_verification_token',
             'email' => 'required|email|exists:users,email'
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'code.required' => 'El código de verificación es requerido.',
+            'code.exists' => 'Código de verificación inválido.',
+            'email.required' => 'El correo electrónico es requerido.',
+            'email.email' => 'El correo electrónico no es válido.',
+            'email.exists' => 'Correo electrónico no registrado.'
         ];
     }
 }

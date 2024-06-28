@@ -36,6 +36,14 @@ class Tournament extends Model implements HasMedia
         'start_date' => 'datetime',
         'end_date' => 'datetime',
     ];
+    public function getStartDateAttribute($value): string
+    {
+        return date('d/m/y', strtotime($value));
+    }
+    public function getEndDateAttribute($value): string
+    {
+        return date('d/m/y', strtotime($value));
+    }
     protected static function booted(): void
     {
         static::addGlobalScope(new LeagueScope);
@@ -46,9 +54,9 @@ class Tournament extends Model implements HasMedia
         return TournamentFactory::new();
     }
 
-    public function TournamentFormat(): BelongsTo
+    public function format(): BelongsTo
     {
-        return $this->belongsTo(TournamentFormat::class);
+        return $this->belongsTo(TournamentFormat::class, 'tournament_format_id', 'id');
     }
     public function teams(): HasMany
     {

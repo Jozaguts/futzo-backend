@@ -12,7 +12,11 @@ class TournamentController extends Controller
     public function index(): TournamentCollection
     {
         // todo paginate the response
-        $tournaments = Tournament::withCount(['teams', 'players', 'games'])->get();
+        $tournaments = Tournament::withCount(['teams', 'players', 'games'])
+            ->with('format',function ($query){
+                $query->select('id','name');
+            })
+            ->get();
 
         return new TournamentCollection($tournaments);
     }

@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'default' => env('MAIL_MAILER', 'smtp'),
+    'default' => env('MAIL_MAILER', 'ses'),
 
     /*
     |--------------------------------------------------------------------------
@@ -34,9 +34,6 @@ return [
     */
 
     'mailers' => [
-        'mailersend' => [
-            'transport' => 'mailersend',
-        ],
         'smtp' => [
             'transport' => 'smtp',
             'url' => env('MAIL_URL'),
@@ -51,6 +48,10 @@ return [
 
         'ses' => [
             'transport' => 'ses',
+        ],
+        'from' => [
+            'address' => env('MAIL_FROM_ADDRESS', 'hola@futzo.io'),
+            'name' => env('MAIL_FROM_NAME', 'Futzo'),
         ],
 
         'mailgun' => [

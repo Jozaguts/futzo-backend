@@ -10,10 +10,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Location extends Model
 {
     use HasFactory, SoftDeletes;
-    protected $fillable = ['name','city','address','availability'];
+    protected $fillable = ['name','city','address','availability','autocomplete_prediction'];
 
     protected $casts = [
-        'availability' => 'json'
+        'availability' => 'json',
+        'autocomplete_prediction' => 'json'
     ];
 
     public function tournaments(): BelongsToMany

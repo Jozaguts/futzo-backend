@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('city');
             $table->string('address');
             $table->json('availability')->nullable();
+            $table->json('autocomplete_prediction')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

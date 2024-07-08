@@ -52,8 +52,58 @@ class TournamentTest extends TestCase
         $this->initUser();
         Storage::fake('public');
         $image = UploadedFile::fake()->image('logo-test.jpg')->mimeType('image/jpeg');
+        $autoCompletePrediction = json_encode([
+            'description' => 'La Sabana, San José Province, San José, Sabana, Costa Rica',
+            'matched_substrings' => [
+                [
+                    'length' => 9,
+                    'offset' => 0
+                ]
+            ],
+            'place_id' => 'ChIJM_Dtpqv8oI8RyETi6jXqf_c',
+            'reference' => 'ChIJM_Dtpqv8oI8RyETi6jXqf_c',
+            'structured_formatting' => [
+                'main_text' => 'La Sabana',
+                'main_text_matched_substrings' => [
+                    [
+                        'length' => 9,
+                        'offset' => 0
+                    ]
+                ],
+                'secondary_text' => 'San José Province, San José, Sabana, Costa Rica'
+            ],
+            'terms' => [
+                [
+                    'offset' => 0,
+                    'value' => 'La Sabana'
+                ],
+                [
+                    'offset' => 11,
+                    'value' => 'San José Province'
+                ],
+                [
+                    'offset' => 30,
+                    'value' => 'San José'
+                ],
+                [
+                    'offset' => 40,
+                    'value' => 'Sabana'
+                ],
+                [
+                    'offset' => 48,
+                    'value' => 'Costa Rica'
+                ]
+            ],
+            'types' => [
+                'establishment',
+                'tourist_attraction',
+                'point_of_interest',
+                'park'
+            ]
+        ]);
         $response = $this->json('POST','/api/v1/admin/tournaments', [
             'name' => 'Tournament 1',
+            'image' => $image,
             'category_id' => 1,
             'tournament_format_id' => 1,
             'start_date' => '2021-12-12',
@@ -61,20 +111,24 @@ class TournamentTest extends TestCase
             'prize' => 'Prize 1',
             'winner' => 'Winner 1',
             'description' => 'Tournament 1 description',
-            'status' => 'active',
+            'status' => 'creado',
+            'location' => $autoCompletePrediction
         ]);
 
         $response->assertStatus(201)
             ->assertJsonStructure([
                 'name',
-                'category_id',
                 'tournament_format_id',
-                'start_date' ,
+                'start_date',
                 'end_date',
                 'prize',
-                'winner' ,
+                'winner',
                 'description',
-                'status',
+                'category_id',
+                'league_id',
+                'id',
+                'image',
+                'thumbnail',
             ]);
     }
 }

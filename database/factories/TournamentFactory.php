@@ -32,7 +32,7 @@ class TournamentFactory extends Factory
             'prize' => '1000000',
             'winner' => null,
             'description' => 'El torneo Clausura de la temporada 2021 en Liga MX.',
-            'status' => 'active',
+            'status' => 'creado',
             'category_id' => 1,
         ];
     }

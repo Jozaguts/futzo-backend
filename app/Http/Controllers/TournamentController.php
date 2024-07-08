@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\TournamentStoreRequest;
+use App\Http\Requests\TournamentUpdateRequest;
 use App\Http\Resources\TournamentCollection;
+use App\Http\Resources\TournamentResource;
+use App\Models\Location;
 use App\Models\Tournament;
 use App\Models\TournamentFormat;
 use Illuminate\Http\JsonResponse;
@@ -16,6 +19,7 @@ class TournamentController extends Controller
             ->with('format',function ($query){
                 $query->select('id','name');
             })
+            ->with('locations')
             ->get();
 
         return new TournamentCollection($tournaments);
@@ -24,22 +28,32 @@ class TournamentController extends Controller
     public function store(TournamentStoreRequest $request): JsonResponse
     {
 
-        $request->validated();
+        $data = $request->safe()->collect();
 
-        $tournament = Tournament::create([
-            'name' => $request->name,
-            'tournament_format_id' => $request->tournament_format_id,
-            'start_date' => $request->start_date,
-            'end_date' => $request->end_date,
-            'prize' => $request->prize,
-            'winner' => $request->winner,
-            'description' => $request->description,
-            'category_id' => $request->category_id,
-            'status' => 'active',
+        $requestLocation = json_decode($data->get('location'), true);
+
+        $location = Location::updateOrCreate([
+            'autocomplete_prediction->place_id' => $requestLocation['place_id']
+        ],[
+            'name' => $requestLocation['structured_formatting']['main_text'],
+            'address' => $requestLocation['description'],
+            'city' => $requestLocation['terms'][2]['value'],
+            'autocomplete_prediction' => $requestLocation
         ]);
-        if ($request->hasFile('image')) {
+        $tournament = Tournament::create([
+            'name' => $data->get('name'),
+            'tournament_format_id' => $data->get('tournament_format_id'),
+            'start_date' => $data->get('start_date'),
+            'end_date' => $data->get('end_date'),
+            'prize' => $data->get('prize'),
+            'winner' => $data->get('winner'),
+            'description' => $data->get('description'),
+            'category_id' => $data->get('category_id'),
+        ]);
+        $tournament->locations()->attach($location->id);
+        if ($data->has('image')) {
           $media =  $tournament
-               ->addMedia($request->file('image'))
+               ->addMedia($data->get('image'))
                ->toMediaCollection('tournament');
 
             $tournament->update([
@@ -47,10 +61,49 @@ class TournamentController extends Controller
                 'thumbnail' => $media->getUrl('thumbnail')
             ]);
         }
-
+        $tournament->refresh();
         return response()->json($tournament, 201);
     }
 
+    public function show(Tournament $tournament): TournamentResource
+    {
+        return new TournamentResource($tournament);
+    }
+    public function update(TournamentUpdateRequest $request, Tournament $tournament): TournamentResource
+    {
+        $data = $request->safe()->collect();
+        $location = null;
+
+        if($data->has('location')) {
+            $requestLocation = json_decode($data->get('location'), true);
+
+            $location = Location::updateOrCreate([
+                'autocomplete_prediction->place_id' => $requestLocation['place_id']
+            ],[
+                'name' => $requestLocation['structured_formatting']['main_text'],
+                'address' => $requestLocation['description'],
+                'city' => $requestLocation['terms'][2]['value'],
+                'autocomplete_prediction' => $requestLocation
+            ]);
+        }
+        $tournament->update($data->except('location')->toArray());
+
+        if ($data->has('image')) {
+            $media =  $tournament
+                ->addMedia($data->get('image'))
+                ->toMediaCollection('tournament');
+
+            $tournament->update([
+                'image' => $media->getUrl('default'),
+                'thumbnail' => $media->getUrl('thumbnail')
+            ]);
+        }
+
+        if (!is_null($location)) {
+            $tournament->locations()->sync([$location->id]);
+        }
+        return new TournamentResource($tournament);
+    }
     public function getTournamentTypes(): JsonResponse
     {
         $tournamentTypes = TournamentFormat::query()->select('id','name')->get();

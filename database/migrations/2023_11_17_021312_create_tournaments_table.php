@@ -27,9 +27,12 @@ return new class extends Migration
             $table->string('prize')->nullable();
             $table->string('winner')->nullable();
             $table->longText('description')->nullable();
-            $table->string('status')->nullable()->default('created');
+            $table->enum('status', ['creado', 'en curso', 'completado', 'cancelado'])->default('creado');
             $table->softDeletes();
             $table->timestamps();
+            $table->index('league_id');
+            $table->index('category_id');
+            $table->index('tournament_format_id');
         });
     }
 

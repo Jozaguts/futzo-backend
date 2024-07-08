@@ -17,7 +17,7 @@ class TournamentCollection extends ResourceCollection
     {
         $data = [];
         $data['categories'] = Category::select('id', 'name','age_range')->get()->toArray();
-        logger($this->collection);
+
         $data['tournaments'] =  $this->collection->map(fn ($tournament) => [
 
             'id' => $tournament->id,
@@ -38,6 +38,12 @@ class TournamentCollection extends ResourceCollection
             'players' => $tournament->players_count,
             'matches' => $tournament->games_count,
             'league' => $tournament->league->name,
+            'location' => [
+                'name' => $tournament->locations->first()?->name,
+                'city' => $tournament->locations->first()?->city,
+                'address' => $tournament->locations->first()?->address,
+                'autocomplete_prediction' => $tournament?->locations->first()?->autocomplete_prediction,
+                ],
         ])->toArray();
 
         return $data;

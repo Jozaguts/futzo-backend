@@ -19,7 +19,7 @@
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>
-        <env name="BCRYPT_ROUNDS" value="4"/>
+        <env name="BCRYPT_ROUNDS" value="10"/>
         <env name="CACHE_DRIVER" value="array"/>
 <!--         <env name="DB_CONNECTION" value="sqlite"/> -->
 <!--         <env name="DB_DATABASE" value=":memory:"/> -->
@@ -29,5 +29,6 @@
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="DB_CONNECTION" value="mysql"/>
         <env name="DB_DATABASE" value="laravel_test"/>
+        <env name="FILESYSTEM_DRIVER" value="local"/>
     </php>
 </phpunit>

@@ -8,6 +8,7 @@ use Database\Factories\TournamentFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -82,7 +83,7 @@ class Tournament extends Model implements HasMedia
     {
         return $this->belongsTo(Category::class);
     }
-    public function locations()
+    public function locations(): BelongsToMany
     {
         return $this->belongsToMany(Location::class, 'location_tournament')
             ->using(LocationTournament::class);

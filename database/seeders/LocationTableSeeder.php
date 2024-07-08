@@ -12,6 +12,108 @@ class LocationTableSeeder extends Seeder
      */
     public function run(): void
     {
+        $autoCompletePredictions =  [
+            [
+                'description' => 'La Sabana, San José Province, San José, Sabana, Costa Rica',
+                'matched_substrings' => [
+                    [
+                        'length' => 9,
+                        'offset' => 0
+                    ]
+                ],
+                'place_id' => 'ChIJM_Dtpqv8oI8RyETi6jXqf_c',
+                'reference' => 'ChIJM_Dtpqv8oI8RyETi6jXqf_c',
+                'structured_formatting' => [
+                    'main_text' => 'La Sabana',
+                    'main_text_matched_substrings' => [
+                        [
+                            'length' => 9,
+                            'offset' => 0
+                        ]
+                    ],
+                    'secondary_text' => 'San José Province, San José, Sabana, Costa Rica'
+                ],
+                'terms' => [
+                    [
+                        'offset' => 0,
+                        'value' => 'La Sabana'
+                    ],
+                    [
+                        'offset' => 11,
+                        'value' => 'San José Province'
+                    ],
+                    [
+                        'offset' => 30,
+                        'value' => 'San José'
+                    ],
+                    [
+                        'offset' => 40,
+                        'value' => 'Sabana'
+                    ],
+                    [
+                        'offset' => 48,
+                        'value' => 'Costa Rica'
+                    ]
+                ],
+                'types' => [
+                    'establishment',
+                    'tourist_attraction',
+                    'point_of_interest',
+                    'park'
+                ]
+            ],
+
+            // generate another one
+            [
+                'description' => 'La Sabana, San José Province, San José, Sabana, Costa Rica',
+                'matched_substrings' => [
+                    [
+                        'length' => 9,
+                        'offset' => 0
+                    ]
+                ],
+                'place_id' => 'ChIJM_Dtpqv8oI8RyETi6jXqf_c',
+                'reference' => 'ChIJM_Dtpqv8oI8RyETi6jXqf_c',
+                'structured_formatting' => [
+                    'main_text' => 'La Sabana',
+                    'main_text_matched_substrings' => [
+                        [
+                            'length' => 9,
+                            'offset' => 0
+                        ]
+                    ],
+                    'secondary_text' => 'San José Province, San José, Sabana, Costa Rica'
+                ],
+                'terms' => [
+                    [
+                        'offset' => 0,
+                        'value' => 'La Sabana'
+                    ],
+                    [
+                        'offset' => 11,
+                        'value' => 'San José Province'
+                    ],
+                    [
+                        'offset' => 30,
+                        'value' => 'San José'
+                    ],
+                    [
+                        'offset' => 40,
+                        'value' => 'Sabana'
+                    ],
+                    [
+                        'offset' => 48,
+                        'value' => 'Costa Rica'
+                    ]
+                ],
+                'types' => [
+                    'establishment',
+                    'tourist_attraction',
+                    'point_of_interest',
+                    'park'
+                ]
+            ]
+        ];
         $locations = [
             [
                 'name' => 'Location 1',
@@ -25,7 +127,8 @@ class LocationTableSeeder extends Seeder
                         'friday' => ['start' => '08:00', 'end' => '20:00'],
                         'saturday' => ['start' => '08:00', 'end' => '20:00'],
                         'sunday' => ['start' => '08:00', 'end' => '20:00'],
-                    ]
+                    ],
+                'autocomplete_prediction' => $autoCompletePredictions[0]
             ],
             [
                 'name' => 'Location 2',
@@ -39,7 +142,8 @@ class LocationTableSeeder extends Seeder
                         'friday' => ['start' => '08:00', 'end' => '20:00'],
                         'saturday' => ['start' => '08:00', 'end' => '20:00'],
                         'sunday' => ['start' => '08:00', 'end' => '20:00'],
-                    ]
+                    ],
+                'autocomplete_prediction' => $autoCompletePredictions[1]
             ],
             [
                 'name' => 'Location 3',
@@ -53,7 +157,8 @@ class LocationTableSeeder extends Seeder
                         'friday' => ['start' => '08:00', 'end' => '20:00'],
                         'saturday' => ['start' => '08:00', 'end' => '20:00'],
                         'sunday' => ['start' => '08:00', 'end' => '20:00'],
-                    ]
+                    ],
+                'autocomplete_prediction' => $autoCompletePredictions
             ]
 
         ];

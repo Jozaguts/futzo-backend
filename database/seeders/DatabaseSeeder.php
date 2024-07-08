@@ -18,7 +18,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-       $this->call([
+        $this->call([
            RolesTableSeeder::class,
        ]);
        $user = User::create([
@@ -35,13 +35,14 @@ class DatabaseSeeder extends Seeder
        $this->call(LeaguesTableSeeder::class);
        $user->league_id = League::first()->id;
        $user->save();
-
        $this->call(PositionsTableSeeder::class);
        $this->call(CategoriesTableSeeder::class);
        $this->call(TournamentFormatTableSeeder::class);
+       $this->call(LocationTableSeeder::class);
        $this->call(TournamentTableSeeder::class);
+       $this->call(LocationTournamentTableSeeder::class);
        $this->call(TeamsTableSeeder::class);
        $this->call(ActionsTableSeeder::class);
-       $this->call(LocationTableSeeder::class);
+
     }
 }

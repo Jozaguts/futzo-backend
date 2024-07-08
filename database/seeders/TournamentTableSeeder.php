@@ -25,8 +25,9 @@ class TournamentTableSeeder extends Seeder
                 'tournament_format_id' => 1, // Asume Torneo de Liga es ID 1
                 'winner' => null,
                 'description' => 'El torneo Clausura de la temporada 2021 en Liga MX.',
-                'status' => 'active',
+                'status' => 'creado',
                 'category_id' => 1,
+                'image' => $url . 'Clausura+2021',
             ],
             [
                 'league_id' => 2, // Asume MLS es ID 2
@@ -37,8 +38,9 @@ class TournamentTableSeeder extends Seeder
                 'prize' => '1000000',
                 'winner' => null,
                 'description' => 'El torneo de copa de la temporada 2021 en MLS.',
-                'status' => 'active',
+                'status' => 'creado',
                 'category_id' => 1,
+                'image' => $url . 'MLS+Cup+2021',
             ]
         ];
         foreach ($tournaments as $tournament) {

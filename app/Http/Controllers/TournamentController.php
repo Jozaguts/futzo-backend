@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\TournamentStoreRequest;
 use App\Http\Requests\TournamentUpdateRequest;
+use App\Http\Requests\UpdateTournamentStatusRequest;
 use App\Http\Resources\TournamentCollection;
 use App\Http\Resources\TournamentResource;
 use App\Models\Location;
@@ -118,14 +119,12 @@ class TournamentController extends Controller
         return response()->json($tournamentFormats);
     }
 
-    public function updateStatus(Request $request, Tournament $tournament): JsonResponse
+    public function updateStatus(UpdateTournamentStatusRequest $request, Tournament $tournament): JsonResponse
     {
-        $request->validate([
-            'status' => 'required|in:creado,en curso,completado,cancelado'
-        ]);
-        $tournament->update([
-            'status' => 'creado'
-        ]);
+
+        $data = $request->safe()->collect();
+
+        $tournament->update($data->only('status')->toArray());
 
         return response()->json($tournament);
     }

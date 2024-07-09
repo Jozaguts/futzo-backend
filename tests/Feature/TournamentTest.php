@@ -26,27 +26,85 @@ class TournamentTest extends TestCase
 
         $response = $this->json('GET','/api/v1/admin/tournaments');
 
-        $this->assertNotEmpty($response->json('categories'));
-        $this->assertNotEmpty($response->json('tournaments'));
         $response->assertStatus(200)
             ->assertJsonStructure([
-                "categories" =>  [
-                    "*" => [
-                        "id",
-                        "name",
-                        "age_range"
-                    ]
+                'data' =>[
+                    "categories" =>  [
+                        "*" => [
+                            "id",
+                            "name",
+                            "age_range"
+                        ]
+                    ],
+                    "tournaments" => [
+                        "*" => [
+                            'id',
+                            'name',
+                            'teams',
+                            'players',
+                            'matches',
+                            'league'
+                        ]
+                    ],
                 ],
-                "tournaments" => [
-                    "*" => [
-                        'id',
-                        'name',
-                        'teams',
-                        'players',
-                        'matches',
-                        'league'
-                    ]
+                'links' => [
+                    'first',
+                    'last',
+                    'prev',
+                    'next'
                 ],
+                'meta' => [
+                    'current_page',
+                    'from',
+                    'last_page',
+                    'path',
+                    'per_page',
+                    'to',
+                    'total'
+                ]
+            ]);
+    }
+
+    public function test_tournament_pagination()
+    {
+        $this->initUser();
+        $response = $this->json('GET','/api/v1/admin/tournaments?page=1&per_page=10');
+        $response->assertStatus(200)
+            ->assertJsonStructure([
+                'data' =>[
+                    "categories" =>  [
+                        "*" => [
+                            "id",
+                            "name",
+                            "age_range"
+                        ]
+                    ],
+                    "tournaments" => [
+                        "*" => [
+                            'id',
+                            'name',
+                            'teams',
+                            'players',
+                            'matches',
+                            'league'
+                        ]
+                    ],
+                ],
+                'links' => [
+                    'first',
+                    'last',
+                    'prev',
+                    'next'
+                ],
+                'meta' => [
+                    'current_page',
+                    'from',
+                    'last_page',
+                    'path',
+                    'per_page',
+                    'to',
+                    'total'
+                ]
             ]);
     }
 

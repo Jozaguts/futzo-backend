@@ -14,19 +14,18 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 class TournamentController extends Controller
 {
-    public function index(): TournamentCollection
+    public function index(Request $request): TournamentCollection
     {
-        // todo paginate the response
+
         $tournaments = Tournament::withCount(['teams', 'players', 'games'])
             ->with('format',function ($query){
                 $query->select('id','name');
             })
             ->with('locations')
-            ->get();
+            ->paginate($request->get('per_page', 10), ['*'], 'page', $request->get('page', 1));
 
         return new TournamentCollection($tournaments);
     }
-
     public function store(TournamentStoreRequest $request): JsonResponse
     {
 
@@ -66,7 +65,6 @@ class TournamentController extends Controller
         $tournament->refresh();
         return response()->json($tournament, 201);
     }
-
     public function show(Tournament $tournament): TournamentResource
     {
         return new TournamentResource($tournament);
@@ -118,7 +116,6 @@ class TournamentController extends Controller
 
         return response()->json($tournamentFormats);
     }
-
     public function updateStatus(UpdateTournamentStatusRequest $request, Tournament $tournament): JsonResponse
     {
 

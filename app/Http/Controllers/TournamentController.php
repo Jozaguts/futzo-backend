@@ -10,6 +10,7 @@ use App\Models\Location;
 use App\Models\Tournament;
 use App\Models\TournamentFormat;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 class TournamentController extends Controller
 {
     public function index(): TournamentCollection
@@ -115,5 +116,17 @@ class TournamentController extends Controller
         $tournamentFormats = TournamentFormat::query()->select('id','name','description')->get();
 
         return response()->json($tournamentFormats);
+    }
+
+    public function updateStatus(Request $request, Tournament $tournament): JsonResponse
+    {
+        $request->validate([
+            'status' => 'required|in:creado,en curso,completado,cancelado'
+        ]);
+        $tournament->update([
+            'status' => 'creado'
+        ]);
+
+        return response()->json($tournament);
     }
 }

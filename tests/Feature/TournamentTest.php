@@ -17,6 +17,8 @@ use Tests\TestCase;
 class TournamentTest extends TestCase
 {
     use RefreshDatabase, InitUser;
+    // declare Enum of status
+    const STATUS = ['creado', 'en curso', 'completado', 'cancelado'];
 
     public function test_get_tournaments_with_data()
     {
@@ -242,5 +244,17 @@ class TournamentTest extends TestCase
                 'image',
                 'thumbnail',
             ]);
+    }
+    public function test_change_tournament_status()
+    {
+        $this->initUser();
+        $tournament = Tournament::find(1);
+        $response = $this->json('PUT','/api/v1/admin/tournaments/'.$tournament->id.'/status', [
+            'status' => self::STATUS[1]
+        ]);
+        $response->assertStatus(200);
+        $this->assertDatabaseMissing('tournaments', [
+            'status' => self::STATUS[1]
+        ]);
     }
 }

@@ -13,12 +13,12 @@ return new class extends Migration
     {
         Schema::create('tournaments', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('league_id');
-            $table->foreign('league_id')->references('id')->on('leagues')->onDelete('cascade');
+            $table->unsignedBigInteger('league_id')->nullable();
+            $table->foreign('league_id')->references('id')->on('leagues');
             $table->unsignedBigInteger('category_id')->nullable();
-            $table->foreign('category_id')->references('id')->on('categories')->onDelete('set null');
-            $table->unsignedBigInteger('tournament_format_id');
-            $table->foreign('tournament_format_id')->references('id')->on('tournament_formats')->cascadeOnDelete();
+            $table->foreign('category_id')->references('id')->on('categories');
+            $table->unsignedBigInteger('tournament_format_id')->nullable();
+            $table->foreign('tournament_format_id')->references('id')->on('tournament_formats');
             $table->string('name');
             $table->string('image', 254)->nullable();
             $table->string('thumbnail', 254)->nullable();

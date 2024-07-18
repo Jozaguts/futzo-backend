@@ -13,6 +13,7 @@ use App\Http\Controllers\PlayersController;
 use App\Http\Controllers\RefereeController;
 use App\Http\Controllers\RoleAndPermissionsController;
 use App\Http\Controllers\TeamsController;
+use App\Http\Controllers\UserController;
 use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -35,7 +36,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     });
 
     Route::prefix('/admin')->group(function () {
-
+        Route::put('/profile/{user}', [UserController::class, 'update'])->middleware('ensureUserOwnsProfile');
         Route::get('leagues/football/types', [\App\Http\Controllers\LeaguesController::class, 'getFootballTypes']);
         Route::apiResource('/roles', RoleAndPermissionsController::class);
         Route::apiResources(['genders'=> GenderController::class]);

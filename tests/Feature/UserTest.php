@@ -13,15 +13,16 @@ class UserTest extends TestCase
 
     public function test_register_user()
     {
-        $this->json('POST', '/auth/register', [
+       $this->json('POST', '/auth/register', [
             'name' => 'John',
             'email' => 'test@test.com',
             'password' => 'password'
-            ])->dump();
+            ]);
 
         $this->assertDatabaseHas('users', [
             'name' => 'John',
-            'email' => 'test@test.com'
+            'email' => 'test@test.com',
+            'avatar' => 'https://ui-avatars.com/api/?name=John&color=9155fd&background=F9FAFB'
         ]);
     }
     public function test_me_endpoint()

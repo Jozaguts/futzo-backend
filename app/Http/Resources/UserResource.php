@@ -22,6 +22,7 @@ class UserResource extends JsonResource
             'league' => $this->league ?? 'No league assigned',
             'verified' => !!$this->email_verified_at,
             'phone' => $this->phone,
+            'avatar' => $this->avatar,
         ];
     }
 }

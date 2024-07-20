@@ -3,13 +3,16 @@
 namespace App\Models;
 
 use App\Notifications\VerifyEmailWithToken;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Spatie\Permission\Traits\HasRoles;
 
 /**
@@ -21,9 +24,10 @@ use Spatie\Permission\Traits\HasRoles;
  * @property int $google_id
  * @property string $email_verification_token
  */
-class User extends Authenticatable  implements MustVerifyEmail
+class User extends Authenticatable  implements MustVerifyEmail, HasMedia
+
 {
-    use HasApiTokens, HasFactory, Notifiable, HasRoles;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles, InteractsWithMedia;
 
     /**
      * The attributes that are mass assignable.
@@ -46,6 +50,7 @@ class User extends Authenticatable  implements MustVerifyEmail
         'facebook_id',
         'google_id',
         'phone',
+        'avatar',
     ];
 
     /**
@@ -70,5 +75,10 @@ class User extends Authenticatable  implements MustVerifyEmail
     public function league(): BelongsTo
     {
         return $this->belongsTo(League::class);
+    }
+    public function registerMediaCollections(?Media $media = null): void
+    {
+        $this->addMediaCollection('avatar','s3')
+            ->singleFile();
     }
 }

@@ -37,6 +37,11 @@ class Tournament extends Model implements HasMedia
         'start_date' => 'datetime',
         'end_date' => 'datetime',
     ];
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new LeagueScope);
+        Tournament::observe(TournamentObserver::class);
+    }
     public function getStartDateAttribute($value): string
     {
         return date('d/m/y', strtotime($value));
@@ -45,11 +50,7 @@ class Tournament extends Model implements HasMedia
     {
         return date('d/m/y', strtotime($value));
     }
-    protected static function booted(): void
-    {
-        static::addGlobalScope(new LeagueScope);
-        Tournament::observe(TournamentObserver::class);
-    }
+
     protected static function newFactory(): TournamentFactory
     {
         return TournamentFactory::new();

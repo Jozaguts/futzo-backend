@@ -21,6 +21,7 @@ class UserResource extends JsonResource
             'roles' => $this->roles()->pluck('name'),
             'league' => $this->league ?? 'No league assigned',
             'verified' => !!$this->email_verified_at,
+            'phone' => $this->phone,
         ];
     }
 }

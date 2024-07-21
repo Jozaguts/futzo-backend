@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\UserAvatarUpdateRequest;
+use App\Http\Requests\UserPasswordUpdateRequest;
 use App\Http\Requests\UserUpdateRequest;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -32,5 +33,14 @@ class UserController extends Controller
 
 
         return response()->json(['success' => $response, 'message' => 'User avatar updated successfully']);
+    }
+
+    public function updatePassword(UserPasswordUpdateRequest $request, User $user): JsonResponse
+    {
+        $validated = $request->validated();
+
+        $response =  $user->update(['password' => bcrypt($validated['new_password'])]);
+
+        return response()->json(['success' => $response, 'message' => 'User password updated successfully']);
     }
 }

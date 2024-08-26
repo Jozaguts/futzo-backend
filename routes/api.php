@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\PreRegisterController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\GameActionDetailController;
 use App\Http\Controllers\GameController;
@@ -62,5 +63,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
         require __DIR__.'/tournaments/routes.php';
     });
 });
+
+Route::post('/pre-register', [PreRegisterController::class, 'preRegister'])
+    ->middleware(['throttle:3,1'])
+    ->name('pre-register');
 
 

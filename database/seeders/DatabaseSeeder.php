@@ -4,10 +4,7 @@ namespace Database\Seeders;
 
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use App\Models\League;
-use App\Models\Player;
-use App\Models\TournamentFormat;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Factories\Sequence;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -43,6 +40,7 @@ class DatabaseSeeder extends Seeder
        $this->call(LocationTournamentTableSeeder::class);
        $this->call(TeamsTableSeeder::class);
        $this->call(ActionsTableSeeder::class);
+       $this->call(CouponsTableSeeder::class);
 
     }
 }

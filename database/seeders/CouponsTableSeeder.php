@@ -38,7 +38,7 @@ class CouponsTableSeeder extends Seeder
                 'qty_total' => 100,
                 'initial_date' => '2024-09-01',
                 'end_date' => '2024-12-31',
-                'factor_type' => 'fixed',
+                'factor_type' => 'promotion',
                 'factor_value' => 0,
                 'accept_same_email' => false,
             ],

@@ -21,7 +21,7 @@ return new class extends Migration
             $table->unsignedBigInteger('team_tournament_id');
             $table->foreign('team_tournament_id')
                 ->references('id')
-                ->on('team_tournaments')
+                ->on('team_tournament')
                 ->cascadeOnDelete();
             // played games
             $table->integer('pg')->default(0);

@@ -14,18 +14,16 @@ return new class extends Migration
         Schema::create('teams', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->unsignedBigInteger('tournament_id');
-            $table->foreign('tournament_id')->references('id')->on('tournaments')->onDelete('cascade');
-            $table->unsignedBigInteger('category_id');
-            $table->foreign('category_id')->references('id')->on('categories')->onDelete('cascade');
-            $table->unsignedBigInteger('league_id');
-            $table->foreign('league_id')->references('id')->on('leagues')->onDelete('cascade');
-            $table->string('president_name');
-            $table->string('coach_name');
-            $table->string('phone')->nullable();
-            $table->string('email')->nullable();
             $table->string('address')->nullable();
+            $table->string('email')->nullable();
+            $table->string('phone')->nullable();
             $table->string('image')->nullable();
+            $table->json('colors')->nullable();
+            $table->text('description')->nullable();
+            $table->unsignedBigInteger('president_id')->nullable();
+            $table->unsignedBigInteger('coach_id')->nullable();
+            $table->foreign('president_id')->references('id')->on('users')->onDelete('set null');
+            $table->foreign('coach_id')->references('id')->on('users')->onDelete('set null');
             $table->softDeletes();
             $table->timestamps();
         });

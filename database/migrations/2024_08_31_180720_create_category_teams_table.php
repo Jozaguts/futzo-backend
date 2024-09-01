@@ -11,12 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('team_details', function (Blueprint $table) {
+        Schema::create('category_team', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('category_id');
             $table->unsignedBigInteger('team_id');
+            $table->foreign('category_id')->references('id')->on('categories')->onDelete('cascade');
             $table->foreign('team_id')->references('id')->on('teams')->onDelete('cascade');
-            $table->json('colors');
-            $table->softDeletes();
             $table->timestamps();
         });
     }
@@ -26,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('team_details');
+        Schema::dropIfExists('category_team');
     }
 };

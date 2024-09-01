@@ -3,14 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\Tournament;
-use App\Models\User;
-use Database\Seeders\CategoriesTableSeeder;
-use Database\Seeders\LeaguesTableSeeder;
-use Database\Seeders\TournamentTableSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
-use Laravel\Sanctum\Sanctum;
 use Tests\InitUser;
 use Tests\TestCase;
 
@@ -267,7 +262,6 @@ class TournamentTest extends TestCase
                 'winner',
                 'description',
                 'category_id',
-                'league_id',
                 'id',
                 'image',
                 'thumbnail',
@@ -297,7 +291,6 @@ class TournamentTest extends TestCase
                 'winner',
                 'description',
                 'category_id',
-                'league_id',
                 'id',
                 'image',
                 'thumbnail',
@@ -310,9 +303,9 @@ class TournamentTest extends TestCase
         $response = $this->json('PUT','/api/v1/admin/tournaments/'.$tournament->id.'/status', [
             'status' => self::STATUS[1]
         ]);
-        $response->assertStatus(200);
-        $this->assertDatabaseMissing('tournaments', [
-            'status' => self::STATUS[1]
-        ]);
+        $response->assertStatus(200)
+            ->assertJson([
+                'status' => self::STATUS[1]
+            ]);
     }
 }

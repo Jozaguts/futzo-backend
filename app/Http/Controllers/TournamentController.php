@@ -12,16 +12,19 @@ use App\Models\Tournament;
 use App\Models\TournamentFormat;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+
 class TournamentController extends Controller
 {
     public function index(Request $request): TournamentCollection
     {
 
         $tournaments = Tournament::withCount(['teams', 'players', 'games'])
-            ->with('format',function ($query){
-                $query->select('id','name');
-            })
-            ->with('locations')
+            ->with([
+                'format' => function ($query){
+                    $query->select('id','name');
+                },
+                'locations'
+            ])
             ->paginate($request->get('per_page', 10), ['*'], 'page', $request->get('page', 1));
 
         return new TournamentCollection($tournaments);

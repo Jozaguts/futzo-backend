@@ -2,14 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\RegisteredTeamPresident;
 use App\Http\Requests\TeamStoreRequest;
 use App\Http\Requests\TeamUpdateRequest;
 use App\Http\Resources\TeamCollection;
 use App\Http\Resources\TeamResource;
-use App\Models\Category;
 use App\Models\Team;
-use App\Models\TeamDetail;
-use App\Models\Tournament;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -27,32 +26,53 @@ class TeamsController extends Controller
         return new TeamResource(Team::findOrFail($id));
     }
 
-    public function store(TeamStoreRequest $request)
+    public function store(TeamStoreRequest $request): TeamResource
     {
 
+        $data = $request->validated();
 
-        if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('images', 'public');
-            $request->image = Storage::disk('public')->url($path);
+        if ($request->hasFile('team.image')) {
+            $path = $request->file('team.image')->store('images', 'public');
+            $data['team']['image'] = Storage::disk('public')->url($path);
+        }
+        $president = collect($data['president']);
+        $coach = collect($data['coach']);
+
+        if (!empty($president)) {
+            if ($request->hasFile('president.image')) {
+                $path = $request->file('president.image')->store('images', 'public');
+                $president->put('image',Storage::disk('public')->url($path));
+            }
+          $president = User::updateOrCreate(
+              ['email' => $president->get('email')],
+              $president->except('email')->toArray()
+          );
+            $president->assignRole('dueño de equipo');
+            logger('president', [$president]);
+            RegisteredTeamPresident::dispatch($president);
+        }
+        if (!empty($coach)) {
+            if ($request->hasFile('coach.image')) {
+                $path = $request->file('coach.image')->store('images', 'public');
+                $coach->put('image',Storage::disk('public')->url($path));
+            }
+            $coach =  User::updateOrCreate(['email' => $coach['email']],
+                $coach->except('email')->toArray());
+            $coach->assignRole('entrenador');
         }
 
         $team = Team::create([
-            'name' => $request->name,
-            'tournament_id' => $request->tournament_id,
-            'category_id' => $request->category_id,
-            'president_name' => $request->president_name,
-            'coach_name' => $request->coach_name,
-            'phone' => $request->phone,
-            'email' => $request->email,
-            'address' => $request->address,
-            'image' => $request->image,
+            'name' => $data['team']['name'],
+            'president_id' => $president->id,
+            'coach_id' => $coach->id,
+            'phone' => $data['team']['phone'],
+            'email' => $data['team']['email'],
+            'address' => $data['team']['address'],
+            'image' => $data['team']['image'],
+            'colors' =>$data['team']['colors'],
         ]);
-        if ($request->has('colors')) {
-            $team->colors()->create([
-                'colors' => $request->colors
-            ]);
-        }
 
+        $team->leagues()->attach(auth()->user()->league_id);
         return new TeamResource($team);
     }
 

@@ -51,6 +51,8 @@ class User extends Authenticatable  implements MustVerifyEmail, HasMedia
         'google_id',
         'phone',
         'avatar',
+        'email_verified_at',
+        'league_id',
     ];
 
     /**

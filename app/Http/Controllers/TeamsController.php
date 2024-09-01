@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\RegisteredTeamCoach;
 use App\Events\RegisteredTeamPresident;
 use App\Http\Requests\TeamStoreRequest;
 use App\Http\Requests\TeamUpdateRequest;
@@ -37,28 +38,41 @@ class TeamsController extends Controller
         }
         $president = collect($data['president']);
         $coach = collect($data['coach']);
+        $temporaryPassword = str()->random(8);
+        $president->put('password', $temporaryPassword);
+        $president->put('email_verified_at', now());
+        $coach->put('password', $temporaryPassword);
+        $coach->put('email_verified_at', now());
 
         if (!empty($president)) {
             if ($request->hasFile('president.image')) {
                 $path = $request->file('president.image')->store('images', 'public');
                 $president->put('image',Storage::disk('public')->url($path));
             }
-          $president = User::updateOrCreate(
-              ['email' => $president->get('email')],
-              $president->except('email')->toArray()
-          );
+
+            $president = User::updateOrCreate(
+                ['email' => $president->get('email')],
+                $president->except('email')->toArray()
+            );
+
+            $president->league()->associate(auth()->user()->league);
+            $president->save();
             $president->assignRole('dueño de equipo');
-            logger('president', [$president]);
-            RegisteredTeamPresident::dispatch($president);
+            event(new RegisteredTeamPresident($president, $temporaryPassword));
         }
         if (!empty($coach)) {
             if ($request->hasFile('coach.image')) {
                 $path = $request->file('coach.image')->store('images', 'public');
                 $coach->put('image',Storage::disk('public')->url($path));
             }
-            $coach =  User::updateOrCreate(['email' => $coach['email']],
-                $coach->except('email')->toArray());
+            $coach =  User::updateOrCreate(
+                ['email' => $coach['email']],
+                $coach->except('email')->toArray()
+            );
+            $coach->league()->associate(auth()->user()->league);
+            $coach->save();
             $coach->assignRole('entrenador');
+            event(new RegisteredTeamCoach($coach, $temporaryPassword));
         }
 
         $team = Team::create([
@@ -68,11 +82,13 @@ class TeamsController extends Controller
             'phone' => $data['team']['phone'],
             'email' => $data['team']['email'],
             'address' => $data['team']['address'],
-            'image' => $data['team']['image'],
+            'image' => $data['team']['image'] ?? null,
             'colors' =>$data['team']['colors'],
         ]);
 
         $team->leagues()->attach(auth()->user()->league_id);
+
+
         return new TeamResource($team);
     }
 

@@ -14,6 +14,13 @@ class TeamResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        return parent::toArray($request);
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'colors' => $this->colors,
+            'president' => $this->president()->select('id','name','email','phone')->first(),
+            'coach' => $this->coach()->select('id','name','email','phone')->first(),
+            'league' => $this->leagues()->where('league_id', auth()->user()->league_id)->select('leagues.id','leagues.name')->first(),
+        ];
     }
 }

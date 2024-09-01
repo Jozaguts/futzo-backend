@@ -2,46 +2,50 @@
 
 namespace App\Models;
 
-use App\Scopes\LeagueScope;
-use App\Traits\HasLeague;
+use Illuminate\Database\Eloquent\Attributes\ScopedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+#[ScopedBy(\App\Scopes\LeagueScope::class)]
 class Team extends Model
 {
-    use HasFactory, SoftDeletes, HasLeague;
+    use HasFactory, SoftDeletes;
     protected $fillable = [
         'name',
-        'tournament_id',
-        'category_id',
-        'league_id',
-        'president_name',
-        'coach_name',
-        'phone',
-        'email',
         'address',
+        'email',
+        'phone',
+        'description',
         'image',
+        'president_id',
+        'coach_id',
+        'colors',
     ];
 
-
-    protected static function booted(): void
+    protected $casts = [
+        'colors' => 'json',
+    ];
+    public function president(): BelongsTo
     {
-        static::addGlobalScope(new LeagueScope);
-
+        return $this->belongsTo(User::class, 'president_id');
     }
-    public function league(): BelongsTo
+    public function coach(): BelongsTo
     {
-        return $this->belongsTo(League::class);
+        return $this->belongsTo(User::class, 'coach_id');
     }
-
-    public function category(): BelongsTo
+    public function leagues(): BelongsToMany
     {
-        return $this->belongsTo(Category::class);
+        return $this->belongsToMany(League::class, 'league_team');
     }
-    public function colors ()
+    public function tournaments(): BelongsToMany
     {
-        return $this->hasOne(TeamDetail::class);
+        return $this->belongsToMany(Tournament::class)->using(TeamTournament::class);
+    }
+    public function categories()
+    {
+        return $this->belongsToMany(Category::class)->using(CategoryTeam::class);
     }
 }

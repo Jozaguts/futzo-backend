@@ -2,13 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Models\TeamDetail;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
-use Laravel\Sanctum\Sanctum;
 use Tests\InitUser;
 use Tests\TestCase;
 
@@ -20,8 +16,11 @@ class TeamTest extends TestCase
      */
     public function test_store_team(): void
     {
+
         Storage::fake('public');
         $image = UploadedFile::fake()->image('logo-test.jpg')->mimeType('image/jpeg');
+        $coachImage = UploadedFile::fake()->image('coach-test.jpg')->mimeType('image/jpeg');
+        $address = fake()->address;
         $this->initUser();
         $expectedColors = [
             'home' => [
@@ -33,27 +32,52 @@ class TeamTest extends TestCase
                 'short' => 'blue',
             ],
         ];
+
         $response = $this->json('POST', '/api/v1/admin/teams', [
-            'name' => 'Team test',
-            'tournament_id' => 1,
-            'category_id' => 1,
-            'president_name' => 'John Doe',
-            'coach_name' => 'John Doe',
-            'phone' => 'John Doe',
-            'email' => 'test@test.com',
-            'address' => 'address',
-            'image' => $image,
-            'colors' => $expectedColors,
+            'team' =>[
+                'name' => 'Team 1',
+                'address' => $address,
+                'image' => $image,
+                'email' => fake()->email,
+                'phone' => fake()->phoneNumber,
+                'colors' => $expectedColors,
+                'category_id' => 1,
+            ],
+            'president' => [
+                'name' => 'John Doe',
+                'phone' => fake()->phoneNumber,
+                'email' => fake()->email,
+            ],
+            'coach' => [
+                'name' => 'John Doe',
+                'phone' => fake()->phoneNumber,
+                'email' => fake()->email,
+                'image' => $coachImage,
+            ],
          ]);
          $response->assertStatus(201);
+
          $this->assertDatabaseHas('teams', [
-            'name' => 'Team 1',
+             'name' => 'Team 1',
+             'colors->home->jersey' => 'red',
+             'colors->home->short' => 'red',
+             'colors->away->jersey' => 'blue',
+             'colors->away->short' => 'blue',
+         ]);
+         $this->assertDatabaseHas('users', [
+             'name' => 'John Doe',
+             'email' => $response->json('coach.email'),
+             'phone' => $response->json('coach.phone'),
          ]);
 
-        $teamDetail = TeamDetail::where('team_id', $response->json('id'))->first();
+        $this->assertDatabaseHas('users', [
+            'name' => 'John Doe',
+            'email' => $response->json('president.email'),
+            'phone' => $response->json('president.phone'),
+        ]);
 
-        $this->assertNotNull($teamDetail);
-        $this->assertEquals($expectedColors, $teamDetail->colors);
+
+
         Storage::disk('public')->assertExists('/images/'.$image->hashName());
     }
 }

@@ -14,7 +14,7 @@ class PreRegisterTest extends TestCase
         $email = fake()->email;
 
         $response = $this->postJson('/api/v1/pre-register',['email' => $email]);
-        $response->dump();
+
         $response->assertStatus(201);
     }
 }

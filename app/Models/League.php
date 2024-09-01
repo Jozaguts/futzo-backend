@@ -5,6 +5,7 @@ namespace App\Models;
 use Database\Factories\LeagueFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -31,9 +32,9 @@ class League extends Model
         return $this->hasMany(Tournament::class);
     }
 
-    public function teams(): HasMany
+    public function teams(): BelongsToMany
     {
-        return $this->hasMany(Team::class);
+        return $this->belongsToMany(Team::class, 'league_team');
     }
 
 }

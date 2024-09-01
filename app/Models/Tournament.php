@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use App\Observers\TournamentObserver;
-use App\Scopes\LeagueScope;
 use Database\Factories\TournamentFactory;
+use Illuminate\Database\Eloquent\Attributes\ScopedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,11 +16,11 @@ use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
+#[ScopedBy(\App\Scopes\LeagueScope::class)]
 class Tournament extends Model implements HasMedia
 {
     use HasFactory, SoftDeletes, InteractsWithMedia;
     protected $fillable = [
-        'league_id',
         'name',
         'start_date',
         'end_date',
@@ -39,7 +39,6 @@ class Tournament extends Model implements HasMedia
     ];
     protected static function booted(): void
     {
-        static::addGlobalScope(new LeagueScope);
         Tournament::observe(TournamentObserver::class);
     }
     public function getStartDateAttribute($value): string
@@ -60,14 +59,14 @@ class Tournament extends Model implements HasMedia
     {
         return $this->belongsTo(TournamentFormat::class, 'tournament_format_id', 'id');
     }
-    public function teams(): HasMany
+    public function teams(): BelongsToMany
     {
-        return $this->hasMany(Team::class);
+        return $this->belongsToMany(Team::class)->using(TeamTournament::class);
     }
 
     public function players():HasManyThrough
     {
-        return $this->hasManyThrough(Player::class, Team::class);
+        return $this->hasManyThrough(Player::class, TeamTournament::class, 'tournament_id', 'team_id', 'id', 'team_id');
     }
 
     public function games(): HasMany

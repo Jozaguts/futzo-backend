@@ -32,22 +32,25 @@ class TeamStoreRequest extends FormRequest
         return
             [
                 'team.name' => 'required',
-                'team.address' => 'nullable|string',
+                'team.address' => 'nullable|json',
                 'team.image' => 'nullable|image|mimes:jpg,png,svg',
-                'team.colors.home.jersey' => 'nullable|string',
-                'team.colors.home.short' => 'nullable|string',
-                'team.colors.away.jersey' => 'nullable|string',
-                'team.colors.away.short' => 'nullable|string',
+                'team.colors' => 'required|json',
+                'team.colors.home' => 'nullable|json',
+                'team.colors.home.primary' => 'nullable|string',
+                'team.colors.home.secondary' => 'nullable|string',
+                'team.colors.away' => 'nullable|json',
+                'team.colors.away.primary' => 'nullable|string',
+                'team.colors.away.secondary' => 'nullable|string',
                 'team.email' => 'nullable|email',
                 'team.phone' => 'nullable|string',
 
                 'president.name' => 'required|string',
-                'president.phone' => 'required|string',
+                'president.phone' => 'required|string|unique:users,phone',
                 'president.email' => 'required|email|string',
                 'president.image' => 'nullable|image|mimes:jpg,png,svg',
 
                 'coach.name' => 'required|string',
-                'coach.phone' => 'required|string',
+                'coach.phone' => 'required|string|unique:users,phone',
                 'coach.email' => 'required|email|string',
                 'coach.image' => 'nullable|image|mimes:jpg,png,svg',
             ];
@@ -68,5 +71,37 @@ class TeamStoreRequest extends FormRequest
             ->where('teams.name', $this->input('team.name'))
             ->where('category_team.category_id', $this->input('team.category_id'))
             ->exists();
+    }
+
+    public function messages()
+    {
+       return [
+              'team.name.required' => 'El nombre del equipo es requerido',
+              'team.address.string' => 'La dirección del equipo debe ser una cadena de texto',
+              'team.image.image' => 'La imagen del equipo debe ser un archivo de imagen',
+              'team.image.mimes' => 'La imagen del equipo debe ser un archivo de imagen con formato jpg, png o svg',
+              'team.colors.home.jersey.string' => 'El color de la camiseta de local debe ser una cadena de texto',
+              'team.colors.home.short.string' => 'El color del short de local debe ser una cadena de texto',
+              'team.colors.away.jersey.string' => 'El color de la camiseta de visitante debe ser una cadena de texto',
+              'team.colors.away.short.string' => 'El color del short de visitante debe ser una cadena de texto',
+              'team.email.email' => 'El correo electrónico del equipo debe ser una dirección de correo válida',
+              'team.phone.string' => 'El teléfono del equipo debe ser una cadena de texto',
+
+              'president.name.required' => 'El nombre del presidente es requerido',
+              'president.name.string' => 'El nombre del presidente debe ser una cadena de texto',
+              'president.phone.required' => 'El teléfono del presidente es requerido',
+              'president.phone.string' => 'El teléfono del presidente debe ser una cadena de texto',
+              'president.phone.unique' => 'El teléfono del presidente ya está en uso',
+              'president.email.required' => 'El correo electrónico del presidente es requerido',
+              'president.email.email' => 'El correo electrónico del presidente debe ser una dirección de correo válida',
+              'president.email.string' => 'El correo electrónico del presidente debe ser una cadena de texto',
+              'president.image.image' => 'La imagen del presidente debe ser un archivo de imagen',
+              'president.image.mimes' => 'La imagen del presidente debe ser un archivo de imagen con formato jpg, png o svg',
+
+              'coach.name.required' => 'El nombre del entrenador es requerido',
+              'coach.name.string' => 'El nombre del entrenador debe ser una cadena de texto',
+              'coach.phone.required' => 'El teléfono del entrenador es requerido',
+              'coach.phone.string' => 'El teléfono del entrenador debe ser una cadena de texto',
+       ];
     }
 }

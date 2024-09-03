@@ -24,9 +24,9 @@ class Team extends Model
         'coach_id',
         'colors',
     ];
-
     protected $casts = [
-        'colors' => 'json',
+        'address' => 'array',
+        'colors' => 'array'
     ];
     public function president(): BelongsTo
     {

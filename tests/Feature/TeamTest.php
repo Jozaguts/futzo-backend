@@ -16,10 +16,11 @@ class TeamTest extends TestCase
      */
     public function test_store_team(): void
     {
-
+        $this->initUser();
         Storage::fake('public');
         $image = UploadedFile::fake()->image('logo-test.jpg')->mimeType('image/jpeg');
         $coachImage = UploadedFile::fake()->image('coach-test.jpg')->mimeType('image/jpeg');
+
         $address = json_encode([
             'description' => 'La Sabana, San José Province, San José, Sabana, Costa Rica',
             'matched_substrings' => [
@@ -69,8 +70,8 @@ class TeamTest extends TestCase
                 'park'
             ]
         ]);
-        $this->initUser();
-        $expectedColors = [
+
+        $expectedColors = json_encode([
             'home' => [
                 'jersey' => 'red',
                 'short' => 'red',
@@ -79,7 +80,7 @@ class TeamTest extends TestCase
                 'jersey' => 'blue',
                 'short' => 'blue',
             ],
-        ];
+        ]);
 
         $response = $this->json('POST', '/api/v1/admin/teams', [
             'team' =>[
@@ -90,6 +91,7 @@ class TeamTest extends TestCase
                 'phone' => fake()->phoneNumber,
                 'colors' => $expectedColors,
                 'category_id' => 1,
+                'tournament_id' => 1,
             ],
             'president' => [
                 'name' => 'John Doe',

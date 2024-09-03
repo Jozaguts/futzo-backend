@@ -28,7 +28,7 @@ class UserController extends Controller
             ->addMedia($validated['avatar'])
             ->toMediaCollection('avatar', 's3')
             ->getUrl();
-        logger($url);
+
        $response =  $user->update(['avatar' => $url]);
 
 

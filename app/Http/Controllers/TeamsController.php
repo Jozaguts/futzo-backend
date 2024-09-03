@@ -13,7 +13,6 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class TeamsController extends Controller
 {
@@ -21,9 +20,6 @@ class TeamsController extends Controller
     public function index(Request $request)
     {
         $teams = Team::query()
-            ->with(['president', 'coach','tournaments' => function ($query) {
-                $query->where('league_id', auth()->user()->league_id)->first();
-            }])
             ->where('league_id', auth()->user()->league_id)
             ->paginate($request->get('per_page', 10));
         return  new TeamCollection($teams);
@@ -39,10 +35,6 @@ class TeamsController extends Controller
 
         $data = $request->validated();
 
-        if ($request->hasFile('team.image')) {
-            $path = $request->file('team.image')->store('images', 'public');
-            $data['team']['image'] = Storage::disk('public')->url($path);
-        }
         $president = collect($data['president']);
         $coach = collect($data['coach']);
         $temporaryPassword = str()->random(8);
@@ -54,15 +46,20 @@ class TeamsController extends Controller
         try {
             DB::beginTransaction();
             if (!empty($president)) {
-                if ($request->hasFile('president.image')) {
-                    $path = $request->file('president.image')->store('images', 'public');
-                    $president->put('image',Storage::disk('public')->url($path));
-                }
 
                 $president = User::updateOrCreate(
                     ['email' => $president->get('email')],
                     $president->except('email')->toArray()
                 );
+                if ($request->hasFile('president.image')) {
+                    $media =  $president
+                        ->addMedia($request->file('president.image'))
+                        ->toMediaCollection('avatar');
+
+                    $president->update([
+                        'avatar' => $media->getUrl(),
+                    ]);
+                }
 
                 $president->league()->associate(auth()->user()->league);
                 $president->save();
@@ -70,14 +67,19 @@ class TeamsController extends Controller
                 event(new RegisteredTeamPresident($president, $temporaryPassword));
             }
             if (!empty($coach)) {
-                if ($request->hasFile('coach.image')) {
-                    $path = $request->file('coach.image')->store('images', 'public');
-                    $coach->put('image',Storage::disk('public')->url($path));
-                }
                 $coach =  User::updateOrCreate(
                     ['email' => $coach['email']],
                     $coach->except('email')->toArray()
                 );
+                if ($request->hasFile('coach.image')) {
+                    $media =  $coach
+                        ->addMedia($request->file('coach.image'))
+                        ->toMediaCollection('avatar');
+
+                    $coach->update([
+                        'avatar' => $media->getUrl(),
+                    ]);
+                }
                 $coach->league()->associate(auth()->user()->league);
                 $coach->save();
                 $coach->assignRole('entrenador');
@@ -91,9 +93,18 @@ class TeamsController extends Controller
                 'phone' => $data['team']['phone'],
                 'email' => $data['team']['email'],
                 'address' => json_decode($data['team']['address']),
-                'image' => $data['team']['image'] ?? null,
                 'colors' => json_decode($data['team']['colors']),
             ]);
+            if ($request->hasFile('team.image')) {
+                $media =  $team
+                    ->addMedia($request->file('team.image'))
+                    ->toMediaCollection('team');
+                $team->update([
+                    'image' => $media->getUrl('default'),
+                ]);
+            }
+
+
 
             $team->leagues()->attach(auth()->user()->league_id);
             $team->categories()->attach($data['team']['category_id']);

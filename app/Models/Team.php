@@ -8,11 +8,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 #[ScopedBy(\App\Scopes\LeagueScope::class)]
-class Team extends Model
+class Team extends Model implements HasMedia
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, InteractsWithMedia;
     protected $fillable = [
         'name',
         'address',
@@ -47,5 +50,19 @@ class Team extends Model
     public function categories()
     {
         return $this->belongsToMany(Category::class)->using(CategoryTeam::class);
+    }
+    public function registerMediaCollections(?Media $media = null): void
+    {
+        $this->addMediaCollection('team')
+            ->singleFile()
+            ->storeConversionsOnDisk('s3')
+            ->registerMediaConversions(function (Media $media = null) {
+                $this->addMediaConversion('thumbnail')
+                    ->width(150)
+                    ->height(150);
+                $this->addMediaConversion('default')
+                    ->width(400)
+                    ->height(400);
+            });
     }
 }

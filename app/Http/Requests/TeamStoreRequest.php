@@ -43,6 +43,8 @@ class TeamStoreRequest extends FormRequest
                 'team.colors.away.secondary' => 'nullable|string',
                 'team.email' => 'nullable|email',
                 'team.phone' => 'nullable|string',
+                'team.category_id' => 'required|exists:categories,id',
+                'team.tournament_id' => 'required|exists:tournaments,id',
 
                 'president.name' => 'required|string',
                 'president.phone' => 'required|string|unique:users,phone',

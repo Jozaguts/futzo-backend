@@ -96,14 +96,14 @@ class TeamsController extends Controller
             ]);
 
             $team->leagues()->attach(auth()->user()->league_id);
+            $team->categories()->attach($data['team']['category_id']);
+            $team->tournaments()->attach($data['team']['tournament_id']);
             DB::commit();
             return new TeamResource($team);
         }catch (\Exception $e) {
             DB::rollBack();
-            logger('data',[
-                'team' => $data['team'],
-                'president' => $president,
-                'coach' => $coach
+            logger('error',[
+                'message' => $e->getMessage(),
             ]);
             return response()->json(['success' => false, 'message' => $e->getMessage()], 401);
         }

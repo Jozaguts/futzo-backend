@@ -18,10 +18,15 @@ use Illuminate\Support\Facades\Storage;
 class TeamsController extends Controller
 {
 
-    public function index(Team $team, Request $request)
+    public function index(Request $request)
     {
-        $team = $team->with('leagues')->get();
-        return  new TeamCollection($team);
+        $teams = Team::query()
+            ->with(['president', 'coach','tournaments' => function ($query) {
+                $query->where('league_id', auth()->user()->league_id)->first();
+            }])
+            ->where('league_id', auth()->user()->league_id)
+            ->paginate($request->get('per_page', 10));
+        return  new TeamCollection($teams);
     }
 
     public function show($id)

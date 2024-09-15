@@ -63,6 +63,10 @@ class User extends Authenticatable  implements MustVerifyEmail, HasMedia
     protected $hidden = [
         'password',
         'remember_token',
+        'email_verification_token',
+        'deleted_at',
+        'facebook_id',
+        'google_id',
     ];
 
     /**
@@ -74,13 +78,23 @@ class User extends Authenticatable  implements MustVerifyEmail, HasMedia
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
     public function league(): BelongsTo
     {
         return $this->belongsTo(League::class);
     }
     public function registerMediaCollections(?Media $media = null): void
     {
-        $this->addMediaCollection('avatar','s3')
-            ->singleFile();
+        $this->addMediaCollection('avatar')
+            ->singleFile()
+            ->storeConversionsOnDisk('s3')
+            ->registerMediaConversions(function (Media $media = null) {
+                $this->addMediaConversion('thumbnail')
+                    ->width(150)
+                    ->height(150);
+                $this->addMediaConversion('default')
+                    ->width(400)
+                    ->height(400);
+            });
     }
 }

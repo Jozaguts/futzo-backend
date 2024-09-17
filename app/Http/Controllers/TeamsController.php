@@ -17,17 +17,22 @@ use Illuminate\Support\Facades\DB;
 class TeamsController extends Controller
 {
 
-    public function index(Request $request)
+    public function index(Request $request): TeamCollection
     {
-        $paginate = $request->get('paginate');
+        $teams = Team::query()
+            ->where('league_id', auth()->user()->league_id)
+            ->paginate(
+                $request->get('per_page', 10),
+                ['*'],
+                'page',
+                $request->get('page', 2)
+            );
+        return  new TeamCollection($teams);
+    }
 
-        if (!!$paginate){
-            $teams = Team::query()->where('league_id', auth()->user()->league_id)
-                ->paginate($request->get('per_page', 10), ['*'], 'page', $request->get('page', 2));
-
-        }else{
-            $teams = Team::query()->where('league_id', auth()->user()->league_id)->get();
-        }
+    public function list(): TeamCollection
+    {
+        $teams = Team::query()->where('league_id', auth()->user()->league_id)->get();
         return  new TeamCollection($teams);
     }
 

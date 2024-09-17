@@ -14,7 +14,6 @@ use App\Http\Controllers\PenaltyGoalKeeperController;
 use App\Http\Controllers\PlayersController;
 use App\Http\Controllers\RefereeController;
 use App\Http\Controllers\RoleAndPermissionsController;
-use App\Http\Controllers\TeamsController;
 use App\Http\Controllers\UserController;
 use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
@@ -37,14 +36,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
         return new UserResource($request->user());
     });
 
-    Route::prefix('/admin')->group(function () {
-        Route::put('/profile/{user}', [UserController::class, 'update'])->middleware('ensureUserOwnsProfile');
-        Route::post('/profile/{user}/avatar', [UserController::class, 'updateAvatar'])->middleware('ensureUserOwnsProfile');
-        Route::put('/profile/{user}/password', [UserController::class, 'updatePassword'])->middleware('ensureUserOwnsProfile');
+    Route::prefix('admin')->group(function () {
+        Route::put('profile/{user}', [UserController::class, 'update'])->middleware('ensureUserOwnsProfile');
+        Route::post('profile/{user}/avatar', [UserController::class, 'updateAvatar'])->middleware('ensureUserOwnsProfile');
+        Route::put('profile/{user}/password', [UserController::class, 'updatePassword'])->middleware('ensureUserOwnsProfile');
         Route::get('leagues/football/types', [LeaguesController::class, 'getFootballTypes']);
         Route::apiResource('/roles', RoleAndPermissionsController::class);
         Route::apiResources(['genders'=> GenderController::class]);
-        Route::apiResources(['teams' => TeamsController::class]);
         Route::apiResources(['players' => PlayersController::class]);
         Route::apiResources(['categories' => CategoryController::class]);
         Route::apiResources(['referees' => RefereeController::class]);
@@ -61,6 +59,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('schedule/generate', [\App\Http\Controllers\ScheduleController::class, 'generate']);
 
         require __DIR__.'/tournaments/routes.php';
+        require __DIR__.'/teams/routes.php';
     });
 });
 

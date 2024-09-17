@@ -19,9 +19,15 @@ class TeamsController extends Controller
 
     public function index(Request $request)
     {
-        $teams = Team::query()
-            ->where('league_id', auth()->user()->league_id)
-            ->paginate($request->get('per_page', 10), ['*'], 'page', $request->get('page', 2));
+        $paginate = $request->get('paginate');
+
+        if (!!$paginate){
+            $teams = Team::query()->where('league_id', auth()->user()->league_id)
+                ->paginate($request->get('per_page', 10), ['*'], 'page', $request->get('page', 2));
+
+        }else{
+            $teams = Team::query()->where('league_id', auth()->user()->league_id)->get();
+        }
         return  new TeamCollection($teams);
     }
 

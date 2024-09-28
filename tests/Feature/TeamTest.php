@@ -11,6 +11,7 @@ use Tests\TestCase;
 class TeamTest extends TestCase
 {
     use RefreshDatabase, InitUser;
+
     /**
      * A basic feature test example.
      */
@@ -83,8 +84,8 @@ class TeamTest extends TestCase
         ]);
 
         $response = $this->json('POST', '/api/v1/admin/teams', [
-            'team' =>[
-                'name' => 'Team 1',
+            'team' => [
+                'name' => 'test 1',
                 'address' => $address,
                 'image' => $image,
                 'email' => fake()->email,
@@ -104,30 +105,105 @@ class TeamTest extends TestCase
                 'email' => fake()->email,
                 'image' => $coachImage,
             ],
-         ]);
-         $response->assertStatus(201);
+        ]);
+        $response->assertStatus(201);
 
-         $this->assertDatabaseHas('teams', [
-             'name' => 'Team 1',
-             'colors->home->jersey' => 'red',
-             'colors->home->short' => 'red',
-             'colors->away->jersey' => 'blue',
-             'colors->away->short' => 'blue',
-         ]);
-         $this->assertDatabaseHas('users', [
-             'name' => 'John Doe',
-             'email' => $response->json('coach.email'),
-             'phone' => $response->json('coach.phone'),
-         ]);
+        $this->assertDatabaseHas('teams', [
+            'name' => 'test 1',
+            'colors->home->jersey' => 'red',
+            'colors->home->short' => 'red',
+            'colors->away->jersey' => 'blue',
+            'colors->away->short' => 'blue',
+        ]);
+        $this->assertDatabaseHas('users', [
+            'name' => 'John Doe',
+            'email' => $response->json('coach.email'),
+            'phone' => $response->json('coach.phone'),
+        ]);
 
         $this->assertDatabaseHas('users', [
             'name' => 'John Doe',
             'email' => $response->json('president.email'),
             'phone' => $response->json('president.phone'),
         ]);
+    }
 
+    public function test_store_team_without_coach_and_owner(): void
+    {
+        $this->initUser();
+        Storage::fake('public');
+        $image = UploadedFile::fake()->image('logo-test.jpg')->mimeType('image/jpeg');
 
-//todo test guardado en s3
-//        Storage::disk('public')->assertExists('/images/'.$image->hashName());
+        $address = json_encode([
+            'description' => 'La Sabana, San José Province, San José, Sabana, Costa Rica',
+            'matched_substrings' => [
+                [
+                    'length' => 9,
+                    'offset' => 0
+                ]
+            ],
+            'place_id' => 'ChIJM_Dtpqv8oI8RyETi6jXqf_c',
+            'reference' => 'ChIJM_Dtpqv8oI8RyETi6jXqf_c',
+            'structured_formatting' => [
+                'main_text' => 'La Sabana',
+                'main_text_matched_substrings' => [
+                    [
+                        'length' => 9,
+                        'offset' => 0
+                    ]
+                ],
+                'secondary_text' => 'San José Province, San José, Sabana, Costa Rica'
+            ],
+            'terms' => [
+                [
+                    'offset' => 0,
+                    'value' => 'La Sabana'
+                ],
+                [
+                    'offset' => 11,
+                    'value' => 'San José Province'
+                ],
+                [
+                    'offset' => 30,
+                    'value' => 'San José'
+                ],
+                [
+                    'offset' => 40,
+                    'value' => 'Sabana'
+                ],
+                [
+                    'offset' => 48,
+                    'value' => 'Costa Rica'
+                ]
+            ],
+            'types' => [
+                'establishment',
+                'tourist_attraction',
+                'point_of_interest',
+                'park'
+            ]
+        ]);
+
+        $expectedColors = json_encode([]);
+
+        $response = $this->json('POST', '/api/v1/admin/teams', [
+            'team' => [
+                'name' => 'test 5',
+                'address' => $address,
+                'image' => $image,
+                'email' => fake()->email,
+                'phone' => fake()->phoneNumber,
+                'colors' => $expectedColors,
+                'category_id' => 1,
+                'tournament_id' => 1,
+            ],
+            'president' => [],
+            'coach' => [],
+        ]);
+        $response->assertStatus(201);
+
+        $this->assertDatabaseHas('teams', [
+            'name' => 'test 5',
+        ]);
     }
 }

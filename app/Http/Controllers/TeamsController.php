@@ -27,13 +27,13 @@ class TeamsController extends Controller
                 'page',
                 $request->get('page', 2)
             );
-        return  new TeamCollection($teams);
+        return new TeamCollection($teams);
     }
 
     public function list(): TeamCollection
     {
         $teams = Team::query()->where('league_id', auth()->user()->league_id)->get();
-        return  new TeamCollection($teams);
+        return new TeamCollection($teams);
     }
 
     public function show($id)
@@ -41,29 +41,22 @@ class TeamsController extends Controller
         return new TeamResource(Team::findOrFail($id));
     }
 
-    public function store(TeamStoreRequest $request): TeamResource | JsonResponse
+    public function store(TeamStoreRequest $request): TeamResource|JsonResponse
     {
 
         $data = $request->validated();
-
-        $president = collect($data['president']);
-        $coach = collect($data['coach']);
-        $temporaryPassword = str()->random(8);
-        $president->put('password', $temporaryPassword);
-        $president->put('email_verified_at', now());
-        $coach->put('password', $temporaryPassword);
-        $coach->put('email_verified_at', now());
-
         try {
             DB::beginTransaction();
-            if (!empty($president)) {
-
+            if (isset($data['president'])) {
+                $president = collect($data['president']);
+                $president->put('password', str()->random(8));
+                $president->put('email_verified_at', now());
                 $president = User::updateOrCreate(
                     ['email' => $president->get('email')],
                     $president->except('email')->toArray()
                 );
                 if ($request->hasFile('president.avatar')) {
-                    $media =  $president
+                    $media = $president
                         ->addMedia($request->file('president.avatar'))
                         ->toMediaCollection('avatar');
 
@@ -75,15 +68,18 @@ class TeamsController extends Controller
                 $president->league()->associate(auth()->user()->league); // user belongs to league
                 $president->save();
                 $president->assignRole('dueño de equipo');
-                event(new RegisteredTeamPresident($president, $temporaryPassword));
+                event(new RegisteredTeamPresident($president, str()->random(8)));
             }
-            if (!empty($coach)) {
-                $coach =  User::updateOrCreate(
+            if (isset($data['coach'])) {
+                $coach = collect($data['coach']);
+                $coach->put('password', str()->random(8));
+                $coach->put('email_verified_at', now());
+                $coach = User::updateOrCreate(
                     ['email' => $coach['email']],
                     $coach->except('email')->toArray()
                 );
                 if ($request->hasFile('coach.avatar')) {
-                    $media =  $coach
+                    $media = $coach
                         ->addMedia($request->file('coach.avatar'))
                         ->toMediaCollection('avatar');
 
@@ -94,20 +90,20 @@ class TeamsController extends Controller
                 $coach->league()->associate(auth()->user()->league); // user belongs to league
                 $coach->save();
                 $coach->assignRole('entrenador');
-                event(new RegisteredTeamCoach($coach, $temporaryPassword));
+                event(new RegisteredTeamCoach($coach, str()->random(8)));
             }
 
             $team = Team::create([
                 'name' => $data['team']['name'],
-                'president_id' => $president->id,
-                'coach_id' => $coach->id,
-                'phone' => $data['team']['phone'],
-                'email' => $data['team']['email'],
-                'address' => json_decode($data['team']['address']),
-                'colors' => json_decode($data['team']['colors']),
+                'president_id' => $president?->id ?? null,
+                'coach_id' => $coach?->id ?? null,
+                'phone' => $data['team']['phone'] ?? null,
+                'email' => $data['team']['email'] ?? null,
+                'address' => json_decode($data['team']['address'] ?? null),
+                'colors' => json_decode($data['team']['colors'] ?? '[]'),
             ]);
             if ($request->hasFile('team.image')) {
-                $media =  $team
+                $media = $team
                     ->addMedia($request->file('team.image'))
                     ->toMediaCollection('team');
                 $team->update([
@@ -120,9 +116,9 @@ class TeamsController extends Controller
             $team->tournaments()->attach($data['team']['tournament_id']);  // team belongs to tournament
             DB::commit();
             return new TeamResource($team);
-        }catch (\Exception $e) {
+        } catch (\Exception $e) {
             DB::rollBack();
-            logger('error',[
+            logger('error', [
                 'message' => $e->getMessage(),
             ]);
             return response()->json(['success' => false, 'message' => $e->getMessage()], 401);
@@ -139,14 +135,14 @@ class TeamsController extends Controller
             $coach = collect($data['coach']);
             DB::beginTransaction();
             $team = Team::findOrFail($id);
-            if (!empty($president)){
+            if (!empty($president)) {
                 $team->president->update($president->only('name')->toArray());
-                if ($request->hasFile('president.avatar') ) {
+                if ($request->hasFile('president.avatar')) {
 
-                    $media =  $team->president
+                    $media = $team->president
                         ->addMedia($request->file('president.avatar'))
                         ->toMediaCollection('avatar', 's3');
-                    logger('media',[
+                    logger('media', [
                         ' president url' => $media->getUrl(),
                     ]);
                     $team->president->update([
@@ -154,14 +150,14 @@ class TeamsController extends Controller
                     ]);
                 }
             }
-            if (!empty($coach)){
-                $team->coach->update($coach->only('name')->toArray() );
-                if ($request->hasFile('coach.avatar') ) {
+            if (!empty($coach)) {
+                $team->coach->update($coach->only('name')->toArray());
+                if ($request->hasFile('coach.avatar')) {
 
                     $media = $team->coach
                         ->addMedia($request->file('coach.avatar'))
-                        ->toMediaCollection('avatar','s3');
-                    logger('media',[
+                        ->toMediaCollection('avatar', 's3');
+                    logger('media', [
                         'coach url' => $media->getUrl(),
                     ]);
                     $team->coach->update([
@@ -174,9 +170,9 @@ class TeamsController extends Controller
                 'address' => json_decode($data['team']['address']),
                 'colors' => json_decode($data['team']['colors']),
             ]);
-            if ($request->hasFile('team.image') ) {
+            if ($request->hasFile('team.image')) {
 
-                $media =  $team
+                $media = $team
                     ->addMedia($request->file('team.image'))
                     ->toMediaCollection('team');
                 $team->update([
@@ -188,9 +184,9 @@ class TeamsController extends Controller
             $team->refresh();
             DB::commit();
             return new TeamResource($team);
-        }catch (\Exception $e) {
+        } catch (\Exception $e) {
             DB::rollBack();
-            logger('error',[
+            logger('error', [
                 'message' => $e->getMessage(),
             ]);
             return response()->json(['success' => false, 'message' => $e->getMessage()], 401);

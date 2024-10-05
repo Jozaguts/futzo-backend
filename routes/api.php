@@ -32,7 +32,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth:sanctum'])->group(function () {
 
-    Route::get('/me', function(Request $request){
+    Route::get('/me', function (Request $request) {
         return new UserResource($request->user());
     });
 
@@ -42,7 +42,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::put('profile/{user}/password', [UserController::class, 'updatePassword'])->middleware('ensureUserOwnsProfile');
         Route::get('leagues/football/types', [LeaguesController::class, 'getFootballTypes']);
         Route::apiResource('/roles', RoleAndPermissionsController::class);
-        Route::apiResources(['genders'=> GenderController::class]);
+        Route::apiResources(['genders' => GenderController::class]);
         Route::apiResources(['players' => PlayersController::class]);
         Route::apiResources(['categories' => CategoryController::class]);
         Route::apiResources(['referees' => RefereeController::class]);
@@ -57,9 +57,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::apiResources(['locations' => \App\Http\Controllers\LocationController::class]);
         Route::get('leagues/{leagueId}/tournaments', [\App\Http\Controllers\LeaguesController::class, 'getTournaments']);
         Route::post('schedule/generate', [\App\Http\Controllers\ScheduleController::class, 'generate']);
-
-        require __DIR__.'/tournaments/routes.php';
-        require __DIR__.'/teams/routes.php';
+        Route::get('positions', \App\Http\Controllers\PositionsController::class);
+        require __DIR__ . '/tournaments/routes.php';
+        require __DIR__ . '/teams/routes.php';
     });
 });
 

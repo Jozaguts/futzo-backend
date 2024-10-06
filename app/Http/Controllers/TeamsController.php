@@ -47,51 +47,9 @@ class TeamsController extends Controller
         $data = $request->validated();
         try {
             DB::beginTransaction();
-            if (isset($data['president'])) {
-                $president = collect($data['president']);
-                $president->put('password', str()->random(8));
-                $president->put('email_verified_at', now());
-                $president = User::updateOrCreate(
-                    ['email' => $president->get('email')],
-                    $president->except('email')->toArray()
-                );
-                if ($request->hasFile('president.avatar')) {
-                    $media = $president
-                        ->addMedia($request->file('president.avatar'))
-                        ->toMediaCollection('avatar');
 
-                    $president->update([
-                        'avatar' => $media->getUrl(),
-                    ]);
-                }
-
-                $president->league()->associate(auth()->user()->league); // user belongs to league
-                $president->save();
-                $president->assignRole('dueño de equipo');
-                event(new RegisteredTeamPresident($president, str()->random(8)));
-            }
-            if (isset($data['coach'])) {
-                $coach = collect($data['coach']);
-                $coach->put('password', str()->random(8));
-                $coach->put('email_verified_at', now());
-                $coach = User::updateOrCreate(
-                    ['email' => $coach['email']],
-                    $coach->except('email')->toArray()
-                );
-                if ($request->hasFile('coach.avatar')) {
-                    $media = $coach
-                        ->addMedia($request->file('coach.avatar'))
-                        ->toMediaCollection('avatar');
-
-                    $coach->update([
-                        'avatar' => $media->getUrl(),
-                    ]);
-                }
-                $coach->league()->associate(auth()->user()->league); // user belongs to league
-                $coach->save();
-                $coach->assignRole('entrenador');
-                event(new RegisteredTeamCoach($coach, str()->random(8)));
-            }
+            $president = $this->createOrUpdateUser($data['president'] ?? null, $request, 'president', 'dueño de equipo', RegisteredTeamPresident::class);
+            $coach = $this->createOrUpdateUser($data['coach'] ?? null, $request, 'coach', 'entrenador', RegisteredTeamCoach::class);
 
             $team = Team::create([
                 'name' => $data['team']['name'],
@@ -111,9 +69,9 @@ class TeamsController extends Controller
                 ]);
             }
 
-            $team->leagues()->attach(auth()->user()->league_id); // team belongs to league
-            $team->categories()->attach($data['team']['category_id']); // team belongs to category
-            $team->tournaments()->attach($data['team']['tournament_id']);  // team belongs to tournament
+            $team->leagues()->attach(auth()->user()->league_id);
+            $team->categories()->attach($data['team']['category_id']);
+            $team->tournaments()->attach($data['team']['tournament_id']);
             DB::commit();
             return new TeamResource($team);
         } catch (\Exception $e) {
@@ -196,5 +154,29 @@ class TeamsController extends Controller
     public function destroy($id)
     {
 
+    }
+
+    private function createOrUpdateUser($userData, $request, $role, $roleName, $eventClass)
+    {
+        if (!$userData) return null;
+
+        $user = collect($userData);
+        $temporaryPassword = str()->random(8);
+        $user->put('password', $temporaryPassword);
+        $user->put('email_verified_at', now());
+        logger('user', $user->toArray());
+        $user = User::updateOrCreate(['email' => $user->get('email')], $user->except('email')->toArray());
+
+        if ($request->hasFile("$role.avatar")) {
+            $media = $user->addMedia($request->file("$role.avatar"))->toMediaCollection('avatar');
+            $user->update(['avatar' => $media->getUrl()]);
+        }
+
+        $user->league()->associate(auth()->user()->league);
+        $user->save();
+        $user->assignRole($roleName);
+        event(new $eventClass($user, $temporaryPassword));
+
+        return $user;
     }
 }

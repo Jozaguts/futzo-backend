@@ -24,7 +24,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property int $google_id
  * @property string $email_verification_token
  */
-class User extends Authenticatable  implements MustVerifyEmail, HasMedia
+class User extends Authenticatable implements MustVerifyEmail, HasMedia
 
 {
     use HasApiTokens, HasFactory, Notifiable, HasRoles, InteractsWithMedia;
@@ -38,12 +38,15 @@ class User extends Authenticatable  implements MustVerifyEmail, HasMedia
     {
         return UserFactory::new();
     }
+
     public function sendEmailVerificationNotification(): void
     {
         $this->notify(new VerifyEmailWithToken($this->email_verification_token));
     }
+
     protected $fillable = [
         'name',
+        'last_name',
         'email',
         'email_verification_token',
         'password',
@@ -83,6 +86,7 @@ class User extends Authenticatable  implements MustVerifyEmail, HasMedia
     {
         return $this->belongsTo(League::class);
     }
+
     public function registerMediaCollections(?Media $media = null): void
     {
         $this->addMediaCollection('avatar')

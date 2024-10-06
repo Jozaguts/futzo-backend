@@ -95,31 +95,31 @@ class TeamsController extends Controller
             $team = Team::findOrFail($id);
             if (!empty($president)) {
                 $team->president->update($president->only('name')->toArray());
-                if ($request->hasFile('president.avatar')) {
+                if ($request->hasFile('president.image')) {
 
                     $media = $team->president
-                        ->addMedia($request->file('president.avatar'))
-                        ->toMediaCollection('avatar', 's3');
+                        ->addMedia($request->file('president.image'))
+                        ->toMediaCollection('image', 's3');
                     logger('media', [
                         ' president url' => $media->getUrl(),
                     ]);
                     $team->president->update([
-                        'avatar' => $media->getUrl(),
+                        'image' => $media->getUrl(),
                     ]);
                 }
             }
             if (!empty($coach)) {
                 $team->coach->update($coach->only('name')->toArray());
-                if ($request->hasFile('coach.avatar')) {
+                if ($request->hasFile('coach.image')) {
 
                     $media = $team->coach
-                        ->addMedia($request->file('coach.avatar'))
-                        ->toMediaCollection('avatar', 's3');
+                        ->addMedia($request->file('coach.image'))
+                        ->toMediaCollection('image', 's3');
                     logger('media', [
                         'coach url' => $media->getUrl(),
                     ]);
                     $team->coach->update([
-                        'avatar' => $media->getUrl(),
+                        'image' => $media->getUrl(),
                     ]);
                 }
             }
@@ -167,9 +167,9 @@ class TeamsController extends Controller
         logger('user', $user->toArray());
         $user = User::updateOrCreate(['email' => $user->get('email')], $user->except('email')->toArray());
 
-        if ($request->hasFile("$role.avatar")) {
-            $media = $user->addMedia($request->file("$role.avatar"))->toMediaCollection('avatar');
-            $user->update(['avatar' => $media->getUrl()]);
+        if ($request->hasFile("$role.image")) {
+            $media = $user->addMedia($request->file("$role.image"))->toMediaCollection('image');
+            $user->update(['image' => $media->getUrl()]);
         }
 
         $user->league()->associate(auth()->user()->league);

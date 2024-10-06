@@ -38,7 +38,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::prefix('admin')->group(function () {
         Route::put('profile/{user}', [UserController::class, 'update'])->middleware('ensureUserOwnsProfile');
-        Route::post('profile/{user}/avatar', [UserController::class, 'updateAvatar'])->middleware('ensureUserOwnsProfile');
+        Route::post('profile/{user}/image', [UserController::class, 'updateImage'])->middleware('ensureUserOwnsProfile');
         Route::put('profile/{user}/password', [UserController::class, 'updatePassword'])->middleware('ensureUserOwnsProfile');
         Route::get('leagues/football/types', [LeaguesController::class, 'getFootballTypes']);
         Route::apiResource('/roles', RoleAndPermissionsController::class);

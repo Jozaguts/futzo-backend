@@ -26,27 +26,27 @@ class TeamUpdateRequest extends FormRequest
     {
         $request = $this;
         return [
-                'team.name' => 'required',
-                'team.address' => 'nullable|json',
-                'team.image' => [
-                    'nullable',
-                    new IsImageOrUrl,
-                ],
-                'team.colors' => 'required|json',
-                'team.colors.home' => 'nullable|json',
-                'team.colors.home.primary' => 'nullable|string',
-                'team.colors.home.secondary' => 'nullable|string',
-                'team.colors.away' => 'nullable|json',
-                'team.colors.away.primary' => 'nullable|string',
-                'team.colors.away.secondary' => 'nullable|string',
-                'team.category_id' => 'required|exists:categories,id',
-                'team.tournament_id' => 'required|exists:tournaments,id',
+            'team.name' => 'required',
+            'team.address' => 'nullable|json',
+            'team.image' => [
+                'nullable',
+                new IsImageOrUrl,
+            ],
+            'team.colors' => 'required|json',
+            'team.colors.home' => 'nullable|json',
+            'team.colors.home.primary' => 'nullable|string',
+            'team.colors.home.secondary' => 'nullable|string',
+            'team.colors.away' => 'nullable|json',
+            'team.colors.away.primary' => 'nullable|string',
+            'team.colors.away.secondary' => 'nullable|string',
+            'team.category_id' => 'required|exists:categories,id',
+            'team.tournament_id' => 'required|exists:tournaments,id',
 
-                'president.name' => 'required|string',
-                'president.avatar' => ['nullable', new IsImageOrUrl],
+            'president.name' => 'required|string',
+            'president.image' => ['nullable', new IsImageOrUrl],
 
-                'coach.name' => 'required|string',
-                'coach.avatar' => ['nullable', new IsImageOrUrl],
+            'coach.name' => 'required|string',
+            'coach.image' => ['nullable', new IsImageOrUrl],
 
         ];
     }

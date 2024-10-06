@@ -53,7 +53,7 @@ class User extends Authenticatable implements MustVerifyEmail, HasMedia
         'facebook_id',
         'google_id',
         'phone',
-        'avatar',
+        'image',
         'email_verified_at',
         'league_id',
     ];
@@ -89,7 +89,7 @@ class User extends Authenticatable implements MustVerifyEmail, HasMedia
 
     public function registerMediaCollections(?Media $media = null): void
     {
-        $this->addMediaCollection('avatar')
+        $this->addMediaCollection('image')
             ->singleFile()
             ->storeConversionsOnDisk('s3')
             ->registerMediaConversions(function (Media $media = null) {

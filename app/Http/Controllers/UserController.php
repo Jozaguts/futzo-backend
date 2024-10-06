@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\UserAvatarUpdateRequest;
+use App\Http\Requests\UserImageUpdateRequest;
 use App\Http\Requests\UserPasswordUpdateRequest;
 use App\Http\Requests\UserUpdateRequest;
 use App\Models\User;
@@ -14,32 +14,32 @@ class UserController extends Controller
     {
         $validated = $request->validated();
 
-        $response =  $user->update($validated);
+        $response = $user->update($validated);
 
         return response()->json(['success' => $response, 'message' => 'User updated successfully']);
     }
 
-    public function updateAvatar(UserAvatarUpdateRequest $request, User $user): JsonResponse
+    public function updateAvatar(UserImageUpdateRequest $request, User $user): JsonResponse
     {
         $validated = $request->validated();
 
 
         $url = $user
-            ->addMedia($validated['avatar'])
-            ->toMediaCollection('avatar', 's3')
+            ->addMedia($validated['image'])
+            ->toMediaCollection('image', 's3')
             ->getUrl();
 
-       $response =  $user->update(['avatar' => $url]);
+        $response = $user->update(['image' => $url]);
 
 
-        return response()->json(['success' => $response, 'message' => 'User avatar updated successfully']);
+        return response()->json(['success' => $response, 'message' => 'User image updated successfully']);
     }
 
     public function updatePassword(UserPasswordUpdateRequest $request, User $user): JsonResponse
     {
         $validated = $request->validated();
 
-        $response =  $user->update(['password' => bcrypt($validated['new_password'])]);
+        $response = $user->update(['password' => bcrypt($validated['new_password'])]);
 
         return response()->json(['success' => $response, 'message' => 'User password updated successfully']);
     }

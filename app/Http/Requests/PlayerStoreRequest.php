@@ -30,7 +30,7 @@ class PlayerStoreRequest extends FormRequest
             'basic.nationality' => 'nullable|string',
             'basic.team_id' => 'nullable|integer',
             'basic.category_id' => 'nullable|integer',
-            'basic.avatar' => 'nullable|image',
+            'basic.image' => 'nullable|image',
             'details.position' => 'nullable|string',
             'details.number' => 'nullable|integer',
             'details.height' => 'nullable|numeric',

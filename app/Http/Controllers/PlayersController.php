@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\RegisteredPlayer;
 use App\Http\Requests\PlayerStoreRequest;
 use App\Http\Requests\PlayerUpdateRequest;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 
 class PlayersController extends Controller
@@ -22,13 +25,23 @@ class PlayersController extends Controller
 
     public function store(PlayerStoreRequest $request)
     {
-        $data = $request->safe()->collect();
         try {
+
             DB::beginTransaction();
-            $userData = $data->only(['basic.name', 'basic.last_name', 'contact.email', 'contact.phone', 'basic.avatar']);
-            $playerdata = $data->only(['basic.birthdate', 'basic.team_id', 'basic.category_id', 'basic.nationality', 'details.*']);
-
-
+            $userData = $request->userFormData();
+            $temporaryPassword = str()->random(8);
+            $userData['password'] = $temporaryPassword;
+            $playerData = $request->playerFormData();
+            $user = User::create($userData);
+            $user->assignRole('jugador');
+            $user->league()->associate(auth()->user()->league);
+            $user->save();
+            $user->players()->create($playerData);
+            event(new RegisteredPlayer($user, $userData['password']));
+            if ($userData['image'] instanceof UploadedFile) {
+                $image = $user->addMediaFromRequest('basic.image')->toMediaCollection('image');
+                $user->update(['image' => $image->getUrl()]);
+            }
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();

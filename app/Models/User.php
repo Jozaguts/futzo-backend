@@ -3,10 +3,13 @@
 namespace App\Models;
 
 use App\Notifications\VerifyEmailWithToken;
+use App\Observers\UserObserver;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -23,7 +26,9 @@ use Spatie\Permission\Traits\HasRoles;
  * @property int $facebook_id
  * @property int $google_id
  * @property string $email_verification_token
+ * @method static create(array $userData)
  */
+#[ObservedBy([UserObserver::class])]
 class User extends Authenticatable implements MustVerifyEmail, HasMedia
 
 {
@@ -32,7 +37,7 @@ class User extends Authenticatable implements MustVerifyEmail, HasMedia
     /**
      * The attributes that are mass assignable.
      *
-     * @var array<int, string>
+     * @return UserFactory
      */
     protected static function newFactory(): UserFactory
     {
@@ -87,6 +92,11 @@ class User extends Authenticatable implements MustVerifyEmail, HasMedia
         return $this->belongsTo(League::class);
     }
 
+    public function players(): HasMany
+    {
+        return $this->hasMany(Player::class);
+    }
+
     public function registerMediaCollections(?Media $media = null): void
     {
         $this->addMediaCollection('image')
@@ -101,4 +111,6 @@ class User extends Authenticatable implements MustVerifyEmail, HasMedia
                     ->height(400);
             });
     }
+
+
 }

@@ -30,7 +30,7 @@ class PlayerStoreRequest extends FormRequest
             'basic.nationality' => 'nullable|string',
             'basic.team_id' => 'nullable|integer',
             'basic.category_id' => 'nullable|integer',
-            'basic.image' => 'nullable|image',
+            'basic.image' => 'required|file|mimes:jpg,jpeg,png|max:2048',
             'details.position' => 'nullable|string',
             'details.number' => 'nullable|integer',
             'details.height' => 'nullable|numeric',
@@ -40,6 +40,35 @@ class PlayerStoreRequest extends FormRequest
             'contact.email' => 'required|email',
             'contact.phone' => 'nullable|string',
             'contact.notes' => 'nullable|string',
+        ];
+    }
+
+    public function userFormData(): array
+    {
+        return [
+            'name' => $this->validated('basic.name'),
+            'last_name' => $this->validated('basic.last_name'),
+            'email' => $this->validated('contact.email'),
+            'phone' => $this->validated('contact.phone'),
+            'image' => $this->validated('basic.image'),
+        ];
+    }
+
+    public function playerFormData(): array
+    {
+        return [
+            'birthdate' => $this->validated('basic.birthdate'),
+            'team_id' => $this->validated('basic.team_id'),
+            'category_id' => $this->validated('basic.category_id'), // todo  crear una tabla pivot category_player
+            'nationality' => $this->validated('basic.national'),
+            'position_id' => $this->validated('details.position'), // todo cambiar por position_id
+            'number' => $this->validated('details.number'),
+            'height' => $this->validated('details.height'),
+            'weight' => $this->validated('details.weight'),
+            'dominant_foot' => $this->validated('details.dominant_foot'),
+            'medical_notes' => $this->validated('details.medical_notes'),
+//            'notes' => $this->validated('contact.notes'), // todo cambiar para la tabla users
+
         ];
     }
 }

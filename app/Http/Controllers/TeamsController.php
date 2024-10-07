@@ -164,7 +164,7 @@ class TeamsController extends Controller
         $temporaryPassword = str()->random(8);
         $user->put('password', $temporaryPassword);
         $user->put('email_verified_at', now());
-        logger('user', $user->toArray());
+
         $user = User::updateOrCreate(['email' => $user->get('email')], $user->except('email')->toArray());
 
         if ($request->hasFile("$role.image")) {

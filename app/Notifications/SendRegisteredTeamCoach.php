@@ -14,7 +14,9 @@ class SendRegisteredTeamCoach extends Notification implements ShouldQueue
     /**
      * Create a new notification instance.
      */
-    public function __construct(public string $temporaryPassword){}
+    public function __construct(public string $temporaryPassword)
+    {
+    }
 
     /**
      * Get the notification's delivery channels.
@@ -38,7 +40,7 @@ class SendRegisteredTeamCoach extends Notification implements ShouldQueue
             ->line('Para iniciar sesión, utiliza tu correo electrónico y la siguiente contraseña temporal:')
             ->line('Correo Electrónico: ' . $notifiable->email)
             ->line('Contraseña: ' . $this->temporaryPassword)
-            ->action('Iniciar Sesión', url('https://futzo.com/login'))
+            ->action('Iniciar Sesión', url('https://futzo.io/login'))
             ->line('Te recomendamos cambiar tu contraseña al iniciar sesión.');
     }
 

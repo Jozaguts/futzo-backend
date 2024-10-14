@@ -25,30 +25,32 @@ class TournamentStoreRequest extends FormRequest
      */
     public function rules()
     {
-        return[
-            'name' => [
+        return [
+            'basic.name' => [
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('tournaments')->where(function ($query) {
+                Rule::unique('tournaments', 'name')->where(function ($query) {
                     return $query->where('category_id', $this->category_id);
-                }),],
-            'tournament_format_id' => 'exists:tournament_formats,id',
-            'start_date' =>'string|nullable',
-            'end_date' => 'string|nullable',
-            'prize' => 'string|nullable',
-            'winner' => 'string|nullable',
-            'description' => 'string|nullable',
-            'category_id' => 'exists:categories,id|nullable',
-            'status' => 'string|nullable',
-            'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'location' => 'required|json',
+                })
+            ],
+            'basic.image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'basic.tournament_format_id' => 'exists:tournament_formats,id',
+            'basic.category_id' => 'exists:categories,id|nullable',
+            'details.start_date' => 'string|nullable',
+            'details.end_date' => 'string|nullable',
+            'details.prize' => 'string|nullable',
+            'details.winner' => 'string|nullable',
+            'details.description' => 'string|nullable',
+            'details.status' => 'string|nullable',
+            'details.location' => 'required|json',
         ];
     }
+
     public function messages()
     {
         return [
-            'name.unique' => 'El nombre del torneo ya ha sido tomado.',
+            'basic.name.unique' => 'El nombre del torneo ya ha sido tomado.',
         ];
     }
 }

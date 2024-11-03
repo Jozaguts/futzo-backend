@@ -31,10 +31,10 @@ class TournamentStoreRequest extends FormRequest
                 'string',
                 'max:255',
                 Rule::unique('tournaments', 'name')->where(function ($query) {
-                    return $query->where('category_id', $this->category_id);
+                    return $query->where('category_id', $this->input('basic.category_id'));
                 })
             ],
-            'basic.image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'basic.image' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'basic.tournament_format_id' => 'exists:tournament_formats,id',
             'basic.category_id' => 'exists:categories,id|nullable',
             'details.start_date' => 'string|nullable',

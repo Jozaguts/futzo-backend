@@ -2,7 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Models\Category;
+use App\Models\Location;
 use App\Models\Tournament;
+use App\Models\TournamentFormat;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -12,6 +15,7 @@ use Tests\TestCase;
 class TournamentTest extends TestCase
 {
     use RefreshDatabase, InitUser;
+
     // declare Enum of status
     const STATUS = ['creado', 'en curso', 'completado', 'cancelado'];
 
@@ -19,12 +23,12 @@ class TournamentTest extends TestCase
     {
         $this->initUser();
 
-        $response = $this->json('GET','/api/v1/admin/tournaments');
+        $response = $this->json('GET', '/api/v1/admin/tournaments');
 
         $response->assertStatus(200)
             ->assertJsonStructure([
-                'data' =>[
-                    "categories" =>  [
+                'data' => [
+                    "categories" => [
                         "*" => [
                             "id",
                             "name",
@@ -63,11 +67,11 @@ class TournamentTest extends TestCase
     public function test_tournament_pagination()
     {
         $this->initUser();
-        $response = $this->json('GET','/api/v1/admin/tournaments?page=1&per_page=10');
+        $response = $this->json('GET', '/api/v1/admin/tournaments?page=1&per_page=10');
         $response->assertStatus(200)
             ->assertJsonStructure([
-                'data' =>[
-                    "categories" =>  [
+                'data' => [
+                    "categories" => [
                         "*" => [
                             "id",
                             "name",
@@ -108,67 +112,27 @@ class TournamentTest extends TestCase
         $this->initUser();
         Storage::fake('public');
         $image = UploadedFile::fake()->image('logo-test.jpg')->mimeType('image/jpeg');
-        $autoCompletePrediction = json_encode([
-            'description' => 'La Sabana, San José Province, San José, Sabana, Costa Rica',
-            'matched_substrings' => [
-                [
-                    'length' => 9,
-                    'offset' => 0
-                ]
+        $format = TournamentFormat::factory()->create(
+            config('constants.tournament_formats')[0]
+        );
+        $category = Category::factory()->create();
+        $location = json_encode(config('constants.address'), true);
+        $response = $this->json('POST', '/api/v1/admin/tournaments', [
+            'basic' => [
+                'name' => fake()->name,
+                'image' => $image,
+                'tournament_format_id' => $format->first()->id,
+                'category_id' => $category->first()->id,
             ],
-            'place_id' => 'ChIJM_Dtpqv8oI8RyETi6jXqf_c',
-            'reference' => 'ChIJM_Dtpqv8oI8RyETi6jXqf_c',
-            'structured_formatting' => [
-                'main_text' => 'La Sabana',
-                'main_text_matched_substrings' => [
-                    [
-                        'length' => 9,
-                        'offset' => 0
-                    ]
-                ],
-                'secondary_text' => 'San José Province, San José, Sabana, Costa Rica'
+            'details' => [
+                'start_date' => fake()->date('Y-m-d'),
+                'end_date' => fake()->date('Y-m-d'),
+                'prize' => fake()->text(),
+                'winner' => null,
+                'description' => fake()->text(),
+                'status' => null,
+                'location' => $location,
             ],
-            'terms' => [
-                [
-                    'offset' => 0,
-                    'value' => 'La Sabana'
-                ],
-                [
-                    'offset' => 11,
-                    'value' => 'San José Province'
-                ],
-                [
-                    'offset' => 30,
-                    'value' => 'San José'
-                ],
-                [
-                    'offset' => 40,
-                    'value' => 'Sabana'
-                ],
-                [
-                    'offset' => 48,
-                    'value' => 'Costa Rica'
-                ]
-            ],
-            'types' => [
-                'establishment',
-                'tourist_attraction',
-                'point_of_interest',
-                'park'
-            ]
-        ]);
-        $response = $this->json('POST','/api/v1/admin/tournaments', [
-            'name' => 'Tournament 1',
-            'image' => $image,
-            'category_id' => 1,
-            'tournament_format_id' => 1,
-            'start_date' => '2021-12-12',
-            'end_date' => '2021-12-12',
-            'prize' => 'Prize 1',
-            'winner' => 'Winner 1',
-            'description' => 'Tournament 1 description',
-            'status' => 'creado',
-            'location' => $autoCompletePrediction
         ]);
 
         $response->assertStatus(201)
@@ -191,66 +155,31 @@ class TournamentTest extends TestCase
     public function test_update_tournament_without_image()
     {
         $this->initUser();
-        $autoCompletePrediction = json_encode([
-            'description' => 'La Sabana, San José Province, San José, Sabana, Costa Rica',
-            'matched_substrings' => [
-                [
-                    'length' => 9,
-                    'offset' => 0
-                ]
+        $format = TournamentFormat::factory()->create(
+            config('constants.tournament_formats')[0]
+        );
+        $category = Category::factory()->create();
+        $location = Location::factory()->create();
+        $tournament = Tournament::factory()->create();
+        $tournament->format()->associate($format);
+        $tournament->category()->associate($category);
+        $tournament->locations()->attach($location->id);
+        $tournament->save();
+        $response = $this->json('PUT', '/api/v1/admin/tournaments/' . $tournament->id, [
+            'basic' => [
+                'name' => fake()->name,
+                'tournament_format_id' => $tournament->format->id,
+                'category_id' => $tournament->category->id,
             ],
-            'place_id' => 'ChIJM_Dtpqv8oI8RyETi6jXqf_c',
-            'reference' => 'ChIJM_Dtpqv8oI8RyETi6jXqf_c',
-            'structured_formatting' => [
-                'main_text' => 'La Sabana',
-                'main_text_matched_substrings' => [
-                    [
-                        'length' => 9,
-                        'offset' => 0
-                    ]
-                ],
-                'secondary_text' => 'San José Province, San José, Sabana, Costa Rica'
+            'details' => [
+                'start_date' => fake()->date('Y-m-d'),
+                'end_date' => fake()->date('Y-m-d'),
+                'prize' => fake()->text(),
+                'winner' => null,
+                'description' => fake()->text(),
+                'status' => null,
+                'location' => json_encode($location->autocomplete_prediction, true),
             ],
-            'terms' => [
-                [
-                    'offset' => 0,
-                    'value' => 'La Sabana'
-                ],
-                [
-                    'offset' => 11,
-                    'value' => 'San José Province'
-                ],
-                [
-                    'offset' => 30,
-                    'value' => 'San José'
-                ],
-                [
-                    'offset' => 40,
-                    'value' => 'Sabana'
-                ],
-                [
-                    'offset' => 48,
-                    'value' => 'Costa Rica'
-                ]
-            ],
-            'types' => [
-                'establishment',
-                'tourist_attraction',
-                'point_of_interest',
-                'park'
-            ]
-        ]);
-        $tournament = Tournament::find(1);
-        $response = $this->json('PUT','/api/v1/admin/tournaments/'.$tournament->id, [
-            'name' => 'Tournament 1',
-            'category_id' => 1,
-            'tournament_format_id' => 1,
-            'start_date' => '2021-12-12',
-            'end_date' => '2021-12-12',
-            'prize' => 'Prize 1',
-            'winner' => 'Winner 1',
-            'description' => 'Tournament 1 description',
-            'location' => $autoCompletePrediction
         ]);
         $response->assertStatus(200)
             ->assertJsonStructure([
@@ -267,19 +196,29 @@ class TournamentTest extends TestCase
                 'thumbnail',
             ]);
     }
+
     public function test_update_tournament_without_location()
     {
+
         $this->initUser();
-        $tournament = Tournament::find(1);
-        $response = $this->json('PUT','/api/v1/admin/tournaments/'.$tournament->id, [
-            'name' => 'Tournament 1',
-            'category_id' => 1,
-            'tournament_format_id' => 1,
-            'start_date' => '2021-12-12',
-            'end_date' => '2021-12-12',
-            'prize' => 'Prize 1',
-            'winner' => 'Winner 1',
-            'description' => 'Tournament 1 description',
+        $location = Location::factory()->create();
+        $tournament = Tournament::factory()->create();
+        $tournament->locations()->attach($location->id);
+        $tournament->save();
+        $response = $this->json('PUT', '/api/v1/admin/tournaments/' . $tournament->id, [
+            'basic' => [
+                'name' => fake()->name,
+                'tournament_format_id' => $tournament->format->id,
+                'category_id' => $tournament->category->id,
+            ],
+            'details' => [
+                'start_date' => fake()->date('Y-m-d'),
+                'end_date' => fake()->date('Y-m-d'),
+                'prize' => fake()->text(),
+                'winner' => null,
+                'description' => fake()->text(),
+                'status' => null,
+            ],
         ]);
         $response->assertStatus(200)
             ->assertJsonStructure([
@@ -296,11 +235,12 @@ class TournamentTest extends TestCase
                 'thumbnail',
             ]);
     }
+
     public function test_change_tournament_status()
     {
         $this->initUser();
-        $tournament = Tournament::find(1);
-        $response = $this->json('PUT','/api/v1/admin/tournaments/'.$tournament->id.'/status', [
+        $tournament = Tournament::factory()->create();
+        $response = $this->json('PUT', '/api/v1/admin/tournaments/' . $tournament->id . '/status', [
             'status' => self::STATUS[1]
         ]);
         $response->assertStatus(200)

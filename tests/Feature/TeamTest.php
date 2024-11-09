@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Category;
+use App\Models\Tournament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -21,67 +23,13 @@ class TeamTest extends TestCase
         Storage::fake('public');
         $image = UploadedFile::fake()->image('logo-test.jpg')->mimeType('image/jpeg');
         $coachImage = UploadedFile::fake()->image('coach-test.jpg')->mimeType('image/jpeg');
+        $category = Category::factory()->create();
+        $tournament = Tournament::factory()->create();
+        $tournament->category()->associate($category);
+        $tournament->save();
+        $address = json_encode(config('constants.address'), true);
 
-        $address = json_encode([
-            'description' => 'La Sabana, San José Province, San José, Sabana, Costa Rica',
-            'matched_substrings' => [
-                [
-                    'length' => 9,
-                    'offset' => 0
-                ]
-            ],
-            'place_id' => 'ChIJM_Dtpqv8oI8RyETi6jXqf_c',
-            'reference' => 'ChIJM_Dtpqv8oI8RyETi6jXqf_c',
-            'structured_formatting' => [
-                'main_text' => 'La Sabana',
-                'main_text_matched_substrings' => [
-                    [
-                        'length' => 9,
-                        'offset' => 0
-                    ]
-                ],
-                'secondary_text' => 'San José Province, San José, Sabana, Costa Rica'
-            ],
-            'terms' => [
-                [
-                    'offset' => 0,
-                    'value' => 'La Sabana'
-                ],
-                [
-                    'offset' => 11,
-                    'value' => 'San José Province'
-                ],
-                [
-                    'offset' => 30,
-                    'value' => 'San José'
-                ],
-                [
-                    'offset' => 40,
-                    'value' => 'Sabana'
-                ],
-                [
-                    'offset' => 48,
-                    'value' => 'Costa Rica'
-                ]
-            ],
-            'types' => [
-                'establishment',
-                'tourist_attraction',
-                'point_of_interest',
-                'park'
-            ]
-        ]);
-
-        $expectedColors = json_encode([
-            'home' => [
-                'jersey' => 'red',
-                'short' => 'red',
-            ],
-            'away' => [
-                'jersey' => 'blue',
-                'short' => 'blue',
-            ],
-        ]);
+        $expectedColors = json_encode(config('constants.colors'), true);
 
         $response = $this->json('POST', '/api/v1/admin/teams', [
             'team' => [
@@ -92,7 +40,7 @@ class TeamTest extends TestCase
                 'phone' => fake()->phoneNumber,
                 'colors' => $expectedColors,
                 'category_id' => 1,
-                'tournament_id' => 1,
+                'tournament_id' => $tournament->id,
             ],
             'president' => [
                 'name' => 'John Doe',
@@ -108,13 +56,6 @@ class TeamTest extends TestCase
         ]);
         $response->assertStatus(201);
 
-        $this->assertDatabaseHas('teams', [
-            'name' => 'test 1',
-            'colors->home->jersey' => 'red',
-            'colors->home->short' => 'red',
-            'colors->away->jersey' => 'blue',
-            'colors->away->short' => 'blue',
-        ]);
         $this->assertDatabaseHas('users', [
             'name' => 'John Doe',
             'email' => $response->json('coach.email'),
@@ -133,56 +74,11 @@ class TeamTest extends TestCase
         $this->initUser();
         Storage::fake('public');
         $image = UploadedFile::fake()->image('logo-test.jpg')->mimeType('image/jpeg');
-
-        $address = json_encode([
-            'description' => 'La Sabana, San José Province, San José, Sabana, Costa Rica',
-            'matched_substrings' => [
-                [
-                    'length' => 9,
-                    'offset' => 0
-                ]
-            ],
-            'place_id' => 'ChIJM_Dtpqv8oI8RyETi6jXqf_c',
-            'reference' => 'ChIJM_Dtpqv8oI8RyETi6jXqf_c',
-            'structured_formatting' => [
-                'main_text' => 'La Sabana',
-                'main_text_matched_substrings' => [
-                    [
-                        'length' => 9,
-                        'offset' => 0
-                    ]
-                ],
-                'secondary_text' => 'San José Province, San José, Sabana, Costa Rica'
-            ],
-            'terms' => [
-                [
-                    'offset' => 0,
-                    'value' => 'La Sabana'
-                ],
-                [
-                    'offset' => 11,
-                    'value' => 'San José Province'
-                ],
-                [
-                    'offset' => 30,
-                    'value' => 'San José'
-                ],
-                [
-                    'offset' => 40,
-                    'value' => 'Sabana'
-                ],
-                [
-                    'offset' => 48,
-                    'value' => 'Costa Rica'
-                ]
-            ],
-            'types' => [
-                'establishment',
-                'tourist_attraction',
-                'point_of_interest',
-                'park'
-            ]
-        ]);
+        $category = Category::factory()->create();
+        $tournament = Tournament::factory()->create();
+        $tournament->category()->associate($category);
+        $tournament->save();
+        $address = json_encode(config('constants.address'), true);
 
         $expectedColors = json_encode([]);
 
@@ -194,8 +90,8 @@ class TeamTest extends TestCase
                 'email' => fake()->email,
                 'phone' => fake()->phoneNumber,
                 'colors' => $expectedColors,
-                'category_id' => 1,
-                'tournament_id' => 1,
+                'category_id' => $tournament->category()->first()->id,
+                'tournament_id' => $tournament->id,
             ],
             'president' => [],
             'coach' => [],

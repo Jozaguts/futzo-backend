@@ -31,7 +31,7 @@ class PlayerStoreRequest extends FormRequest
             'basic.team_id' => 'nullable|integer',
             'basic.category_id' => 'nullable|integer',
             'basic.image' => 'file|mimes:jpg,jpeg,png|max:2048',
-            'details.position' => 'nullable|string',
+            'details.position_id' => 'nullable|exists:positions,id',
             'details.number' => 'nullable|integer',
             'details.height' => 'nullable|numeric',
             'details.weight' => 'nullable|numeric',
@@ -61,7 +61,7 @@ class PlayerStoreRequest extends FormRequest
             'team_id' => $this->validated('basic.team_id'),
             'category_id' => $this->validated('basic.category_id'), // todo  crear una tabla pivot category_player
             'nationality' => $this->validated('basic.national'),
-            'position_id' => $this->validated('details.position'), // todo cambiar por position_id
+            'position_id' => $this->validated('details.position_id'),
             'number' => $this->validated('details.number'),
             'height' => $this->validated('details.height'),
             'weight' => $this->validated('details.weight'),

@@ -56,19 +56,19 @@ class PlayerBuilder implements IPlayerBuilder
         if (isset($this->playerData['team_id'])) {
             $team = Team::find($this->playerData['team_id']);
             $this->player->team()->associate($team);
-            $this->player->save();
+
         }
         if (isset($this->playerData['position_id'])) {
             $position = Position::find($this->playerData['position_id']);
             $this->player->position()->associate($position);
-            $this->player->save();
+
         }
         if (isset($this->playerData['category_id'])) {
             $category = Category::find($this->playerData['category_id']);
             $this->player->category()->associate($category);
-            $this->player->save();
-        }
 
+        }
+        $this->player->save();
         return $this;
     }
 

@@ -23,7 +23,7 @@ class Player extends Model
         'team_id',
         'position_id',
         'category_id',
-        'birthday',
+        'birthdate',
         'height',
         'weight',
         'dominant_foot',

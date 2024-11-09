@@ -59,8 +59,8 @@ class PlayerStoreRequest extends FormRequest
         return [
             'birthdate' => $this->validated('basic.birthdate'),
             'team_id' => $this->validated('basic.team_id'),
-            'category_id' => $this->validated('basic.category_id'), // todo  crear una tabla pivot category_player
-            'nationality' => $this->validated('basic.national'),
+            'category_id' => $this->validated('basic.category_id'),
+            'nationality' => $this->validated('basic.nationality'),
             'position_id' => $this->validated('details.position_id'),
             'number' => $this->validated('details.number'),
             'height' => $this->validated('details.height'),
@@ -68,7 +68,6 @@ class PlayerStoreRequest extends FormRequest
             'dominant_foot' => $this->validated('details.dominant_foot'),
             'medical_notes' => $this->validated('details.medical_notes'),
 //            'notes' => $this->validated('contact.notes'), // todo cambiar para la tabla users
-
         ];
     }
 }

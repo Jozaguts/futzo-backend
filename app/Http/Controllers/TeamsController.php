@@ -25,7 +25,7 @@ class TeamsController extends Controller
                 $request->get('per_page', 10),
                 ['*'],
                 'page',
-                $request->get('page', 2)
+                $request->get('page', 1)
             );
         return new TeamCollection($teams);
     }

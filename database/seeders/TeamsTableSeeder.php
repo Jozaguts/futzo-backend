@@ -13,55 +13,7 @@ class TeamsTableSeeder extends Seeder
     public function run()
     {
         $url = 'https://ui-avatars.com/api/?name=';
-        $address = json_encode([
-            'description' => 'La Sabana, San José Province, San José, Sabana, Costa Rica',
-            'matched_substrings' => [
-                [
-                    'length' => 9,
-                    'offset' => 0
-                ]
-            ],
-            'place_id' => 'ChIJM_Dtpqv8oI8RyETi6jXqf_c',
-            'reference' => 'ChIJM_Dtpqv8oI8RyETi6jXqf_c',
-            'structured_formatting' => [
-                'main_text' => 'La Sabana',
-                'main_text_matched_substrings' => [
-                    [
-                        'length' => 9,
-                        'offset' => 0
-                    ]
-                ],
-                'secondary_text' => 'San José Province, San José, Sabana, Costa Rica'
-            ],
-            'terms' => [
-                [
-                    'offset' => 0,
-                    'value' => 'La Sabana'
-                ],
-                [
-                    'offset' => 11,
-                    'value' => 'San José Province'
-                ],
-                [
-                    'offset' => 30,
-                    'value' => 'San José'
-                ],
-                [
-                    'offset' => 40,
-                    'value' => 'Sabana'
-                ],
-                [
-                    'offset' => 48,
-                    'value' => 'Costa Rica'
-                ]
-            ],
-            'types' => [
-                'establishment',
-                'tourist_attraction',
-                'point_of_interest',
-                'park'
-            ]
-        ]);
+        $address = config('constants.address');
         $password = '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi';// password
         $expectedColors = json_encode([
             'home' => [

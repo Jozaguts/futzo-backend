@@ -4,17 +4,30 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\PlayerStoreRequest;
 use App\Http\Requests\PlayerUpdateRequest;
+use App\Http\Resources\PlayerCollection;
 use App\Models\Player;
 use App\Services\PlayerService;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class PlayersController extends Controller
 {
 
-    public function index(Request $request): JsonResponse
+    public function index(Request $request)
     {
-        return response()->json(Player::with(['user:id,name,last_name'])->get());
+        $players = Player::select([
+            'id',
+            'user_id',
+            'team_id',
+            'position_id',
+            'category_id',
+            'number',
+            'birthdate',
+            'height',
+            'nationality',
+            'weight'])
+            ->with(['team:teams.id,teams.name', 'position', 'category:id,name'])
+            ->paginate($request->get('per_page', 10), ['*'], 'page', $request->get('page', 1));
+        return new PlayerCollection($players);
     }
 
     public function show($id)

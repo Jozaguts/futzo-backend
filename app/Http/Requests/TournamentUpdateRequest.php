@@ -16,22 +16,31 @@ class TournamentUpdateRequest extends FormRequest
     {
         return true;
     }
+
     public function rules(): array
     {
-        return[
-            'name' => 'string|max:255',
-            'tournament_format_id' => 'exists:tournament_formats,id',
-            'start_date' =>'string|nullable',
-            'end_date' => 'string|nullable',
-            'prize' => 'string|nullable',
-            'winner' => 'string|nullable',
-            'description' => 'string|nullable',
-            'category_id' => 'exists:categories,id|nullable',
-            'status' => 'string|nullable',
-            'image' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'location' => 'json',
+        return [
+            'basic.name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('tournaments', 'name')->where(function ($query) {
+                    return $query->where('category_id', $this->input('basic.category_id'));
+                })
+            ],
+            'basic.image' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'basic.tournament_format_id' => 'exists:tournament_formats,id',
+            'basic.category_id' => 'exists:categories,id|nullable',
+            'details.start_date' => 'string|nullable',
+            'details.end_date' => 'string|nullable',
+            'details.prize' => 'string|nullable',
+            'details.winner' => 'string|nullable',
+            'details.description' => 'string|nullable',
+            'details.status' => 'string|nullable',
+            'details.location' => 'json',
         ];
     }
+
     public function messages(): array
     {
         return [

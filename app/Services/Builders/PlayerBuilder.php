@@ -10,7 +10,6 @@ use App\Models\Position;
 use App\Models\Team;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
-use Nyholm\Psr7\UploadedFile;
 use Spatie\MediaLibrary\MediaCollections\Exceptions\FileDoesNotExist;
 use Spatie\MediaLibrary\MediaCollections\Exceptions\FileIsTooBig;
 
@@ -78,9 +77,12 @@ class PlayerBuilder implements IPlayerBuilder
      */
     public function attachImageIfPresent(): static
     {
-        if ($this->userData['image'] instanceof UploadedFile) {
-            $image = $this->user->addMediaFromRequest('basic.image')->toMediaCollection('image');
-            $this->user->update(['image' => $image->getUrl()]);
+        if (request()->hasFile('basic.image')) {
+            $url = $this->user
+                ->addMedia($this->userData['image'])
+                ->toMediaCollection('image', 's3')
+                ->getUrl();
+            $this->user->update(['image' => $url]);
         }
         return $this;
     }

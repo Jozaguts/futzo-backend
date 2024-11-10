@@ -33,6 +33,9 @@ class Player extends Model
         'birthdate'
     ];
     protected $hidden = ['created_at', 'updated_at', 'deleted_at'];
+    protected $casts = [
+        'birthdate' => 'datetime',
+    ];
 
     public function user(): BelongsTo
     {

@@ -17,10 +17,17 @@ class PlayerCollection extends ResourceCollection
         return $this->collection->map(function ($player) {
             return [
                 'id' => $player->id,
-                'name' => $player->user->name,
-                'last_name' => $player->user->last_name,
-                'birthdate' => $player->birthdate,
+                'full_name' => $player->user->full_name,
+                'birthdate' => [
+                    'date' => $player->birthdate->format('d-M-y'),
+                    'age' => $player->birthdate->age
+                ],
+                'role' => [
+                    'id' => $player->user->roles->first()->id,
+                    'name' => $player->user->roles->first()->name,
+                ],
                 'nationality' => $player->nationality,
+                'image' => $player->user->image,
                 'team' => [
                     'id' => $player->team->id,
                     'name' => $player->team->name,
@@ -29,7 +36,6 @@ class PlayerCollection extends ResourceCollection
                     'id' => $player->category->id,
                     'name' => $player->category->name,
                 ],
-                'rol' => 'Jugador', // todo
                 'position' => [
                     'id' => $player->position->id,
                     'name' => $player->position->name,

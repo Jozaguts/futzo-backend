@@ -4,9 +4,9 @@ namespace App\Models;
 
 use App\Notifications\VerifyEmailWithToken;
 use App\Observers\UserObserver;
-use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -33,16 +33,6 @@ class User extends Authenticatable implements MustVerifyEmail, HasMedia
 
 {
     use HasApiTokens, HasFactory, Notifiable, HasRoles, InteractsWithMedia;
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @return UserFactory
-     */
-    protected static function newFactory(): UserFactory
-    {
-        return UserFactory::new();
-    }
 
     public function sendEmailVerificationNotification(): void
     {
@@ -86,6 +76,13 @@ class User extends Authenticatable implements MustVerifyEmail, HasMedia
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+    protected function fullName(): Attribute
+    {
+        return Attribute::make(
+            get: fn() => "$this->name $this->last_name",
+        );
+    }
 
     public function league(): BelongsTo
     {

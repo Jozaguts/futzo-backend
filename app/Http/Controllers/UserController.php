@@ -7,6 +7,8 @@ use App\Http\Requests\UserPasswordUpdateRequest;
 use App\Http\Requests\UserUpdateRequest;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
+use Spatie\MediaLibrary\MediaCollections\Exceptions\FileDoesNotExist;
+use Spatie\MediaLibrary\MediaCollections\Exceptions\FileIsTooBig;
 
 class UserController extends Controller
 {
@@ -19,7 +21,11 @@ class UserController extends Controller
         return response()->json(['success' => $response, 'message' => 'User updated successfully']);
     }
 
-    public function updateAvatar(UserImageUpdateRequest $request, User $user): JsonResponse
+    /**
+     * @throws FileIsTooBig
+     * @throws FileDoesNotExist
+     */
+    public function updateImage(UserImageUpdateRequest $request, User $user): JsonResponse
     {
         $validated = $request->validated();
 

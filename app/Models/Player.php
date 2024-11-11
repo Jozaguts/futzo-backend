@@ -6,6 +6,7 @@ use Database\Factories\PlayerFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -67,4 +68,10 @@ class Player extends Model
         return $this->user ? $this->user->image : null;
     }
 
+    public function games(): BelongsToMany
+    {
+        return $this->belongsToMany(Game::class, 'game_player')
+            ->withPivot('entry_minute', 'exit_minute', 'goals', 'assists')
+            ->withTimestamps();
+    }
 }

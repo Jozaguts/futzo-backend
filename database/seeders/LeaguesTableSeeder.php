@@ -2,9 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\League;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 
 class LeaguesTableSeeder extends Seeder
 {
@@ -13,31 +12,7 @@ class LeaguesTableSeeder extends Seeder
      */
     public function run(): void
     {
-        $url = 'https://ui-avatars.com/api/?name=';
-        $leagues = [
-            [
-                'name' => 'Liga MX',
-                'location' => 'Mexico',
-                'football_type_id'  => 1,
-                'description' => 'La principal competición de fútbol profesional en México.',
-                'logo' => $url . 'Liga+MX&size=64',
-                'banner' => $url . 'Liga+MX&size=256',
-                'status' => 'active',
-                'creation_date' => '2021-10-10',
-            ],
-            [
-                'name' => 'MLS',
-                'football_type_id'  => 2,
-                'location' => 'USA',
-                'description' => 'Major League Soccer, la principal liga de fútbol en Estados Unidos.',
-                'logo' => $url . 'MLS&size=64',
-                'banner' => $url . 'MLS&size=256',
-                'status' => 'active',
-                'creation_date' => '2021-10-10',
-            ]
-        ];
-        foreach ($leagues as $league) {
-            DB::table('leagues')->insert($league);
-        }
+//        $url = 'https://ui-avatars.com/api/?name=';
+        League::factory()->count(3)->create();
     }
 }

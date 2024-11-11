@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Models\Country;
+use App\Models\FootballType;
 use App\Models\League;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -28,14 +30,13 @@ class LeagueFactory extends Factory
     {
 
         return [
-            'name' => 'Liga MX',
-            'location' => 'Mexico',
-            'football_type_id' => 1,
-            'description' => 'La principal competición de fútbol profesional en México.',
-            'logo' => 'https://ui-avatars.com/api/?name=Liga+MX&size=64',
-            'banner' => 'https://ui-avatars.com/api/?name=Liga+MX&size=256',
-            'status' => 'active',
-            'creation_date' => '2021-10-10',
+            'name' => fake()->word(),
+            'description' => fake()->text(20),
+            'creation_date' => fake()->dateTime(),
+            'logo' => fake()->imageUrl(),
+            'banner' => fake()->imageUrl(),
+            'country_id' => fake()->randomElement(Country::all()->pluck('id')->toArray()),
+            'football_type_id' => fake()->randomElement(FootballType::all()->pluck('id')->toArray()),
         ];
     }
 }

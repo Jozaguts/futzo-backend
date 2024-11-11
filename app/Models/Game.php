@@ -12,6 +12,12 @@ class Game extends Model
 {
     use HasFactory, SoftDeletes;
 
+    const STATUS_SCHEDULED = 'programado';
+    const STATUS_IN_PROGRESS = 'en_progreso';
+    const STATUS_COMPLETED = 'completado';
+    const STATUS_POSTPONED = 'aplazado';
+    const STATUS_CANCELED = 'cancelado';
+
     protected $fillable = [
         'date',
         'location',
@@ -21,6 +27,7 @@ class Game extends Model
         'tournament_id',
         'winner_team_id',
         'league_id',
+        'status'
     ];
     protected $casts = [
         'created_at' => 'datetime',

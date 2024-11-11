@@ -5,8 +5,12 @@ namespace Database\Factories;
 use App\Models\League;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
+/**
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\League>
+ */
 class LeagueFactory extends Factory
 {
+
     /**
      * The name of the factory's corresponding model.
      *
@@ -19,6 +23,7 @@ class LeagueFactory extends Factory
      *
      * @return array
      */
+
     public function definition()
     {
 

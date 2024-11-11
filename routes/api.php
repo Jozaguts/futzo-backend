@@ -60,6 +60,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('positions', \App\Http\Controllers\PositionsController::class);
         require __DIR__ . '/tournaments/routes.php';
         require __DIR__ . '/teams/routes.php';
+        require __DIR__ . '/dashboard/routes.php';
     });
 });
 

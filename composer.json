@@ -18,7 +18,8 @@
         "league/flysystem-aws-s3-v3": "^3.0",
         "mailersend/laravel-driver": "^2.6",
         "spatie/laravel-medialibrary": "^11.9.0",
-        "spatie/laravel-permission": "^6.9.0"
+        "spatie/laravel-permission": "^6.9.0",
+        "ext-http": "*"
     },
     "require-dev": {
         "fakerphp/faker": "^1.9.1",

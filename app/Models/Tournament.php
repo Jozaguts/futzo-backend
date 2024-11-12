@@ -20,6 +20,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 class Tournament extends Model implements HasMedia
 {
     use HasFactory, SoftDeletes, InteractsWithMedia;
+
     protected $fillable = [
         'name',
         'start_date',
@@ -37,14 +38,17 @@ class Tournament extends Model implements HasMedia
         'start_date' => 'datetime',
         'end_date' => 'datetime',
     ];
+
     protected static function booted(): void
     {
         Tournament::observe(TournamentObserver::class);
     }
+
     public function getStartDateAttribute($value): string
     {
         return date('d/m/y', strtotime($value));
     }
+
     public function getEndDateAttribute($value): string
     {
         return date('d/m/y', strtotime($value));
@@ -59,12 +63,13 @@ class Tournament extends Model implements HasMedia
     {
         return $this->belongsTo(TournamentFormat::class, 'tournament_format_id', 'id');
     }
+
     public function teams(): BelongsToMany
     {
         return $this->belongsToMany(Team::class)->using(TeamTournament::class);
     }
 
-    public function players():HasManyThrough
+    public function players(): HasManyThrough
     {
         return $this->hasManyThrough(Player::class, TeamTournament::class, 'tournament_id', 'team_id', 'id', 'team_id');
     }
@@ -83,10 +88,12 @@ class Tournament extends Model implements HasMedia
     {
         return $this->belongsTo(Category::class);
     }
+
     public function locations(): BelongsToMany
     {
         return $this->belongsToMany(Location::class, 'location_tournament')
-            ->using(LocationTournament::class);
+            ->using(LocationTournament::class)
+            ->withTimestamps();
     }
 
     public function registerMediaCollections(?Media $media = null): void

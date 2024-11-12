@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Location;
 use Illuminate\Database\Seeder;
 
 class LocationTableSeeder extends Seeder
@@ -11,15 +12,8 @@ class LocationTableSeeder extends Seeder
      */
     public function run(): void
     {
-        $location = config('constants.location');
-        $locations = [
-            [...$location, 'name' => 'Location 1'],
-            [...$location, 'name' => 'Location 2'],
-            [...$location, 'name' => 'Location 3']
-        ];
-
-        foreach ($locations as $location) {
-            \App\Models\Location::create($location);
-        }
+        Location::factory()->count(10)->create([
+            'name' => fake()->company
+        ]);
     }
 }

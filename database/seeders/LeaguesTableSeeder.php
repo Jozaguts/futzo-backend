@@ -12,7 +12,7 @@ class LeaguesTableSeeder extends Seeder
      */
     public function run(): void
     {
-//        $url = 'https://ui-avatars.com/api/?name=';
+
         League::factory()->count(3)->create();
     }
 }

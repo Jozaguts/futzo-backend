@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -46,6 +47,11 @@ class Team extends Model implements HasMedia
     public function leagues(): BelongsToMany
     {
         return $this->belongsToMany(League::class, 'league_team');
+    }
+
+    public function players(): HasMany
+    {
+        return $this->hasMany(Player::class, 'team_id');
     }
 
     public function tournaments(): BelongsToMany

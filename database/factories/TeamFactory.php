@@ -20,11 +20,11 @@ class TeamFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => $this->faker->name(),
+            'name' => $this->faker->unique()->company . ' FC',
             'address' => config('constants.address'),
-            'email' => $this->faker->unique()->safeEmail(),
+            'email' => $this->faker->unique()->safeEmail,
             'phone' => $this->faker->phoneNumber(),
-            'description' => $this->faker->text(),
+            'description' => $this->faker->sentence(10),
             'image' => $this->faker->imageUrl(),
             'colors' => config('constants.colors'),
         ];

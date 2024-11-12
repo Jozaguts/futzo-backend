@@ -16,6 +16,7 @@ class TeamCollection extends ResourceCollection
 
 
     }
+
     public function toArray(Request $request): array
     {
         return [
@@ -24,7 +25,7 @@ class TeamCollection extends ResourceCollection
                     'id' => $team->id,
                     'name' => $team->name,
                     'address' => $team->address,
-                    'slug'=> str($team->name)->slug('-'),
+                    'slug' => str($team->name)->slug('-'),
                     'email' => $team->email,
                     'phone' => $team->phone,
                     'description' => $team->description,

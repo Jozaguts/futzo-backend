@@ -19,9 +19,8 @@ class TeamsController extends Controller
 
     public function index(Request $request): TeamCollection
     {
-        $teams = Team::query()
-            ->where('league_id', auth()->user()->league_id)
-            ->orderBy('teams.created_at', $request->get('sort', 'asc'))
+        $teams = Team::
+        orderBy('teams.created_at', $request->get('sort', 'asc'))
             ->paginate(
                 $request->get('per_page', 10),
                 ['*'],

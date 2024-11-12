@@ -32,8 +32,8 @@ class TournamentFactory extends Factory
         return [
             'league_id' => null, // Esto se asignará en el seeder
             'category_id' => rand(1, 3), // ID de categoría ficticio
-            'tournament_format_id' => rand(1, 2), // ID de formato ficticio
-            'name' => 'Torneo ' . $this->faker->word,
+            'tournament_format_id' => rand(1, 4), // ID de formato ficticio
+            'name' => 'Torneo ' . $this->faker->company,
             'image' => $this->faker->imageUrl(640, 480, 'sports', true, 'tournament'),
             'thumbnail' => $this->faker->imageUrl(150, 150, 'sports', true, 'thumbnail'),
             'start_date' => $startDate,

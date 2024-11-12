@@ -21,7 +21,7 @@ class TournamentTableSeeder extends Seeder
         $format = TournamentFormat::all();
 
         foreach ($leagues as $league) {
-            Tournament::factory()->count(5)->create([
+            Tournament::factory()->count(env('TOURNAMENT_SEEDER', 1))->create([
                 'league_id' => $league->id,
                 'category_id' => $categories->random()->id,
                 'tournament_format_id' => $format->random()->id,

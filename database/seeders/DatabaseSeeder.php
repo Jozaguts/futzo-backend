@@ -31,21 +31,21 @@ class DatabaseSeeder extends Seeder
         ]);
         $user->assignRole('super administrador');
         $this->call(CountriesSeeder::class);
+        $this->call(PositionsTableSeeder::class);
         $this->call(LocationTableSeeder::class);
+        $this->call(CategoriesTableSeeder::class);
+        $this->call(TournamentFormatTableSeeder::class);
         $this->call(FootballTypesTableSedder::class);
         $this->call(LeaguesTableSeeder::class);
         $user->league_id = League::first()->id;
         $user->save();
         $this->call(UserSeeder::class);
-        $this->call(PositionsTableSeeder::class);
-        $this->call(CategoriesTableSeeder::class);
-        $this->call(TournamentFormatTableSeeder::class);
         $this->call(TournamentTableSeeder::class);
         $this->call(TeamsTableSeeder::class);
         $this->call(PlayerSeeder::class);
         $this->call(GameSeeder::class);
         $this->call(GamePlayerSeeder::class);
-
+//
         $this->call(ActionsTableSeeder::class);
         $this->call(CouponsTableSeeder::class);
 

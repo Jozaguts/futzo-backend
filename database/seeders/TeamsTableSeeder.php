@@ -20,7 +20,7 @@ class TeamsTableSeeder extends Seeder
         foreach ($leagues as $league) {
             $league->tournaments()
                 ->each(function (Tournament $tournament) use ($league) {
-                    for ($i = 1; $i <= 5; $i++) {
+                    for ($i = 1; $i <= env('TEAMS_SEADER', 2); $i++) {
                         $president = User::whereDoesntHave('roles')
                             ->where('league_id', $league->id)
                             ->inRandomOrder()

@@ -13,6 +13,6 @@ class LeaguesTableSeeder extends Seeder
     public function run(): void
     {
 
-        League::factory()->count(3)->create();
+        League::factory()->count(env('LEAGUES_SEEDER'))->create();
     }
 }

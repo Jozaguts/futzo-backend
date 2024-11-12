@@ -30,13 +30,13 @@ class LeagueFactory extends Factory
     {
 
         return [
-            'name' => fake()->word(),
+            'name' => $this->faker->company,
             'description' => fake()->text(20),
             'creation_date' => fake()->dateTime(),
             'logo' => fake()->imageUrl(),
             'banner' => fake()->imageUrl(),
             'country_id' => fake()->randomElement(Country::all()->pluck('id')->toArray()),
-            'football_type_id' => fake()->randomElement(FootballType::all()->pluck('id')->toArray()),
+            'football_type_id' => fake()->randomElement(FootballType::all()->pluck('id')->toArray()), // todo cambiar el football_type_id
         ];
     }
 }

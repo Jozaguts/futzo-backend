@@ -26,7 +26,7 @@ class DashboardStatsService
 
 
         // 2. Calcular `activePlayers` (jugadores que participaron en un partido)
-        $activePlayersCurrent = Player::whereHas('players.games', function ($query) use ($startCurrent, $endCurrent) {
+        $activePlayersCurrent = Player::whereHas('games', function ($query) use ($startCurrent, $endCurrent) {
             $query->whereBetween('games.created_at', [$startCurrent, $endCurrent]);
         })->count();
         $activePlayersPrevious = Player::whereHas('games', function ($query) use ($startPrevious, $endPrevious) {

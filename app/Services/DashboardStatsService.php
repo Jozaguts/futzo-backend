@@ -16,16 +16,18 @@ class DashboardStatsService
 
     private static function calculateStatsForPeriod(string $period): array
     {
-        // Obtener las fechas de inicio y fin del período actual y el anterior
         [$startCurrent, $endCurrent, $startPrevious, $endPrevious] = self::getDateRangeForPeriod($period);
 
-        // 1. Calcular `registeredTeams` (equipos registrados)
-        $registeredTeamsCurrent = Team::whereBetween('teams.created_at', [$startCurrent, $endCurrent])->count();
-        $registeredTeamsPrevious = Team::whereBetween('teams.created_at', [$startPrevious, $endPrevious])->count();
+        // 1. Calcular `registeredTeams`
+        $registeredTeamsCurrent = Team::whereBetween('created_at', [$startCurrent, $endCurrent])->count();
+        $registeredTeamsPrevious = Team::whereBetween('created_at', [$startPrevious, $endPrevious])->count();
         $registeredTeamsStats = self::calculateStatsValues($registeredTeamsCurrent, $registeredTeamsPrevious);
+        $registeredTeamsStats['total'] = Team::count();
+        $registeredTeamsStats['dailyData'] = self::getDailyData(Team::class, 'created_at', $period, $startCurrent, $endCurrent);
 
 
-        // 2. Calcular `activePlayers` (jugadores que participaron en un partido)
+        // 2. Calcular `activePlayers`
+        // Usamos Game en lugar de Player para calcular los jugadores activos en juegos.
         $activePlayersCurrent = Player::whereHas('games', function ($query) use ($startCurrent, $endCurrent) {
             $query->whereBetween('games.created_at', [$startCurrent, $endCurrent]);
         })->count();
@@ -33,21 +35,103 @@ class DashboardStatsService
             $query->whereBetween('games.created_at', [$startPrevious, $endPrevious]);
         })->count();
         $activePlayersStats = self::calculateStatsValues($activePlayersCurrent, $activePlayersPrevious);
+        $activePlayersStats['dailyData'] = self::getDailyData(Game::class, 'created_at', $period, $startCurrent, $endCurrent, 'players');
 
-        // 3. Calcular `completedGames` (partidos completados)
-        $completedGamesCurrent = Game::whereBetween('games.created_at', [$startCurrent, $endCurrent])
+        // 3. Calcular `completedGames`
+        $completedGamesCurrent = Game::whereBetween('created_at', [$startCurrent, $endCurrent])
             ->where('status', Game::STATUS_COMPLETED)
             ->count();
         $completedGamesPrevious = Game::whereBetween('created_at', [$startPrevious, $endPrevious])
             ->where('status', Game::STATUS_COMPLETED)
             ->count();
         $completedGamesStats = self::calculateStatsValues($completedGamesCurrent, $completedGamesPrevious);
-
+        $completedGamesStats['dailyData'] = self::getDailyData(Game::class, 'created_at', $period, $startCurrent, $endCurrent, null, ['status' => Game::STATUS_COMPLETED]);
+        $label = self::getLabel($period);
+        $registeredTeamsStats['label'] = $label;
+        $activePlayersStats['label'] = $label;
+        $completedGamesStats['label'] = $label;
         return [
             'registeredTeams' => $registeredTeamsStats,
             'activePlayers' => $activePlayersStats,
             'completedGames' => $completedGamesStats,
         ];
+    }
+
+    private static function getLabel(string $period): string
+    {
+        return match ($period) {
+            'last24Hrs' => 'vs últimas 24 hrs',
+            'lastWeek' => 'vs última semana',
+            'lastMonth' => 'vs último mes',
+            'lastYear' => 'vs últimos 12 meses'
+        };
+    }
+
+    private static function getDailyData($model, $dateColumn, $period, $start, $end, $relation = null, $conditions = []): array
+    {
+        $query = (new $model);
+
+        // Aplica condiciones adicionales si existen
+        if ($conditions) {
+            foreach ($conditions as $column => $value) {
+                $query = $query->where($column, $value);
+            }
+        }
+
+        // Configura la relación si se especifica (como `players` en `Game`)
+        if ($relation) {
+            $query = $query->whereHas($relation, function ($q) use ($dateColumn, $start, $end, $relation) {
+                // Asegúrate de que el dateColumn esté cualificado con la tabla correcta
+                $q->whereBetween($relation . '.' . $dateColumn, [$start, $end]);
+            });
+        } else {
+            // Cualifica dateColumn en el modelo principal
+            $query = $query->whereBetween((new $model)->getTable() . '.' . $dateColumn, [$start, $end]);
+        }
+
+        switch ($period) {
+            case 'last24Hrs':
+                $data = $query->selectRaw('HOUR(' . (new $model)->getTable() . '.' . $dateColumn . ') as time_unit, COUNT(*) as count')
+                    ->groupBy('time_unit')
+                    ->orderBy('time_unit')
+                    ->pluck('count', 'time_unit')
+                    ->toArray();
+                $data = array_replace(array_fill(0, 24, 0), $data);
+                break;
+
+            case 'lastWeek':
+                $data = $query->selectRaw('DAYOFWEEK(' . (new $model)->getTable() . '.' . $dateColumn . ') as time_unit, COUNT(*) as count')
+                    ->groupBy('time_unit')
+                    ->orderBy('time_unit')
+                    ->pluck('count', 'time_unit')
+                    ->toArray();
+                $data = array_replace(array_fill(1, 7, 0), $data);
+                break;
+
+            case 'lastMonth':
+                $daysInMonth = now()->daysInMonth;
+                $data = $query->selectRaw('DAY(' . (new $model)->getTable() . '.' . $dateColumn . ') as time_unit, COUNT(*) as count')
+                    ->groupBy('time_unit')
+                    ->orderBy('time_unit')
+                    ->pluck('count', 'time_unit')
+                    ->toArray();
+                $data = array_replace(array_fill(1, $daysInMonth, 0), $data);
+                break;
+
+            case 'lastYear':
+                $data = $query->selectRaw('MONTH(' . (new $model)->getTable() . '.' . $dateColumn . ') as time_unit, COUNT(*) as count')
+                    ->groupBy('time_unit')
+                    ->orderBy('time_unit')
+                    ->pluck('count', 'time_unit')
+                    ->toArray();
+                $data = array_replace(array_fill(1, 12, 0), $data);
+                break;
+
+            default:
+                throw new InvalidArgumentException("Periodo no válido");
+        }
+
+        return array_values($data);
     }
 
     private static function getDateRangeForPeriod(string $period): array
@@ -75,9 +159,10 @@ class DashboardStatsService
 
     private static function calculateStatsValues(int $current, int $previous): array
     {
+        // Calcula el porcentaje de crecimiento considerando el caso donde `previous` es 0
         $percentage = $previous > 0
             ? round((($current - $previous) / $previous) * 100, 2)
-            : ($current > 0 ? 100 : 0); // Si el anterior es 0, asumimos un 100% de incremento
+            : ($current > 0 ? round(($current - $previous) * 100, 2) : 0); // Si `previous` es 0, usa 1 como referencia para obtener el crecimiento exacto.
 
         return [
             'total' => $current,

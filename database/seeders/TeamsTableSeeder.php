@@ -25,11 +25,25 @@ class TeamsTableSeeder extends Seeder
                             ->where('league_id', $league->id)
                             ->inRandomOrder()
                             ->first();
+
+                        if (!$president) {
+                            // Si no se encuentra un usuario para el rol de presidente, se omite este equipo
+                            echo "Advertencia: No se encontró un usuario elegible para ser presidente en la liga {$league->id}.\n";
+                            continue;
+                        }
+
+                        // Seleccionar al entrenador
                         $coach = User::whereDoesntHave('roles')
                             ->where('id', '!=', $president->id)
                             ->where('league_id', $league->id)
                             ->inRandomOrder()
                             ->first();
+
+                        if (!$coach) {
+                            // Si no se encuentra un usuario para el rol de entrenador, se omite este equipo
+                            echo "Advertencia: No se encontró un usuario elegible para ser entrenador en la liga {$league->id}.\n";
+                            continue;
+                        }
                         $president->assignRole('dueño de equipo');
                         $coach->assignRole('entrenador');
                         $team = Team::factory()->create([

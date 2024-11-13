@@ -27,6 +27,7 @@ class TeamFactory extends Factory
             'description' => $this->faker->sentence(10),
             'image' => $this->faker->imageUrl(),
             'colors' => config('constants.colors'),
+            'created_at' => $this->faker->dateTimeBetween('-2 days', 'now'),
         ];
     }
 }

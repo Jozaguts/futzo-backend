@@ -5,7 +5,6 @@ namespace Database\Factories;
 use App\Models\Game;
 use App\Models\League;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Carbon;
 
 class GameFactory extends Factory
 {
@@ -18,18 +17,14 @@ class GameFactory extends Factory
         $homeTeam = $tournament->teams()->inRandomOrder()->first();
         $awayTeam = $tournament->teams()->whereNot('teams.id', $homeTeam->id)->inRandomOrder()->first();
         return [
-            'date' => $this->faker->dateTimeBetween(
-                now()->parse('first day of January ' . Carbon::now()->year),
-                now()
-            ),
+            'date' => $this->faker->dateTimeBetween('-2 days', 'now'),
             'location' => $this->faker->word(),
             'home_team_id' => $homeTeam->id,
             'away_team_id' => $awayTeam->id,
             'category_id' => $tournament->category->id,
             'league_id' => $league->id,
-            'created_at' => now(),
-            'updated_at' => now(),
-            'status' => 'completado',
+            'created_at' => $this->faker->dateTimeBetween('-2 days', 'now'),
+            'status' => Game::STATUS_COMPLETED,
             'winner_team_id' => $this->faker->randomElement([$homeTeam->id, $awayTeam->id]),
             'tournament_id' => $tournament->id,
         ];

@@ -25,7 +25,8 @@ class GamePlayerSeeder extends Seeder
                                 'entry_minute' => rand(0, 45),
                                 'exit_minute' => rand(45, 90),
                                 'goals' => rand(0, 3),
-                                'assists' => rand(0, 3)
+                                'assists' => rand(0, 3),
+                                'created_at' => fake()->randomElement([now()->startOfMonth(), now()->endOfMonth()]),
                             ]
                         ]);
                     });
@@ -36,7 +37,8 @@ class GamePlayerSeeder extends Seeder
                                 'entry_minute' => rand(0, 45),
                                 'exit_minute' => rand(45, 90),
                                 'goals' => rand(0, 3),
-                                'assists' => rand(0, 3)
+                                'assists' => rand(0, 3),
+                                'created_at' => fake()->randomElement([now()->startOfMonth(), now()->endOfMonth()]),
                             ]
                         ]);
                     });

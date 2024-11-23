@@ -29,10 +29,18 @@ class PlayersImport implements ToCollection, WithHeadingRow
 
 			DB::beginTransaction();
 			try {
-				$temporalPassword = str()->random(8);
+
 				$userData = $this->userData($row);
-				$userData['password'] = $temporalPassword;
-				$user = User::updateOrCreate(['email' => $userData['email']], $userData);
+
+				$user = User::find($userData['email']);
+				if (is_null($user)) {
+					$temporalPassword = str()->random(8);
+					$userData['password'] = $temporalPassword;
+					$user = User::create($userData);
+					event(new RegisteredPlayer($user, $temporalPassword));
+				} else {
+					$user->update($userData);
+				}
 				// assign role
 				$user->assignRole('jugador');
 				//assign league
@@ -60,7 +68,7 @@ class PlayersImport implements ToCollection, WithHeadingRow
 				}
 				$player->save();
 
-				event(new RegisteredPlayer($user, $temporalPassword));
+
 				DB::commit();
 			} catch (\Exception $e) {
 				DB::rollBack();

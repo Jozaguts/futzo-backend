@@ -17,12 +17,13 @@ class UserResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'email'=> $this->email,
+            'email' => $this->email,
             'roles' => $this->roles()->pluck('name'),
-            'league' => $this->league ?? 'No league assigned',
+            'league' => $this->league,
+            'has_league' => !!$this->league,
             'verified' => !!$this->email_verified_at,
             'phone' => $this->phone,
-            'avatar' => $this->avatar,
+            'image' => $this->image,
         ];
     }
 }

@@ -10,5 +10,7 @@ class Position extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $fillable = ['name','abbr','type'];
+    protected $fillable = ['name', 'abbr', 'type'];
+
+    protected $hidden = ['created_at', 'updated_at', 'deleted_at'];
 }

@@ -3,10 +3,13 @@
 namespace App\Models;
 
 use App\Notifications\VerifyEmailWithToken;
-use Database\Factories\UserFactory;
+use App\Observers\UserObserver;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -23,34 +26,29 @@ use Spatie\Permission\Traits\HasRoles;
  * @property int $facebook_id
  * @property int $google_id
  * @property string $email_verification_token
+ * @method static create(array $userData)
  */
-class User extends Authenticatable  implements MustVerifyEmail, HasMedia
+#[ObservedBy([UserObserver::class])]
+class User extends Authenticatable implements MustVerifyEmail, HasMedia
 
 {
     use HasApiTokens, HasFactory, Notifiable, HasRoles, InteractsWithMedia;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
-    protected static function newFactory(): UserFactory
-    {
-        return UserFactory::new();
-    }
     public function sendEmailVerificationNotification(): void
     {
         $this->notify(new VerifyEmailWithToken($this->email_verification_token));
     }
+
     protected $fillable = [
         'name',
+        'last_name',
         'email',
         'email_verification_token',
         'password',
         'facebook_id',
         'google_id',
         'phone',
-        'avatar',
+        'image',
         'email_verified_at',
         'league_id',
     ];
@@ -79,13 +77,26 @@ class User extends Authenticatable  implements MustVerifyEmail, HasMedia
         'password' => 'hashed',
     ];
 
+    protected function fullName(): Attribute
+    {
+        return Attribute::make(
+            get: fn() => "$this->name $this->last_name",
+        );
+    }
+
     public function league(): BelongsTo
     {
         return $this->belongsTo(League::class);
     }
+
+    public function players(): HasMany
+    {
+        return $this->hasMany(Player::class);
+    }
+
     public function registerMediaCollections(?Media $media = null): void
     {
-        $this->addMediaCollection('avatar')
+        $this->addMediaCollection('image')
             ->singleFile()
             ->storeConversionsOnDisk('s3')
             ->registerMediaConversions(function (Media $media = null) {
@@ -97,4 +108,6 @@ class User extends Authenticatable  implements MustVerifyEmail, HasMedia
                     ->height(400);
             });
     }
+
+
 }

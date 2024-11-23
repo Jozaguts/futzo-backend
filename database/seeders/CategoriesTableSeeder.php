@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -14,25 +13,9 @@ class CategoriesTableSeeder extends Seeder
     public function run()
     {
 
-        $categories =[
-            [
-                'name' => 'Amateur',
-                'age_range' => '*',
-                'gender' => 'male',
-            ],
-            [
-                'name' => 'Ascenso',
-                'age_range' => '*',
-                'gender' => 'male',
-            ],
-            [
-                'name' => 'Especial',
-                'age_range' => '*',
-                'gender' => 'male',
-            ],
-        ];
+        $categories = config('constants.categories');
 
-        foreach($categories as $category) {
+        foreach ($categories as $category) {
             DB::table('categories')->insert($category);
         }
     }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\DTO\TournamentDTO;
 use App\Http\Requests\TournamentStoreRequest;
 use App\Http\Requests\TournamentUpdateRequest;
 use App\Http\Requests\UpdateTournamentStatusRequest;
@@ -12,6 +13,9 @@ use App\Models\Tournament;
 use App\Models\TournamentFormat;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Spatie\MediaLibrary\MediaCollections\Exceptions\FileDoesNotExist;
+use Spatie\MediaLibrary\MediaCollections\Exceptions\FileIsTooBig;
 
 class TournamentController extends Controller
 {
@@ -20,8 +24,8 @@ class TournamentController extends Controller
 
         $tournaments = Tournament::withCount(['teams', 'players', 'games'])
             ->with([
-                'format' => function ($query){
-                    $query->select('id','name');
+                'format' => function ($query) {
+                    $query->select('id', 'name');
                 },
                 'locations'
             ])
@@ -29,60 +33,55 @@ class TournamentController extends Controller
 
         return new TournamentCollection($tournaments);
     }
+
     public function store(TournamentStoreRequest $request): JsonResponse
     {
+        try {
+            DB::beginTransaction();
+            $tourneyDto = (new TournamentDTO($request->validated()));
+            $tournament = Tournament::create($tourneyDto->basicFields());
 
-        $data = $request->safe()->collect();
+            if ($tourneyDto->hasLocation) {
+                $location = Location::updateOrCreate([
+                    'autocomplete_prediction->place_id' => $tourneyDto->location['place_id']
+                ], $tourneyDto->locationFields());
+                $tournament->locations()->attach($location->id);
+            }
 
-        $requestLocation = json_decode($data->get('location'), true);
+            if ($request->hasFile('basic.image')) {
+                $media = $tournament
+                    ->addMedia($tourneyDto->getImage())
+                    ->toMediaCollection('tournament');
 
-        $location = Location::updateOrCreate([
-            'autocomplete_prediction->place_id' => $requestLocation['place_id']
-        ],[
-            'name' => $requestLocation['structured_formatting']['main_text'],
-            'address' => $requestLocation['description'],
-            'city' => $requestLocation['terms'][2]['value'],
-            'autocomplete_prediction' => $requestLocation
-        ]);
-        $tournament = Tournament::create([
-            'name' => $data->get('name'),
-            'tournament_format_id' => $data->get('tournament_format_id'),
-            'start_date' => $data->get('start_date'),
-            'end_date' => $data->get('end_date'),
-            'prize' => $data->get('prize'),
-            'winner' => $data->get('winner'),
-            'description' => $data->get('description'),
-            'category_id' => $data->get('category_id'),
-        ]);
-        $tournament->locations()->attach($location->id);
-        if ($data->has('image')) {
-          $media =  $tournament
-               ->addMedia($data->get('image'))
-               ->toMediaCollection('tournament');
-
-            $tournament->update([
-                'image' => $media->getUrl('default'),
-                'thumbnail' => $media->getUrl('thumbnail')
-            ]);
+                $tournament->update([
+                    'image' => $media->getUrl('default'),
+                    'thumbnail' => $media->getUrl('thumbnail')
+                ]);
+            }
+            DB::commit();
+        } catch (FileIsTooBig|FileDoesNotExist $e) {
+            DB::rollBack();
+            return response()->json(['error' => $e->getMessage()], 500);
         }
-        $tournament->refresh();
         return response()->json($tournament, 201);
     }
+
     public function show(Tournament $tournament): TournamentResource
     {
         return new TournamentResource($tournament);
     }
+
     public function update(TournamentUpdateRequest $request, Tournament $tournament): TournamentResource
     {
         $data = $request->safe()->collect();
         $location = null;
 
-        if($data->has('location')) {
+        if ($data->has('location')) {
             $requestLocation = json_decode($data->get('location'), true);
 
             $location = Location::updateOrCreate([
                 'autocomplete_prediction->place_id' => $requestLocation['place_id']
-            ],[
+            ], [
                 'name' => $requestLocation['structured_formatting']['main_text'],
                 'address' => $requestLocation['description'],
                 'city' => $requestLocation['terms'][2]['value'],
@@ -92,7 +91,7 @@ class TournamentController extends Controller
         $tournament->update($data->except('location')->toArray());
 
         if ($data->has('image')) {
-            $media =  $tournament
+            $media = $tournament
                 ->addMedia($data->get('image'))
                 ->toMediaCollection('tournament');
 
@@ -107,18 +106,21 @@ class TournamentController extends Controller
         }
         return new TournamentResource($tournament);
     }
+
     public function getTournamentTypes(): JsonResponse
     {
-        $tournamentTypes = TournamentFormat::query()->select('id','name')->get();
+        $tournamentTypes = TournamentFormat::query()->select('id', 'name')->get();
 
         return response()->json($tournamentTypes);
     }
+
     public function getTournamentFormats(): JsonResponse
     {
-        $tournamentFormats = TournamentFormat::query()->select('id','name','description')->get();
+        $tournamentFormats = TournamentFormat::query()->select('id', 'name', 'description')->get();
 
         return response()->json($tournamentFormats);
     }
+
     public function updateStatus(UpdateTournamentStatusRequest $request, Tournament $tournament): JsonResponse
     {
 

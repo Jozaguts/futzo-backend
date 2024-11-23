@@ -14,7 +14,7 @@ class TournamentResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $location = $this->locations->first();
+        $location = $this->resource->locations->first();
         return [
             'id' => $this->id,
             'name' => $this->name,
@@ -25,7 +25,7 @@ class TournamentResource extends JsonResource
             'winner' => $this->winner,
             'description' => $this->description,
             'category_id' => $this->category_id,
-            'location' =>[
+            'location' => [
                 'id' => $location->id,
                 'name' => $location->name,
                 'city' => $location->city,

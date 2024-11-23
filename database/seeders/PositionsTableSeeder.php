@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -13,70 +12,110 @@ class PositionsTableSeeder extends Seeder
      */
     public function run()
     {
-        $positions =[
+        $positions = [
             [
-                'type'=> 'portero',
-                'name'=>'portero',
-                'abbr' =>'por',
+                'type' => 'portero',
+                'name' => 'Portero',
+                'abbr' => 'POR',
             ],
             [
-                'type'=> 'defensa',
-                'name'=>'carrilero',
-                'abbr' =>'car',
+                'type' => 'defensa',
+                'name' => 'Defensa Central',
+                'abbr' => 'DC',
             ],
             [
-                'type'=> 'defensa',
-                'name'=>'libero',
-                'abbr' =>'lib',
+                'type' => 'defensa',
+                'name' => 'Lateral Derecho',
+                'abbr' => 'LD',
             ],
             [
-                'type'=> 'defensa',
-                'name'=>'central',
-                'abbr' =>'cen',
+                'type' => 'defensa',
+                'name' => 'Lateral Izquierdo',
+                'abbr' => 'LI',
             ],
             [
-                'type'=> 'defensa',
-                'name'=>'lateral',
-                'abbr' =>'lat',
+                'type' => 'defensa',
+                'name' => 'Defensa Central Derecho',
+                'abbr' => 'DCD',
             ],
             [
-                'type'=> 'medio',
-                'name'=> 'pivote',
-                'abbr' =>'piv',
+                'type' => 'defensa',
+                'name' => 'Defensa Central Izquierdo',
+                'abbr' => 'DCI',
             ],
             [
-                'type'=> 'medio',
-                'name'=> 'interior',
-                'abbr' =>'int',
+                'type' => 'defensa',
+                'name' => 'Lateral Volante Derecho',
+                'abbr' => 'LVD',
             ],
             [
-                'type'=> 'medio',
-                'name'=> 'media punta',
-                'abbr' =>'mep',
+                'type' => 'defensa',
+                'name' => 'Lateral Volante Izquierdo',
+                'abbr' => 'LVI',
             ],
             [
-                'type'=> 'medio',
-                'name'=> 'volante',
-                'abbr' =>'vol',
+                'type' => 'medio',
+                'name' => 'Mediocentro Defensivo',
+                'abbr' => 'MCD',
             ],
             [
-                'type'=> 'delantero',
-                'name'=> 'extremo',
-                'abbr' =>'ext',
+                'type' => 'medio',
+                'name' => 'Mediocentro',
+                'abbr' => 'MC',
             ],
             [
-                'type'=> 'delantero',
-                'name'=> 'delantero centro',
-                'abbr' =>'dec',
+                'type' => 'medio',
+                'name' => 'Mediocentro Ofensivo',
+                'abbr' => 'MCO',
             ],
             [
-                'type'=> 'delantero',
-                'name'=> 'segundo delantero',
-                'abbr' =>'des',
+                'type' => 'delantero',
+                'name' => 'Extremo Derecho',
+                'abbr' => 'ED',
+            ],
+            [
+                'type' => 'delantero',
+                'name' => 'Extremo Izquierdo',
+                'abbr' => 'EI',
+            ],
+            [
+                'type' => 'medio',
+                'name' => 'Interior Derecho',
+                'abbr' => 'ID',
+            ],
+            [
+                'type' => 'medio',
+                'name' => 'Interior Izquierdo',
+                'abbr' => 'II',
+            ],
+            [
+                'type' => 'delantero',
+                'name' => 'Delantero Centro',
+                'abbr' => 'DC',
+            ],
+            [
+                'type' => 'delantero',
+                'name' => 'Delantero',
+                'abbr' => 'DEL',
+            ],
+            [
+                'type' => 'delantero',
+                'name' => 'Segundo Delantero',
+                'abbr' => 'SD',
+            ],
+            [
+                'type' => 'delantero',
+                'name' => 'Extremo Derecho',
+                'abbr' => 'ED',
+            ],
+            [
+                'type' => 'delantero',
+                'name' => 'Extremo Izquierdo',
+                'abbr' => 'EI',
             ],
         ];
 
-        foreach($positions as $position){
+        foreach ($positions as $position) {
             DB::table('positions')->insert($position);
         }
     }

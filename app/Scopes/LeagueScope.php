@@ -17,8 +17,11 @@ class LeagueScope implements Scope
     {
         if (auth()->check()) {
             if ($model instanceof Team) {
-                $builder->join('league_team', 'teams.id', '=', 'league_team.team_id')
-                    ->where('league_team.league_id', auth()->user()->league_id);
+                $teamIds = \DB::table('league_team')
+                    ->where('league_id', auth()->user()->league_id)
+                    ->pluck('team_id');
+
+                $builder->whereIn('teams.id', $teamIds);
             } elseif ($model instanceof Tournament) {
                 $builder->where('league_id', auth()->user()->league_id);
             }

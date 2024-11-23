@@ -2,10 +2,14 @@
     "name": "laravel/laravel",
     "type": "project",
     "description": "The skeleton application for the Laravel framework.",
-    "keywords": ["laravel", "framework"],
+    "keywords": [
+        "laravel",
+        "framework"
+    ],
     "license": "MIT",
     "require": {
-        "php": "^8.1",
+        "php": "^8.2",
+        "ext-http": "*",
         "guzzlehttp/guzzle": "^7.2",
         "laravel/framework": "^11.0",
         "laravel/sanctum": "^4.0",
@@ -13,6 +17,7 @@
         "laravel/tinker": "^2.8",
         "laraveles/spanish": "^1.5",
         "league/flysystem-aws-s3-v3": "^3.0",
+        "maatwebsite/excel": "^3.1",
         "mailersend/laravel-driver": "^2.6",
         "spatie/laravel-medialibrary": "^11.9.0",
         "spatie/laravel-permission": "^6.9.0"
@@ -57,7 +62,9 @@
     },
     "extra": {
         "laravel": {
-            "dont-discover": ["laravel/telescope"]
+            "dont-discover": [
+                "laravel/telescope"
+            ]
         }
     },
     "config": {

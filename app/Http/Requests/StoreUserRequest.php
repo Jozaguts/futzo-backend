@@ -23,8 +23,12 @@ class StoreUserRequest extends FormRequest
     {
         return [
             'name' => 'required',
+            'last_name' => 'nullable',
+            'phone' => 'nullable|unique:users',
             'email' => 'required|unique:users',
-            'password' => 'required'
+            'password' => 'required',
+            'image' => 'nullable',
+            'league_id' => 'nullable',
         ];
     }
 }

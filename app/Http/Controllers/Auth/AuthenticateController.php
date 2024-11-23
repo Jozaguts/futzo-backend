@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\Auth;
+
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\StoreUserRequest;
 use App\Models\User;
@@ -22,13 +23,13 @@ class AuthenticateController extends Controller
         try {
             DB::beginTransaction();
             $validated['email_verification_token'] = rand(1000, 9999);
-            $validated['avatar'] = 'https://ui-avatars.com/api/?name='.$validated['name'].'&color=9155fd&background=F9FAFB';
+            $validated['image'] = 'https://ui-avatars.com/api/?name=' . $validated['name'] . '&color=9155fd&background=F9FAFB';
             $user = User::create($validated);
             $user->assignRole('predeterminado');
             event(new Registered($user));
             DB::commit();
             return response()->json(['success' => true, 'message' => 'User created successfully'], 201);
-        }catch(\Exception $e){
+        } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['success' => false, 'message' => $e->getMessage()], 401);
         }
@@ -47,6 +48,7 @@ class AuthenticateController extends Controller
             'message' => 'Login successful'
         ]);
     }
+
     public function logout(Request $request): Response
     {
         Auth::guard('web')->logout();

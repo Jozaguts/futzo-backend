@@ -14,8 +14,8 @@ class PlayerCollection extends ResourceCollection
 	 */
 	public function toArray(Request $request): array
 	{
-		return $this->collection->map(function ($player) {
-			return [
+		return $this->collection
+			->map(fn($player) => [
 				'id' => $player->id,
 				'full_name' => $player->user->full_name,
 				'birthdate' => [
@@ -44,7 +44,16 @@ class PlayerCollection extends ResourceCollection
 				'number' => $player->number,
 				'height' => $player->height,
 				'weight' => $player->weight,
-			];
-		})->toArray();
+			])->toArray();
+	}
+
+	public function paginationInformation(): array
+	{
+		return ['pagination' => [
+			'currentPage' => $this->currentPage(),
+			'lastPage' => $this->lastPage(),
+			'perPage' => $this->perPage(),
+			'total' => $this->total(),
+		]];
 	}
 }

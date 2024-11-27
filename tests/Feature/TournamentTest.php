@@ -94,10 +94,11 @@ class TournamentTest extends TestCase
 				'tournament_format_id' => $format->first()->id,
 				'football_type_id' => $footballType->first()->id,
 				'category_id' => $category->first()->id,
+				'start_date' => fake()->date(),
+				'end_date' => fake()->date(),
 			],
 			'details' => [
-				'start_date' => fake()->date('Y-m-d'),
-				'end_date' => fake()->date('Y-m-d'),
+
 				'prize' => fake()->text(),
 				'winner' => null,
 				'description' => fake()->text(),

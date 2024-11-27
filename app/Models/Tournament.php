@@ -19,95 +19,96 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 #[ScopedBy(\App\Scopes\LeagueScope::class)]
 class Tournament extends Model implements HasMedia
 {
-    use HasFactory, SoftDeletes, InteractsWithMedia;
+	use HasFactory, SoftDeletes, InteractsWithMedia;
 
-    protected $fillable = [
-        'name',
-        'start_date',
-        'end_date',
-        'prize',
-        'winner',
-        'description',
-        'status',
-        'category_id',
-        'tournament_format_id',
-        'image',
-        'thumbnail'
-    ];
-    protected $casts = [
-        'start_date' => 'datetime',
-        'end_date' => 'datetime',
-    ];
+	protected $fillable = [
+		'name',
+		'start_date',
+		'end_date',
+		'prize',
+		'winner',
+		'description',
+		'status',
+		'category_id',
+		'tournament_format_id',
+		'image',
+		'thumbnail',
+		'football_type_id'
+	];
+	protected $casts = [
+		'start_date' => 'datetime',
+		'end_date' => 'datetime',
+	];
 
-    protected static function booted(): void
-    {
-        Tournament::observe(TournamentObserver::class);
-    }
+	protected static function booted(): void
+	{
+		Tournament::observe(TournamentObserver::class);
+	}
 
-    public function getStartDateAttribute($value): string
-    {
-        return date('d/m/y', strtotime($value));
-    }
+	public function getStartDateAttribute($value): string
+	{
+		return date('d/m/y', strtotime($value));
+	}
 
-    public function getEndDateAttribute($value): string
-    {
-        return date('d/m/y', strtotime($value));
-    }
+	public function getEndDateAttribute($value): string
+	{
+		return date('d/m/y', strtotime($value));
+	}
 
-    protected static function newFactory(): TournamentFactory
-    {
-        return TournamentFactory::new();
-    }
+	protected static function newFactory(): TournamentFactory
+	{
+		return TournamentFactory::new();
+	}
 
-    public function format(): BelongsTo
-    {
-        return $this->belongsTo(TournamentFormat::class, 'tournament_format_id', 'id');
-    }
+	public function format(): BelongsTo
+	{
+		return $this->belongsTo(TournamentFormat::class, 'tournament_format_id', 'id');
+	}
 
-    public function teams(): BelongsToMany
-    {
-        return $this->belongsToMany(Team::class)->using(TeamTournament::class);
-    }
+	public function teams(): BelongsToMany
+	{
+		return $this->belongsToMany(Team::class)->using(TeamTournament::class);
+	}
 
-    public function players(): HasManyThrough
-    {
-        return $this->hasManyThrough(Player::class, TeamTournament::class, 'tournament_id', 'team_id', 'id', 'team_id');
-    }
+	public function players(): HasManyThrough
+	{
+		return $this->hasManyThrough(Player::class, TeamTournament::class, 'tournament_id', 'team_id', 'id', 'team_id');
+	}
 
-    public function games(): HasMany
-    {
-        return $this->hasMany(Game::class);
-    }
+	public function games(): HasMany
+	{
+		return $this->hasMany(Game::class);
+	}
 
-    public function league(): BelongsTo
-    {
-        return $this->belongsTo(League::class);
-    }
+	public function league(): BelongsTo
+	{
+		return $this->belongsTo(League::class);
+	}
 
-    public function category(): BelongsTo
-    {
-        return $this->belongsTo(Category::class);
-    }
+	public function category(): BelongsTo
+	{
+		return $this->belongsTo(Category::class);
+	}
 
-    public function locations(): BelongsToMany
-    {
-        return $this->belongsToMany(Location::class, 'location_tournament')
-            ->using(LocationTournament::class)
-            ->withTimestamps();
-    }
+	public function locations(): BelongsToMany
+	{
+		return $this->belongsToMany(Location::class, 'location_tournament')
+			->using(LocationTournament::class)
+			->withTimestamps();
+	}
 
-    public function registerMediaCollections(?Media $media = null): void
-    {
-        $this->addMediaCollection('tournament')
-            ->singleFile()
-            ->storeConversionsOnDisk('s3')
-            ->registerMediaConversions(function (Media $media = null) {
-                $this->addMediaConversion('thumbnail')
-                    ->width(150)
-                    ->height(150);
-                $this->addMediaConversion('default')
-                    ->width(400)
-                    ->height(400);
-            });
-    }
+	public function registerMediaCollections(?Media $media = null): void
+	{
+		$this->addMediaCollection('tournament')
+			->singleFile()
+			->storeConversionsOnDisk('s3')
+			->registerMediaConversions(function (Media $media = null) {
+				$this->addMediaConversion('thumbnail')
+					->width(150)
+					->height(150);
+				$this->addMediaConversion('default')
+					->width(400)
+					->height(400);
+			});
+	}
 }

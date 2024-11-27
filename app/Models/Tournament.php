@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Observers\TournamentObserver;
-use Database\Factories\TournamentFactory;
 use Illuminate\Database\Eloquent\Attributes\ScopedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -55,14 +54,14 @@ class Tournament extends Model implements HasMedia
 		return date('d/m/y', strtotime($value));
 	}
 
-	protected static function newFactory(): TournamentFactory
-	{
-		return TournamentFactory::new();
-	}
-
 	public function format(): BelongsTo
 	{
 		return $this->belongsTo(TournamentFormat::class, 'tournament_format_id', 'id');
+	}
+
+	public function footballType(): BelongsTo
+	{
+		return $this->belongsTo(FootballType::class);
 	}
 
 	public function teams(): BelongsToMany

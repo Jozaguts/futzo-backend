@@ -58,7 +58,7 @@ class LeaguesController extends Controller
 	public function getFootballTypes(): JsonResponse
 	{
 		$footBallTypes = FootballType::query()
-			->select('id', 'name')
+			->select('id', 'name', 'description')
 			->get();
 
 		return response()->json($footBallTypes);

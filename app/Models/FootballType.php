@@ -11,12 +11,21 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class FootballType extends Model
 {
-    use HasFactory, SoftDeletes;
+	use HasFactory, SoftDeletes;
 
-    protected $fillable = ['name', 'description', 'status'];
+	protected $fillable = [
+		'name',
+		'description',
+		'status',
+		'max_players_per_team',
+		'min_players_per_team',
+		'max_registered_players',
+		'substitutions',
+	];
+	protected $hidden = ['created_at', 'updated_at'];
 
-    public function leagues(): HasMany
-    {
-        return $this->hasMany(League::class);
-    }
+	public function leagues(): HasMany
+	{
+		return $this->hasMany(League::class);
+	}
 }

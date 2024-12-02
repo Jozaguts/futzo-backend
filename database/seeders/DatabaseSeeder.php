@@ -13,8 +13,8 @@ class DatabaseSeeder extends Seeder
 	use WithoutModelEvents;
 
 	/**
-		* Seed the application's database.
-		*/
+	 * Seed the application's database.
+	 */
 	public function run(): void
 	{
 		$this->call([
@@ -36,6 +36,7 @@ class DatabaseSeeder extends Seeder
 		$this->call(CategoriesTableSeeder::class);
 		$this->call(TournamentFormatTableSeeder::class);
 		$this->call(FootballTypesTableSedder::class);
+		$this->call(DefaultTournamentConfigurationTableSeeder::class);
 		$this->call(ActionsTableSeeder::class);
 		$this->call(CouponsTableSeeder::class);
 		$this->call(LeaguesTableSeeder::class);

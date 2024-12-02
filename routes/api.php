@@ -54,7 +54,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 		Route::apiResources(['leagues' => \App\Http\Controllers\LeaguesController::class]);
 		Route::apiResources(['locations' => \App\Http\Controllers\LocationController::class]);
 		Route::get('leagues/{leagueId}/tournaments', [\App\Http\Controllers\LeaguesController::class, 'getTournaments']);
-		Route::post('schedule/generate', [\App\Http\Controllers\ScheduleController::class, 'generate']);
+
 		Route::get('positions', \App\Http\Controllers\PositionsController::class);
 		require __DIR__ . '/tournaments/routes.php';
 		require __DIR__ . '/teams/routes.php';

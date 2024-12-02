@@ -35,8 +35,8 @@ class Tournament extends Model implements HasMedia
 		'football_type_id'
 	];
 	protected $casts = [
-		'start_date' => 'datetime',
-		'end_date' => 'datetime',
+		'start_date' => 'date',
+		'end_date' => 'date',
 	];
 
 	protected static function booted(): void
@@ -44,14 +44,9 @@ class Tournament extends Model implements HasMedia
 		Tournament::observe(TournamentObserver::class);
 	}
 
-	public function getStartDateAttribute($value): string
+	public function configuration(): HasOne
 	{
-		return date('d/m/y', strtotime($value));
-	}
-
-	public function getEndDateAttribute($value): string
-	{
-		return date('d/m/y', strtotime($value));
+		return $this->hasOne(TournamentConfiguration::class);
 	}
 
 	public function format(): BelongsTo
@@ -93,7 +88,8 @@ class Tournament extends Model implements HasMedia
 	{
 		return $this->belongsToMany(Location::class, 'location_tournament')
 			->using(LocationTournament::class)
-			->withTimestamps();
+			->withPivot('availability')
+			->whereNull('location_tournament.deleted_at');
 	}
 
 	public function registerMediaCollections(?Media $media = null): void

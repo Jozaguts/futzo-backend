@@ -81,18 +81,24 @@ class TournamentTest extends TestCase
 		$this->initUser();
 		Storage::fake('public');
 		$image = UploadedFile::fake()->image('logo-test.jpg')->mimeType('image/jpeg');
-		$format = TournamentFormat::factory()->create(
-			config('constants.tournament_formats')[0]
+		$formats = array_map(function (array $format) {
+			return TournamentFormat::updateOrcreate(
+				['id' => $format['id']],
+				$format
+			);
+		}, config('constants.tournament_formats'));
+		$footballTypes = array_map(function (array $type) {
+			return FootballType::updateOrcreate(['id' => $type['id']], $type);
+		}, config('constants.football_types')
 		);
-		$footballType = FootballType::factory()->create(config('constants.football_types')[0]);
 		$category = Category::factory()->create();
 		$location = json_encode(config('constants.address'), true);
 		$response = $this->json('POST', '/api/v1/admin/tournaments', [
 			'basic' => [
 				'name' => fake()->name,
 				'image' => $image,
-				'tournament_format_id' => $format->first()->id,
-				'football_type_id' => $footballType->first()->id,
+				'tournament_format_id' => $formats[0]['id'],
+				'football_type_id' => $footballTypes[0]['id'],
 				'category_id' => $category->first()->id,
 				'start_date' => fake()->date(),
 				'end_date' => fake()->date(),
@@ -127,9 +133,7 @@ class TournamentTest extends TestCase
 	public function test_update_tournament_without_image()
 	{
 		$this->initUser();
-		$format = TournamentFormat::factory()->create(
-			config('constants.tournament_formats')[0]
-		);
+		$format = TournamentFormat::find(1);
 		$category = Category::factory()->create();
 		$location = Location::factory()->create();
 		$tournament = Tournament::factory()->create();

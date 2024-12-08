@@ -8,7 +8,7 @@ Route::prefix('tournaments')->group(function () {
 	Route::get('', [TournamentController::class, 'index']);
 	Route::post('', [TournamentController::class, 'store']);
 	Route::post('{tournament}', [TournamentController::class, 'show']);
-	Route::post('{tournament}', [TournamentController::class, 'update']);
+	Route::put('{tournament}', [TournamentController::class, 'update']);
 	Route::get('types', [TournamentController::class, 'getTournamentTypes']);
 	Route::get('formats', [TournamentController::class, 'getTournamentFormats']);
 	Route::put('{tournament}/status', [TournamentController::class, 'updateStatus']);

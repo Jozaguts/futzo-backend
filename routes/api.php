@@ -34,11 +34,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::get('/me', function (Request $request) {
 		return new UserResource($request->user());
 	});
-
 	Route::prefix('admin')->group(function () {
-		Route::put('profile/{user}', [UserController::class, 'update'])->middleware('ensureUserOwnsProfile');
-		Route::post('profile/{user}/image', [UserController::class, 'updateImage'])->middleware('ensureUserOwnsProfile');
-		Route::put('profile/{user}/password', [UserController::class, 'updatePassword'])->middleware('ensureUserOwnsProfile');
 		Route::get('leagues/football/types', [LeaguesController::class, 'getFootballTypes']);
 		Route::apiResource('/roles', RoleAndPermissionsController::class);
 		Route::apiResources(['genders' => GenderController::class]);
@@ -66,5 +62,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 Route::post('/pre-register', [PreRegisterController::class, 'preRegister'])
 	->middleware(['throttle:3,1'])
 	->name('pre-register');
+Route::get('verify-code/resend', [UserController::class, 'resendVerifyCode'])
+	->middleware(['throttle:3,1'])
+	->name('verify-code.resend');
 
 

@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Broadcasting\WhatsAppChannel;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 
@@ -26,5 +28,9 @@ class AppServiceProvider extends ServiceProvider
 	{
 		JsonResource::withoutWrapping();
 		Schema::defaultStringLength(191);
+
+		Notification::extend('whatsapp', function ($app) {
+			return new WhatsAppChannel;
+		});
 	}
 }

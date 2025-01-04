@@ -3,46 +3,53 @@
 namespace App\Observers;
 
 use App\Models\User;
+use App\Notifications\SendOTPNotification;
+use Illuminate\Support\Facades\Notification;
 
 class UserObserver
 {
-    /**
-     * Handle the User "created" event.
-     */
-    public function created(User $user): void
-    {
-       
-    }
+	/**
+	 * Handle the User "created" event.
+	 */
+	public function created(User $user): void
+	{
+		if (!is_null($user->phone) && is_null($user->email)) {
+			$phoneNumber = $user->phone;
+			$otp = rand(1000, 9999);
 
-    /**
-     * Handle the User "updated" event.
-     */
-    public function updated(User $user): void
-    {
-        //
-    }
+			Notification::route('whatsapp', $phoneNumber)->notify(new SendOTPNotification($otp, '2222'));
+		}
+	}
 
-    /**
-     * Handle the User "deleted" event.
-     */
-    public function deleted(User $user): void
-    {
-        //
-    }
+	/**
+	 * Handle the User "updated" event.
+	 */
+	public function updated(User $user): void
+	{
+		//
+	}
 
-    /**
-     * Handle the User "restored" event.
-     */
-    public function restored(User $user): void
-    {
-        //
-    }
+	/**
+	 * Handle the User "deleted" event.
+	 */
+	public function deleted(User $user): void
+	{
+		//
+	}
 
-    /**
-     * Handle the User "force deleted" event.
-     */
-    public function forceDeleted(User $user): void
-    {
-        //
-    }
+	/**
+	 * Handle the User "restored" event.
+	 */
+	public function restored(User $user): void
+	{
+		//
+	}
+
+	/**
+	 * Handle the User "force deleted" event.
+	 */
+	public function forceDeleted(User $user): void
+	{
+		//
+	}
 }

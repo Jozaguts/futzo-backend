@@ -12,83 +12,89 @@ use Illuminate\Validation\ValidationException;
 
 class LoginRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
-    public function authorize(): bool
-    {
-        return true;
-    }
+	private mixed $column;
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\Rule|array|string>
-     */
-    public function rules(): array
-    {
-        return [
-            'email' => ['required', 'string', 'email'],
-            'password' => ['required', 'string'],
-        ];
-    }
+	/**
+	 * Determine if the user is authorized to make this request.
+	 */
+	public function authorize(): bool
+	{
+		return true;
+	}
 
-    /**
-     * Attempt to authenticate the request's credentials.
-     *
-     * @throws \Illuminate\Validation\ValidationException
-     */
-    public function authenticate(): void
-    {
-        $user = User::where('email', $this->input('email'))->first();
+	/**
+	 * Get the validation rules that apply to the request.
+	 *
+	 * @return array<string, \Illuminate\Contracts\Validation\Rule|array|string>
+	 */
+	public function rules(): array
+	{
+		return [
+			'email' => 'required_without:phone|email|exists:users,email',
+			'phone' => 'required_without:email|regex:/^\+?[1-9]\d{1,14}$/|exists:users,phone',
+			'password' => ['required', 'string'],
+		];
+	}
 
-        if ($user && ! $user->hasVerifiedEmail()) {
-            throw ValidationException::withMessages([
-                'email' => __('auth.verify'),
-            ]);
-        }
+	/**
+	 * Attempt to authenticate the request's credentials.
+	 *
+	 * @throws \Illuminate\Validation\ValidationException
+	 * @throws \JsonException
+	 */
+	public function authenticate(): void
+	{
+		$content = json_decode($this->content, false, 512, JSON_THROW_ON_ERROR);
+		$this->column = isset($content->email) ? 'email' : 'phone';
+		$user = User::where($this->column, $this->input($this->column))->first();
 
-        $this->ensureIsNotRateLimited();
+		if ($user && !$user->hasVerifiedEmail()) {
+			throw ValidationException::withMessages([
+				$this->column => $this->column === 'email' ? __('auth.verify') : __('auth.verify_phone'),
+			]);
+		}
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
-            RateLimiter::hit($this->throttleKey());
+		$this->ensureIsNotRateLimited();
 
-            throw ValidationException::withMessages([
-                'email' => __('auth.failed'),
-            ]);
-        }
+		if (!Auth::attempt($this->only($this->column, 'password'), $this->boolean('remember'))) {
+			RateLimiter::hit($this->throttleKey());
 
-        RateLimiter::clear($this->throttleKey());
-    }
+			throw ValidationException::withMessages([
+				$this->column => __('auth.failed'),
+			]);
+		}
 
-    /**
-     * Ensure the login request is not rate limited.
-     *
-     * @throws \Illuminate\Validation\ValidationException
-     */
-    public function ensureIsNotRateLimited(): void
-    {
-        if (! RateLimiter::tooManyAttempts($this->throttleKey(), 5)) {
-            return;
-        }
+		RateLimiter::clear($this->throttleKey());
+	}
 
-        event(new Lockout($this));
+	/**
+	 * Ensure the login request is not rate limited.
+	 *
+	 * @throws \Illuminate\Validation\ValidationException
+	 */
+	public function ensureIsNotRateLimited(): void
+	{
+		if (!RateLimiter::tooManyAttempts($this->throttleKey(), 5)) {
+			return;
+		}
 
-        $seconds = RateLimiter::availableIn($this->throttleKey());
+		event(new Lockout($this));
 
-        throw ValidationException::withMessages([
-            'email' => trans('auth.throttle', [
-                'seconds' => $seconds,
-                'minutes' => ceil($seconds / 60),
-            ]),
-        ]);
-    }
+		$seconds = RateLimiter::availableIn($this->throttleKey());
 
-    /**
-     * Get the rate limiting throttle key for the request.
-     */
-    public function throttleKey(): string
-    {
-        return Str::transliterate(Str::lower($this->input('email')).'|'.$this->ip());
-    }
+		throw ValidationException::withMessages([
+			$this->column => trans('auth.throttle', [
+				'seconds' => $seconds,
+				'minutes' => ceil($seconds / 60),
+			]),
+		]);
+	}
+
+	/**
+	 * Get the rate limiting throttle key for the request.
+	 */
+	public function throttleKey(): string
+	{
+		return Str::transliterate(Str::lower($this->input($this->column)) . '|' . $this->ip());
+	}
 }

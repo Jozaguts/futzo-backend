@@ -23,10 +23,10 @@ class DatabaseSeeder extends Seeder
 		$user = User::create([
 			'name' => 'Sagit Gutierrez',
 			'email' => 'admin@futzo.io',
-			'email_verified_at' => now(),
-			'email_verification_token' => rand(1000, 9999),
+			'verified_at' => now(),
+			'verification_token' => rand(1000, 9999),
 			'phone' => '3221231231',
-			'password' => '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
+			'password' => '$2y$10$RENqDsgT5rr0sjujwq1v4uoTXC9K9f7KMa1ilMFOdG2DMf7Xwm2TS', //password.
 			'remember_token' => Str::random(10),
 		]);
 		$user->assignRole('super administrador');

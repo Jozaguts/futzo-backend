@@ -21,9 +21,9 @@ class UserFactory extends Factory
 			'last_name' => fake()->lastName(),
 			'email' => fake()->unique()->safeEmail(),
 			'phone' => fake()->phoneNumber(),
-			'email_verified_at' => now(),
-			'email_verification_token' => rand(1000, 9999),
-			'password' => '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password
+			'verified_at' => now(),
+			'verification_token' => rand(1000, 9999),
+			'password' => '$2y$10$RENqDsgT5rr0sjujwq1v4uoTXC9K9f7KMa1ilMFOdG2DMf7Xwm2TS', // password.
 			'remember_token' => Str::random(10),
 		];
 	}
@@ -34,7 +34,7 @@ class UserFactory extends Factory
 	public function unverified(): static
 	{
 		return $this->state(fn(array $attributes) => [
-			'email_verified_at' => null,
+			'verified_at' => null,
 		]);
 	}
 }

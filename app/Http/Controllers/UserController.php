@@ -53,12 +53,10 @@ class UserController extends Controller
 
 	public function resendVerifyCode(ReSendVerificationCodeRequest $request)
 	{
-		$user = User::where([
-			'email' => $request->email,
-			'email_verified_at' => null
-		])->firstOrFail();
-
-		$user->update(['email_verification_token' => rand(1000, 9999)]);
+		$validated = $request->validated();
+		$isPhone = isset($validated['phone']);
+		$user = User::where($isPhone ? 'phone' : 'email', $validated[$isPhone ? 'phone' : 'email'])->first();
+		$user->update(['verification_token' => rand(1000, 9999)]);
 
 		$user->sendEmailVerificationNotification();
 

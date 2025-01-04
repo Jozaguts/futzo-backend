@@ -16,47 +16,47 @@ use Illuminate\Validation\ValidationException;
 
 class AuthenticateController extends Controller
 {
-    public function register(StoreUserRequest $request): JsonResponse
-    {
-        $validated = $request->validated();
+	public function register(StoreUserRequest $request): JsonResponse
+	{
+		$validated = $request->validated();
 
-        try {
-            DB::beginTransaction();
-            $validated['email_verification_token'] = rand(1000, 9999);
-            $validated['image'] = 'https://ui-avatars.com/api/?name=' . $validated['name'] . '&color=9155fd&background=F9FAFB';
-            $user = User::create($validated);
-            $user->assignRole('predeterminado');
-            event(new Registered($user));
-            DB::commit();
-            return response()->json(['success' => true, 'message' => 'User created successfully'], 201);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 401);
-        }
-    }
+		try {
+			DB::beginTransaction();
+			$validated['verification_token'] = rand(1000, 9999);
+			$validated['image'] = 'https://ui-avatars.com/api/?name=' . $validated['name'] . '&color=9155fd&background=F9FAFB';
+			$user = User::create($validated);
+			$user->assignRole('predeterminado');
+			event(new Registered($user));
+			DB::commit();
+			return response()->json(['success' => true, 'message' => 'User created successfully'], 201);
+		} catch (\Exception $e) {
+			DB::rollBack();
+			return response()->json(['success' => false, 'message' => $e->getMessage()], 401);
+		}
+	}
 
-    /**
-     * @throws ValidationException
-     */
-    public function login(LoginRequest $request): JsonResponse
-    {
-        $request->authenticate();
+	/**
+	 * @throws ValidationException
+	 */
+	public function login(LoginRequest $request): JsonResponse
+	{
+		$request->authenticate();
 
-        $request->session()->regenerate();
+		$request->session()->regenerate();
 
-        return response()->json([
-            'message' => 'Login successful'
-        ]);
-    }
+		return response()->json([
+			'message' => 'Login successful'
+		]);
+	}
 
-    public function logout(Request $request): Response
-    {
-        Auth::guard('web')->logout();
+	public function logout(Request $request): Response
+	{
+		Auth::guard('web')->logout();
 
-        $request->session()->invalidate();
+		$request->session()->invalidate();
 
-        $request->session()->regenerateToken();
+		$request->session()->regenerateToken();
 
-        return response()->noContent();
-    }
+		return response()->noContent();
+	}
 }

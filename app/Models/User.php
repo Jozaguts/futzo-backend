@@ -25,89 +25,99 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string $password
  * @property int $facebook_id
  * @property int $google_id
- * @property string $email_verification_token
+ * @property string $verification_token
  * @method static create(array $userData)
  */
 #[ObservedBy([UserObserver::class])]
 class User extends Authenticatable implements MustVerifyEmail, HasMedia
 
 {
-    use HasApiTokens, HasFactory, Notifiable, HasRoles, InteractsWithMedia;
+	use HasApiTokens, HasFactory, Notifiable, HasRoles, InteractsWithMedia;
 
-    public function sendEmailVerificationNotification(): void
-    {
-        $this->notify(new VerifyEmailWithToken($this->email_verification_token));
-    }
+	public function sendEmailVerificationNotification(): void
+	{
+		$this->notify(new VerifyEmailWithToken($this->verification_token));
+	}
 
-    protected $fillable = [
-        'name',
-        'last_name',
-        'email',
-        'email_verification_token',
-        'password',
-        'facebook_id',
-        'google_id',
-        'phone',
-        'image',
-        'email_verified_at',
-        'league_id',
-    ];
+	public function sendOTPVerificationNotification(): void
+	{
+		$this->notify();
+	}
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
-    protected $hidden = [
-        'password',
-        'remember_token',
-        'email_verification_token',
-        'deleted_at',
-        'facebook_id',
-        'google_id',
-    ];
+	public function hasVerifiedEmail(): bool
+	{
+		return !is_null($this->verified_at);
+	}
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-        'password' => 'hashed',
-    ];
+	protected $fillable = [
+		'name',
+		'last_name',
+		'email',
+		'verification_token',
+		'password',
+		'facebook_id',
+		'google_id',
+		'phone',
+		'image',
+		'verified_at',
+		'league_id',
+	];
 
-    protected function fullName(): Attribute
-    {
-        return Attribute::make(
-            get: fn() => "$this->name $this->last_name",
-        );
-    }
+	/**
+	 * The attributes that should be hidden for serialization.
+	 *
+	 * @var array<int, string>
+	 */
+	protected $hidden = [
+		'password',
+		'remember_token',
+		'verification_token',
+		'deleted_at',
+		'facebook_id',
+		'google_id',
+	];
 
-    public function league(): BelongsTo
-    {
-        return $this->belongsTo(League::class);
-    }
+	/**
+	 * The attributes that should be cast.
+	 *
+	 * @var array<string, string>
+	 */
+	protected $casts = [
+		'verified_at' => 'datetime',
+		'password' => 'hashed',
+	];
 
-    public function players(): HasMany
-    {
-        return $this->hasMany(Player::class);
-    }
+	protected function fullName(): Attribute
+	{
+		return Attribute::make(
+			get: fn() => "$this->name $this->last_name",
+		);
+	}
 
-    public function registerMediaCollections(?Media $media = null): void
-    {
-        $this->addMediaCollection('image')
-            ->singleFile()
-            ->storeConversionsOnDisk('s3')
-            ->registerMediaConversions(function (Media $media = null) {
-                $this->addMediaConversion('thumbnail')
-                    ->width(150)
-                    ->height(150);
-                $this->addMediaConversion('default')
-                    ->width(400)
-                    ->height(400);
-            });
-    }
+	public function league(): BelongsTo
+	{
+		return $this->belongsTo(League::class);
+	}
+
+	public function players(): HasMany
+	{
+		return $this->hasMany(Player::class);
+	}
+
+	public function registerMediaCollections(?Media $media = null): void
+	{
+		$this->addMediaCollection('image')
+			->singleFile()
+			->storeConversionsOnDisk('s3')
+			->registerMediaConversions(function (Media $media = null) {
+				$this->addMediaConversion('thumbnail')
+					->width(150)
+					->height(150);
+				$this->addMediaConversion('default')
+					->width(400)
+					->height(400);
+			});
+	}
 
 
 }

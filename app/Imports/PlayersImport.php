@@ -45,7 +45,7 @@ class PlayersImport implements ToCollection, WithHeadingRow
 				$user->assignRole('jugador');
 				//assign league
 				$user->league()->associate(Auth()->user()->league);
-				$user->email_verified_at = now();
+				$user->verified_at = now();
 				$user->save();
 
 				// creating player

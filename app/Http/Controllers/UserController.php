@@ -8,6 +8,7 @@ use App\Http\Requests\UserPasswordUpdateRequest;
 use App\Http\Requests\UserUpdateRequest;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
+use Random\RandomException;
 use Spatie\MediaLibrary\MediaCollections\Exceptions\FileDoesNotExist;
 use Spatie\MediaLibrary\MediaCollections\Exceptions\FileIsTooBig;
 
@@ -51,12 +52,15 @@ class UserController extends Controller
 		return response()->json(['success' => $response, 'message' => 'User password updated successfully']);
 	}
 
+	/**
+	 * @throws RandomException
+	 */
 	public function resendVerifyCode(ReSendVerificationCodeRequest $request)
 	{
 		$validated = $request->validated();
 		$isPhone = isset($validated['phone']);
 		$user = User::where($isPhone ? 'phone' : 'email', $validated[$isPhone ? 'phone' : 'email'])->first();
-		$user->update(['verification_token' => rand(1000, 9999)]);
+		$user->update(['verification_token' => random_int(1000, 9999)]);
 
 		$user->sendEmailVerificationNotification();
 

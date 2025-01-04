@@ -22,7 +22,7 @@ class AuthenticateController extends Controller
 
 		try {
 			DB::beginTransaction();
-			$validated['verification_token'] = rand(1000, 9999);
+			$validated['verification_token'] = random_int(1000, 9999);
 			$validated['image'] = 'https://ui-avatars.com/api/?name=' . $validated['name'] . '&color=9155fd&background=F9FAFB';
 			$user = User::create($validated);
 			$user->assignRole('predeterminado');

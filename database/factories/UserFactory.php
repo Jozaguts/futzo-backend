@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
+use Random\RandomException;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\User>
@@ -14,6 +15,9 @@ class UserFactory extends Factory
 	protected $model = User::class;
 
 
+	/**
+	 * @throws RandomException
+	 */
 	public function definition(): array
 	{
 		return [
@@ -22,7 +26,7 @@ class UserFactory extends Factory
 			'email' => fake()->unique()->safeEmail(),
 			'phone' => fake()->phoneNumber(),
 			'verified_at' => now(),
-			'verification_token' => rand(1000, 9999),
+			'verification_token' => random_int(1000, 9999),
 			'password' => '$2y$10$RENqDsgT5rr0sjujwq1v4uoTXC9K9f7KMa1ilMFOdG2DMf7Xwm2TS', // password.
 			'remember_token' => Str::random(10),
 		];

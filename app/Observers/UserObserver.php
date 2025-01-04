@@ -5,17 +5,19 @@ namespace App\Observers;
 use App\Models\User;
 use App\Notifications\SendOTPNotification;
 use Illuminate\Support\Facades\Notification;
+use Random\RandomException;
 
 class UserObserver
 {
 	/**
 	 * Handle the User "created" event.
+	 * @throws RandomException
 	 */
 	public function created(User $user): void
 	{
 		if (!is_null($user->phone) && is_null($user->email)) {
 			$phoneNumber = $user->phone;
-			$otp = rand(1000, 9999);
+			$otp = random_int(1000, 9999);
 
 			Notification::route('whatsapp', $phoneNumber)->notify(new SendOTPNotification($otp, '2222'));
 		}

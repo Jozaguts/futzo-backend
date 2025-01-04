@@ -72,7 +72,7 @@ class PlayersImport implements ToCollection, WithHeadingRow
 				DB::commit();
 			} catch (\Exception $e) {
 				DB::rollBack();
-				logger()->error($e->getMessage());
+				logger()?->error($e->getMessage());
 
 			}
 		}
@@ -89,7 +89,7 @@ class PlayersImport implements ToCollection, WithHeadingRow
 		}
 		$position_id = Position::whereLike('name', $row['posicion'])->first()?->id;
 		return [
-			'birthdate' => Carbon::create($row['fecha_nacimiento'])->toDateString(),
+			'birthdate' => Carbon::create($row['fecha_nacimiento'])?->toDateString(),
 			'team_id' => $team?->id,
 			'category_id' => $category_id,
 			'nationality' => $row['nacionalidad'],

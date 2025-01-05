@@ -54,7 +54,6 @@ class UserTest extends TestCase
             ->json('PUT', "/api/v1/admin/profile/$user->id", [
                 'name' => 'John',
                 'email' => 'test2@gmail.com',
-                'phone' => '+523222397179',
             ]);
         $response->assertStatus(200);
     }

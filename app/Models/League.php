@@ -11,34 +11,46 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class League extends Model
 {
-	use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes;
 
-	protected $fillable = [
-		'name', 'description', 'creation_date', 'logo', 'banner', 'status', 'location', 'football_type_id'
-	];
-	protected $casts = [
-		'creation_date' => 'datetime',
-		'created_at' => 'datetime',
-	];
+    protected $fillable = [
+        'name',
+        'description',
+        'creation_date',
+        'logo',
+        'banner',
+        'status',
+        'location',
+        'football_type_id'
+    ];
+    protected $casts = [
+        'creation_date' => 'datetime',
+        'created_at' => 'datetime',
+    ];
 
-	protected static function newFactory(): LeagueFactory
-	{
-		return LeagueFactory::new();
-	}
+    protected static function newFactory(): LeagueFactory
+    {
+        return LeagueFactory::new();
+    }
 
-	public function users(): HasMany
-	{
-		return $this->hasMany(User::class);
-	}
+    public function users(): HasMany
+    {
+        return $this->hasMany(User::class);
+    }
 
-	public function tournaments(): HasMany
-	{
-		return $this->hasMany(Tournament::class);
-	}
+    public function tournaments(): HasMany
+    {
+        return $this->hasMany(Tournament::class);
+    }
 
-	public function teams(): BelongsToMany
-	{
-		return $this->belongsToMany(Team::class, 'league_team');
-	}
+    public function teams(): BelongsToMany
+    {
+        return $this->belongsToMany(Team::class, 'league_team');
+    }
+
+    public function locations()
+    {
+        return $this->belongsToMany(Location::class, 'league_location');
+    }
 
 }

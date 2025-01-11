@@ -3,15 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\LocationStoreRequest;
+use App\Http\Resources\LocationCollection;
 use App\Models\Location;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 
 class LocationController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(): LocationCollection
     {
-        return response()->json(auth()->user()->league->locations);
+        return new LocationCollection (auth()->user()->league->locations()->with('tags')->get());
     }
 
     public function store(LocationStoreRequest $request): JsonResponse

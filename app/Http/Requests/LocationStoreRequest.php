@@ -25,8 +25,26 @@ class LocationStoreRequest extends FormRequest
             'name' => 'required|string',
             'city' => 'required|string',
             'address' => 'required|string',
-            'autocomplete_prediction' => 'required|array',
-            'tags' => 'array'
+            'autocomplete_prediction' => [
+                'required',
+                'array',
+            ],
+            'tags' => 'array',
+            'autocomplete_prediction.place_id' => [
+                'required',
+                'string',
+                'autocomplete_prediction.place_id' => [
+                    'required',
+                    'string',
+                ],
+                function ($attribute, $value, $fail) {
+                    $exists = \App\Models\Location::whereJsonContains('autocomplete_prediction->place_id', $value)->exists();
+                    \App\Models\Location::whereJsonContains('autocomplete_prediction->place_id', $value)->exists();
+                    if ($exists) {
+                        $fail("Esta ubicación ya está registrada.");
+                    }
+                },
+            ],
         ];
     }
 }

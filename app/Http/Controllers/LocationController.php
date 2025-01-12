@@ -58,4 +58,14 @@ class LocationController extends Controller
             return response()->json(['message' => $e->getMessage()], 500);
         }
     }
+
+    public function destroy(Location $location): JsonResponse
+    {
+        try {
+            $location->delete();
+            return response()->json(['message' => 'Location deleted successfully'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
+    }
 }

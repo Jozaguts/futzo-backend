@@ -68,7 +68,7 @@ class LocationController extends Controller
     public function destroy(Location $location): JsonResponse
     {
         try {
-            $location->delete();
+            auth()->user()->league->locations()->detach($location->id);
             return response()->json(['message' => 'Location deleted successfully'], 200);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);

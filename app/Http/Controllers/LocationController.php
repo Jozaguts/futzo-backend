@@ -39,4 +39,23 @@ class LocationController extends Controller
             return response()->json(['message' => $e->getMessage()], 500);
         }
     }
+
+    public function update(LocationStoreRequest $request, Location $location): JsonResponse
+    {
+        try {
+            DB::beginTransaction();
+            $validated = $request->safe()->except('tags');
+
+            $location->update($validated);
+            if ($request->has('tags')) {
+                $tags = $request->validated()['tags'] ?? [];
+                $location->syncTags($tags);
+            }
+            DB::commit();
+            return response()->json(['message' => 'Location created successfully'], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
+    }
 }

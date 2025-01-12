@@ -6,13 +6,19 @@ use App\Http\Requests\LocationStoreRequest;
 use App\Http\Resources\LocationCollection;
 use App\Models\Location;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class LocationController extends Controller
 {
-    public function index(): LocationCollection
+    public function index(Request $request): LocationCollection
     {
-        return new LocationCollection (auth()->user()->league->locations()->with('tags')->get());
+        return new LocationCollection (
+            auth()->user()
+                ->league->locations()
+                ->with('tags')
+                ->paginate($request->get('per_page', 8), ['*'], 'page', $request->get('page', 1))
+        );
     }
 
     public function store(LocationStoreRequest $request): JsonResponse

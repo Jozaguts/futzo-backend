@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\LocationStoreRequest;
 use App\Http\Resources\LocationCollection;
+use App\Http\Resources\LocationResource;
 use App\Models\Location;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,25 +22,29 @@ class LocationController extends Controller
         );
     }
 
-    public function store(LocationStoreRequest $request): JsonResponse
+    public function store(LocationStoreRequest $request): LocationResource
     {
-        $validated = $request->validated();
+        $validated = $request->safe();
+        $locationData = $validated->except('availability');
+        $availabilityData = $validated->only('availability');
+
 
         try {
             DB::beginTransaction();
-            $location = Location::create($validated);
+            $location = Location::create($locationData);
 
             $league = auth()->user()->league;
 
             if ($league) {
-                $league->locations()->attach($location->id);
+                $league->locations()->attach($location->id, ['availability' => json_encode($availabilityData['availability'])]);
             }
 
             if ($request->has('tags')) {
-                $location->attachTags($validated['tags']);
+                $location->attachTags($locationData['tags']);
             }
+
             DB::commit();
-            return response()->json(['message' => 'Location created successfully'], 201);
+            return new LocationResource($location);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['message' => $e->getMessage()], 500);

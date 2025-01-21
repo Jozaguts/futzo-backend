@@ -45,6 +45,7 @@ class LocationStoreRequest extends FormRequest
                     }
                 },
             ],
+            'availability' => 'array',
         ];
     }
 }

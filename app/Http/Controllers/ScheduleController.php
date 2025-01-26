@@ -8,14 +8,14 @@ use Illuminate\Http\Request;
 
 class ScheduleController extends Controller
 {
-   public function generate(Request $request, ScheduleGeneratorService $scheduleGeneratorService)
-   {
-       $tournament = Tournament::where('id', $request->tournament_id)
-           ->where('league_id', $request->league_id)
-           ->firstOrFail();
+    public function generate(Request $request, ScheduleGeneratorService $scheduleGeneratorService)
+    {
+        $tournament = Tournament::where('id', $request->tournament_id)
+            ->where('league_id', $request->league_id)
+            ->firstOrFail();
 
-      $matches = $scheduleGeneratorService->generateFor($tournament);
+        $matches = $scheduleGeneratorService->generateFor($tournament);
 
-       return response()->json(['matches' =>   $matches],  201);
-   }
+        return response()->json(['matches' => $matches], 201);
+    }
 }

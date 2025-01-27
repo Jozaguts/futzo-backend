@@ -17,6 +17,9 @@ class LocationController extends Controller
         return new LocationCollection (
             auth()->user()
                 ->league->locations()
+                ->when($request->has('search'), function ($query) use ($request) {
+                    $query->where('name', 'like', '%' . $request->get('search') . '%');
+                })
                 ->with('tags')
                 ->paginate($request->get('per_page', 8), ['*'], 'page', $request->get('page', 1))
         );

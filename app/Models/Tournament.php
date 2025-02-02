@@ -42,7 +42,7 @@ class Tournament extends Model implements HasMedia
 
     protected static function booted(): void
     {
-        Tournament::observe(TournamentObserver::class);
+        self::observe(TournamentObserver::class);
     }
 
     public function configuration(): HasOne

@@ -31,6 +31,7 @@ class TournamentUpdateRequest extends FormRequest
             'basic.image' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'basic.tournament_format_id' => 'exists:tournament_formats,id',
             'basic.category_id' => 'exists:categories,id|nullable',
+            'basic.minMax' => 'json|nullable',
             'details.start_date' => 'string|nullable',
             'details.end_date' => 'string|nullable',
             'details.prize' => 'string|nullable',

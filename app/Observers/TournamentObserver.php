@@ -25,9 +25,14 @@ class TournamentObserver
             ->configuration()
             ->save(TournamentConfiguration::create(
                 array_merge(
-                    [...$defaultConfig->toArray(), 'max_teams' => $minMAx[0], 'min_teams' => $minMAx[1]], [
+                    [...$defaultConfig->toArray(), 'min_teams' => $minMAx[0], 'max_teams' => $minMAx[1]], [
                     'tournament_id' => $tournament->id
                 ])));
+        $tieBreakers = config('constants.tiebreakers');
+        foreach ($tieBreakers as $tieBreaker) {
+            $tieBreaker['tournament_configuration_id'] = $tournament->configuration->id;
+            $tournament->configuration->tieBreakers()->create($tieBreaker);
+        }
     }
 
 

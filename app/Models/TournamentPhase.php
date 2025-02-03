@@ -9,5 +9,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class TournamentPhase extends Model
 {
     use HasFactory, SoftDeletes;
-    protected $fillaable = ['name','tournament_id'];
+
+    protected $fillable = ['name', 'tournament_id', 'is_active', 'is_completed'];
+    protected $hidden = ['created_at', 'updated_at', 'deleted_at'];
 }

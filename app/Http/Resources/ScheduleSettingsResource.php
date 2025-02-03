@@ -21,6 +21,7 @@ class ScheduleSettingsResource extends JsonResource
             'footballType' => $this->footballType ?? null,
             'locations' => $this->locations ?? null,
             'tiebreakers' => $this->configuration->tiebreakers ?? null,
+            'phases' => $this->phases ?? null,
         ];
     }
 }

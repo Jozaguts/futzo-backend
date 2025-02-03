@@ -8,6 +8,8 @@ use App\Models\TournamentConfiguration;
 
 class TournamentObserver
 {
+    private string $TOURNAMENT_WITHOUT_PHASES = 'Tabla general';
+
     /**
      * Handle the Tournament "created" event.
      * @throws \JsonException
@@ -33,6 +35,16 @@ class TournamentObserver
             $tieBreaker['tournament_configuration_id'] = $tournament->configuration->id;
             $tournament->configuration->tieBreakers()->create($tieBreaker);
         }
+        $phases = config('constants.phases');
+        if ($tournament->format->name === $this->TOURNAMENT_WITHOUT_PHASES) {
+            $tournament->phases()->create($phases[0]);
+        } else {
+            $phasesWithoutGeneralTablePhase = array_filter($phases, fn($phase) => $phase['name'] !== $this->TOURNAMENT_WITHOUT_PHASES);
+            foreach ($phasesWithoutGeneralTablePhase as $phase) {
+                $tournament->phases()->create($phase);
+            }
+        }
+
     }
 
 

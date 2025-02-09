@@ -33,7 +33,7 @@ class TournamentObserver
         $tieBreakers = config('constants.tiebreakers');
         foreach ($tieBreakers as $tieBreaker) {
             $tieBreaker['tournament_configuration_id'] = $tournament->configuration->id;
-            $tournament->configuration->tieBreakers()->create($tieBreaker);
+            $tournament->configuration->tiebreakers()->create($tieBreaker);
         }
         $phases = config('constants.phases');
         if ($tournament->format->name === $this->TOURNAMENT_WITHOUT_PHASES) {

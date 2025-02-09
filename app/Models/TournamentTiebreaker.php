@@ -17,6 +17,14 @@ class TournamentTiebreaker extends Model
         'is_active',
         'tournament_configuration_id',
     ];
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
+    protected $hidden = [
+        'created_at',
+        'updated_at',
+        'deleted_at',
+    ];
 
     public function tournamentConfiguration(): BelongsTo
     {

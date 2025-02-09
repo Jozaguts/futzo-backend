@@ -22,13 +22,17 @@ class TournamentConfiguration extends Model
         'round_trip',
         'group_stage',
     ];
+    protected $casts = [
+        'round_trip' => 'boolean',
+        'group_stage' => 'boolean',
+    ];
 
     public function tournament(): BelongsTo
     {
         return $this->belongsTo(Tournament::class);
     }
 
-    public function tieBreakers(): HasMany
+    public function tiebreakers(): HasMany
     {
         return $this->hasMany(TournamentTiebreaker::class);
     }

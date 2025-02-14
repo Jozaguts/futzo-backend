@@ -8,7 +8,7 @@ use App\Models\TournamentConfiguration;
 
 class TournamentObserver
 {
-    private string $TOURNAMENT_WITHOUT_PHASES = 'Tabla general';
+    private string $TOURNAMENT_WITHOUT_PHASES = 'Torneo de Liga';
 
     /**
      * Handle the Tournament "created" event.

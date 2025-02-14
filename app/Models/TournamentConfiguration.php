@@ -21,10 +21,12 @@ class TournamentConfiguration extends Model
         'game_time',
         'round_trip',
         'group_stage',
+        'elimination_round_trip',
     ];
     protected $casts = [
         'round_trip' => 'boolean',
         'group_stage' => 'boolean',
+        'elimination_round_trip' => 'boolean',
     ];
 
     public function tournament(): BelongsTo

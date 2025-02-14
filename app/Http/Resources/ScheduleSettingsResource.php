@@ -13,6 +13,7 @@ class ScheduleSettingsResource extends JsonResource
             'round_trip' => $this->configuration->round_trip,
             'start_date' => $this->start_date?->format('Y-m-d'),
             'end_date' => $this->end_date?->format('Y-m-d'),
+            'elimination_round_trip' => $this->configuration->elimination_round_trip ?? null,
             'game_time' => $this->configuration->game_time ?? null,
             'min_teams' => $this->configuration->min_teams ?? null,
             'max_teams' => $this->configuration->max_teams ?? null,

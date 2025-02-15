@@ -31,7 +31,7 @@ class LeagueLocation extends Model
     protected function casts(): array
     {
         return [
-            'availability' => 'json',
+            'availability' => 'array',
         ];
     }
 }

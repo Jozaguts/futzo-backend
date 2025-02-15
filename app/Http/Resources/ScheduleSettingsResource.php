@@ -21,7 +21,7 @@ class ScheduleSettingsResource extends JsonResource
             'teams' => $this->teams->count(),
             'format' => $this->format ?? null,
             'footballType' => $this->footballType ?? null,
-            'locations' => $this->locations ?? null,
+            'locations' => $this->league?->locations ?? [],
             'tiebreakers' => $this->configuration->tiebreakers ?? null,
             'phases' => $this->phases ?? null,
         ];

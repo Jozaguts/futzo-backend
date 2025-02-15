@@ -48,9 +48,21 @@ class League extends Model
         return $this->belongsToMany(Team::class, 'league_team');
     }
 
-    public function locations()
+    public function locations(): BelongsToMany
     {
-        return $this->belongsToMany(Location::class, 'league_location');
+        return $this->belongsToMany(Location::class, LeagueLocation::class)
+            ->withPivot('availability');
     }
 
+    public function getLocationsAttribute()
+    {
+        return $this->locations()->get()->map(function ($location) {
+            if (is_null($location->pivot->availability)) {
+                $location->pivot->availability = [];
+            } else {
+                $location->pivot->availability = json_decode($location->pivot->availability, true, 512, JSON_THROW_ON_ERROR);
+            }
+            return $location;
+        });
+    }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\LocationStoreRequest;
 use App\Http\Resources\LocationCollection;
 use App\Http\Resources\LocationResource;
+use App\Models\Field;
 use App\Models\Location;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -25,13 +26,15 @@ class LocationController extends Controller
         );
     }
 
+    /**
+     * @throws \Throwable
+     */
     public function store(LocationStoreRequest $request): LocationResource
     {
         $validated = $request->safe();
         $locationData = $validated->except('availability');
         $availabilityData = $validated->only('availability');
-
-
+        $location = null;
         try {
             DB::beginTransaction();
             $location = Location::create($locationData);
@@ -39,7 +42,30 @@ class LocationController extends Controller
             $league = auth()->user()->league;
 
             if ($league) {
-                $league->locations()->attach($location->id);
+                $league->locations()->attach($location->id, ['updated_at' => now(), 'created_at' => now()]);
+            }
+            if (!empty($availabilityData)) {
+                foreach ($availabilityData['availability'] as $fieldData) {
+                    $field = Field::create([
+                        'location_id' => $location->id,
+                        'name' => $fieldData['name'],
+                        'type' => Field::defaultType,
+                        'dimensions' => Field::defaultDimensions,
+                    ]);
+                    $league->fields()->attach($field->id, [
+                        'availability' => json_encode([
+                            'monday' => $fieldData['monday'] ?? [],
+                            'tuesday' => $fieldData['tuesday'] ?? [],
+                            'wednesday' => $fieldData['wednesday'] ?? [],
+                            'thursday' => $fieldData['thursday'] ?? [],
+                            'friday' => $fieldData['friday'] ?? [],
+                            'saturday' => $fieldData['saturday'] ?? [],
+                            'sunday' => $fieldData['sunday'] ?? [],
+                        ], JSON_THROW_ON_ERROR),
+                        'updated_at' => now(),
+                        'created_at' => now()
+                    ]);
+                }
             }
 
             if ($request->has('tags')) {
@@ -47,11 +73,11 @@ class LocationController extends Controller
             }
 
             DB::commit();
-            return new LocationResource($location);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => $e->getMessage()], 500);
+            logger('Location creation failed', ['message' => $e->getMessage()]);
         }
+        return new LocationResource($location);
     }
 
     public function update(LocationStoreRequest $request, Location $location): JsonResponse

@@ -53,4 +53,9 @@ class League extends Model
         return $this->belongsToMany(Location::class, LeagueLocation::class)
             ->with('tags:id,name');
     }
+
+    public function fields(): BelongsToMany
+    {
+        return $this->belongsToMany(Field::class, LeagueField::class)->withPivot('availability');
+    }
 }

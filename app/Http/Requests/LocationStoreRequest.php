@@ -22,21 +22,26 @@ class LocationStoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|string',
+            'name' => 'required|string|unique:locations,name',
             'city' => 'required|string',
             'address' => 'required|string',
             'autocomplete_prediction' => [
                 'required',
                 'array',
             ],
+            'position' => 'required|array',
+            'autocomplete_prediction.description' => 'required|string',
+            'autocomplete_prediction.structured_formatting' => 'array',
+            'autocomplete_prediction.terms' => 'array',
+            'autocomplete_prediction.types' => 'array',
+            'autocomplete_prediction.matched_substrings' => 'array',
+            'autocomplete_prediction.structured_formatting.main_text' => 'string',
+            'autocomplete_prediction.structured_formatting.main_text_matched_substrings' => 'array',
+            'autocomplete_prediction.structured_formatting.secondary_text' => 'string',
             'tags' => 'array',
             'autocomplete_prediction.place_id' => [
                 'required',
                 'string',
-                'autocomplete_prediction.place_id' => [
-                    'required',
-                    'string',
-                ],
                 function ($attribute, $value, $fail) {
                     $exists = \App\Models\Location::whereJsonContains('autocomplete_prediction->place_id', $value)->exists();
                     \App\Models\Location::whereJsonContains('autocomplete_prediction->place_id', $value)->exists();
@@ -46,6 +51,15 @@ class LocationStoreRequest extends FormRequest
                 },
             ],
             'availability' => 'array',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'name.required' => 'El nombre es requerido.',
+            'name.string' => 'El nombre debe ser una cadena de texto.',
+            'name.unique' => 'El nombre de la ubicación ya está en uso.',
         ];
     }
 }

@@ -18,32 +18,6 @@ class TournamentObserver
     {
         $tournament->league_id = auth()->user()->league_id;
         $tournament->saveQuietly();
-        $defaultConfig = DefaultTournamentConfiguration::where([
-            'tournament_format_id' => $tournament->tournament_format_id,
-            'football_type_id' => $tournament->football_type_id,
-        ])->first();
-        $minMAx = json_decode(request()->input('basic.minMax'), true);
-        $tournament
-            ->configuration()
-            ->save(TournamentConfiguration::create(
-                array_merge(
-                    [...$defaultConfig->toArray(), 'min_teams' => $minMAx[0], 'max_teams' => $minMAx[1]], [
-                    'tournament_id' => $tournament->id
-                ])));
-        $tieBreakers = config('constants.tiebreakers');
-        foreach ($tieBreakers as $tieBreaker) {
-            $tieBreaker['tournament_configuration_id'] = $tournament->configuration->id;
-            $tournament->configuration->tiebreakers()->create($tieBreaker);
-        }
-        $phases = config('constants.phases');
-        if ($tournament->format->name === $this->TOURNAMENT_WITHOUT_PHASES) {
-            $tournament->phases()->create($phases[0]);
-        } else {
-            $phasesWithoutGeneralTablePhase = array_filter($phases, fn($phase) => $phase['name'] !== $this->TOURNAMENT_WITHOUT_PHASES);
-            foreach ($phasesWithoutGeneralTablePhase as $phase) {
-                $tournament->phases()->create($phase);
-            }
-        }
 
     }
 

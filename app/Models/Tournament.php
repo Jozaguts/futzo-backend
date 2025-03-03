@@ -94,7 +94,6 @@ class Tournament extends Model implements HasMedia
     {
         return $this->belongsToMany(Location::class, 'location_tournament')
             ->using(LocationTournament::class)
-            ->withPivot('availability')
             ->whereNull('location_tournament.deleted_at');
     }
 

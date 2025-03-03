@@ -51,19 +51,6 @@ class League extends Model
     public function locations(): BelongsToMany
     {
         return $this->belongsToMany(Location::class, LeagueLocation::class)
-            ->with('tags:id,name')
-            ->withPivot('availability');
-    }
-
-    public function getLocationsAttribute()
-    {
-        return $this->locations()->get()->map(function ($location) {
-            if (is_null($location->pivot->availability)) {
-                $location->pivot->availability = [];
-            } else {
-                $location->pivot->availability = json_decode($location->pivot->availability, true, 512, JSON_THROW_ON_ERROR);
-            }
-            return $location;
-        });
+            ->with('tags:id,name');
     }
 }

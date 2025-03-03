@@ -15,7 +15,6 @@ class LeagueLocation extends Model
     protected $fillable = [
         'location_id',
         'league_id',
-        'availability',
     ];
 
     public function location(): BelongsTo
@@ -26,12 +25,5 @@ class LeagueLocation extends Model
     public function league(): BelongsTo
     {
         return $this->belongsTo(League::class);
-    }
-
-    protected function casts(): array
-    {
-        return [
-            'availability' => 'array',
-        ];
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\DTO\TournamentDTO;
+use App\Events\TournamentCreatedEvent;
 use App\Http\Requests\TournamentStoreRequest;
 use App\Http\Requests\TournamentUpdateRequest;
 use App\Http\Requests\UpdateTournamentStatusRequest;

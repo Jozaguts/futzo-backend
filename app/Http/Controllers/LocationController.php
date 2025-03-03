@@ -39,7 +39,7 @@ class LocationController extends Controller
             $league = auth()->user()->league;
 
             if ($league) {
-                $league->locations()->attach($location->id, ['availability' => json_encode($availabilityData['availability'])]);
+                $league->locations()->attach($location->id);
             }
 
             if ($request->has('tags')) {
@@ -81,5 +81,10 @@ class LocationController extends Controller
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);
         }
+    }
+
+    public function getLeagueLocation()
+    {
+        return new LocationCollection(auth()->user()->league->locations);
     }
 }

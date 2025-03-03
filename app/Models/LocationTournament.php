@@ -8,8 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class LocationTournament extends Pivot
 {
-	use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes;
 
-	protected $fillable = ['location_id', 'tournament_id', 'availability'];
-	protected $casts = ['availability' => 'json'];
+    protected $fillable = ['location_id', 'tournament_id'];
 }

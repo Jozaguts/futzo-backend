@@ -8,13 +8,9 @@ use Illuminate\Support\Collection;
 class ScheduleGeneratorService
 {
 
-    public function generateFor(Tournament $tournament)
+    public function generateFor(Tournament $tournament): void
     {
         $schedule = $this->makeSchedule($tournament->teams);
-
-
-
-
     }
 
     private function makeSchedule(Collection $teams): Collection

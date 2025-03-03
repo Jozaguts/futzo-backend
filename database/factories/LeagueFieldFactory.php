@@ -1,0 +1,26 @@
+<?php
+
+namespace Database\Factories;
+
+use App\Models\Field;
+use App\Models\League;
+use App\Models\LeagueField;
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Carbon;
+
+class LeagueFieldFactory extends Factory
+{
+    protected $model = LeagueField::class;
+
+    public function definition(): array
+    {
+        return [
+            'availability' => $this->faker->words(),
+            'created_at' => Carbon::now(),
+            'updated_at' => Carbon::now(),
+
+            'league_id' => League::factory(),
+            'field_id' => Field::factory(),
+        ];
+    }
+}

@@ -24,12 +24,12 @@ class TeamTest extends TestCase
         $image = UploadedFile::fake()->image('logo-test.jpg')->mimeType('image/jpeg');
         $coachImage = UploadedFile::fake()->image('coach-test.jpg')->mimeType('image/jpeg');
         $category = Category::factory()->create();
-        $tournament = Tournament::factory()->create();
+        $tournament = Tournament::withoutEvents(static fn() => Tournament::factory()->create());
         $tournament->category()->associate($category);
         $tournament->save();
-        $address = json_encode(config('constants.address'), true);
+        $address = json_encode(config('constants.address'), JSON_THROW_ON_ERROR | true);
 
-        $expectedColors = json_encode(config('constants.colors'), true);
+        $expectedColors = json_encode(config('constants.colors'), JSON_THROW_ON_ERROR | true);
 
         $response = $this->json('POST', '/api/v1/admin/teams', [
             'team' => [
@@ -75,12 +75,12 @@ class TeamTest extends TestCase
         Storage::fake('public');
         $image = UploadedFile::fake()->image('logo-test.jpg')->mimeType('image/jpeg');
         $category = Category::factory()->create();
-        $tournament = Tournament::factory()->create();
+        $tournament = Tournament::withoutEvents(static fn() => Tournament::factory()->create());
         $tournament->category()->associate($category);
         $tournament->save();
-        $address = json_encode(config('constants.address'), true);
+        $address = json_encode(config('constants.address'), JSON_THROW_ON_ERROR | true);
 
-        $expectedColors = json_encode([]);
+        $expectedColors = json_encode([], JSON_THROW_ON_ERROR);
 
         $response = $this->json('POST', '/api/v1/admin/teams', [
             'team' => [

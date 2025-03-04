@@ -16,8 +16,22 @@ class LocationCollection extends ResourceCollection
             return [
                 'id' => $location->id,
                 'name' => $location->name,
+                'city' => $location->city,
                 'address' => $location->address,
-                'tags' => $location->tags->pluck('name'),
+                'availability' => $location->fields->map(function ($field) {
+                    return [
+                        'id' => $field->id,
+                        'name' => $field->name,
+                        'type' => $field->type,
+                        'availability' => [
+                            'leagues' => $field->leaguesFields->map(fn($leagueField) => $leagueField->availability),
+                            'tournaments' => $field->tournamentsFields->map(fn($tournamentField) => $tournamentField->availability),
+                        ]
+                    ];
+                }),
+                'fields_count' => $location->fields->count(),
+                'position' => $location->position,
+                'tags' => [],
                 'image' => $this->imagesAvailable[array_rand($this->imagesAvailable)],
                 'autocomplete_prediction' => $location->autocomplete_prediction
             ];

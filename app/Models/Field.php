@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Field extends Model
@@ -14,6 +15,7 @@ class Field extends Model
 
     public const defaultType = 'Fútbol 11';
     public const defaultDimensions = ['length' => 120, 'width' => 90];
+    public $with = ['leaguesFields'];
     protected $fillable = [
         'location_id',
         'name',
@@ -33,9 +35,14 @@ class Field extends Model
         return $this->belongsTo(Location::class);
     }
 
-    public function leagues(): BelongsToMany
+    public function leaguesFields(): HasMany|Field
     {
-        return $this->belongsToMany(League::class, 'league_fields')->withPivot('availability');
+        return $this->hasMany(LeagueField::class, 'field_id');
+    }
+
+    public function tournamentsFields(): HasMany|Field
+    {
+        return $this->hasMany(TournamentField::class, 'field_id');
     }
 
     public function tournaments(): BelongsToMany

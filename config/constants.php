@@ -88,7 +88,7 @@ return [
         [
             'id' => 2,
             'name' => 'Liga y Eliminatoria',
-            'description' => 'Fase de liga seguida de eliminatoria según la clasificación; ganadores avanzan hasta la final. ',
+            'description' => 'Fase de liga seguida de eliminatoria según la clasificación, ganadores avanzan hasta la final. ',
             'status' => 'created',
         ],
         [

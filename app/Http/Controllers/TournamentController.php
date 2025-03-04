@@ -38,6 +38,10 @@ class TournamentController extends Controller
         return new TournamentCollection($tournaments);
     }
 
+    /**
+     * @throws \Throwable
+     * @throws \JsonException
+     */
     public function store(TournamentStoreRequest $request): JsonResponse
     {
         try {
@@ -59,6 +63,7 @@ class TournamentController extends Controller
                     'thumbnail' => $media->getUrl('thumbnail')
                 ]);
             }
+            TournamentCreatedEvent::dispatch($tournament, $tourneyDto->basicFields());
             DB::commit();
         } catch (FileIsTooBig|FileDoesNotExist $e) {
             DB::rollBack();

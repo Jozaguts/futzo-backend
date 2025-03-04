@@ -139,7 +139,7 @@ class LocationController extends Controller
     {
         try {
             auth()->user()->league->locations()->detach($location->id);
-            $location->delete();
+            
             return response()->json(['message' => 'Location deleted successfully'], 200);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);

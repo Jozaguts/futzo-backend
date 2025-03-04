@@ -18,6 +18,9 @@ class LocationController extends Controller
     public function index(Request $request)
     {
         $data = Location::with('tags', 'fields.leaguesFields', 'fields.tournamentsFields')
+            ->whereHas('leagues', function ($query) {
+                $query->where('league_id', auth()->user()->league->id);
+            })
             ->when($request->has('search'), function ($query) use ($request) {
                 $query->where('locations.name', 'like', '%' . $request->get('search') . '%');
             })
@@ -136,6 +139,7 @@ class LocationController extends Controller
     {
         try {
             auth()->user()->league->locations()->detach($location->id);
+            $location->delete();
             return response()->json(['message' => 'Location deleted successfully'], 200);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);

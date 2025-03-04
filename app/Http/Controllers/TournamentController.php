@@ -46,10 +46,7 @@ class TournamentController extends Controller
             $tournament = Tournament::create($tourneyDto->basicFields());
 
             if ($tourneyDto->hasLocation) {
-                $location = Location::updateOrCreate([
-                    'autocomplete_prediction->place_id' => $tourneyDto->location['place_id']
-                ], $tourneyDto->locationFields());
-                $tournament->locations()->attach($location->id);
+                $tournament->locations()->attach($tourneyDto->locationFields());
             }
 
             if ($request->hasFile('basic.image')) {

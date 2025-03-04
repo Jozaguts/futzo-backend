@@ -36,6 +36,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     });
     Route::prefix('admin')->group(function () {
         Route::get('leagues/football/types', [LeaguesController::class, 'getFootballTypes']);
+        Route::get('leagues/locations', [LeaguesController::class, 'leagueLocations']);
         Route::apiResource('/roles', RoleAndPermissionsController::class);
         Route::apiResources(['genders' => GenderController::class]);
         Route::apiResources(['categories' => CategoryController::class]);

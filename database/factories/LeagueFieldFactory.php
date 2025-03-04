@@ -15,12 +15,11 @@ class LeagueFieldFactory extends Factory
     public function definition(): array
     {
         return [
-            'availability' => $this->faker->words(),
+            'availability' => config('constants.availability'),
             'created_at' => Carbon::now(),
             'updated_at' => Carbon::now(),
-
-            'league_id' => League::factory(),
-            'field_id' => Field::factory(),
+            'league_id' => 1,
+            'field_id' => 1,
         ];
     }
 }

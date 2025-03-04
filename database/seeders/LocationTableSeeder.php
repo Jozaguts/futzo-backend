@@ -12,8 +12,9 @@ class LocationTableSeeder extends Seeder
      */
     public function run(): void
     {
-        Location::factory()->count(10)->create([
-            'name' => fake()->company
+        Location::factory()->count(1)->create([
+            'name' => fake()->company,
+            'position' => ['lat' => fake()->latitude, 'lng' => fake()->longitude],
         ]);
     }
 }

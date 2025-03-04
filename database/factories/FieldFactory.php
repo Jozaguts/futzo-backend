@@ -15,11 +15,10 @@ class FieldFactory extends Factory
     {
         return [
             'name' => $this->faker->name(),
-            'type' => $this->faker->word(),
-            'dimensions' => $this->faker->words(),
+            'type' => Field::defaultType,
+            'dimensions' => Field::defaultDimensions,
             'created_at' => Carbon::now(),
             'updated_at' => Carbon::now(),
-
             'location_id' => Location::factory(),
         ];
     }

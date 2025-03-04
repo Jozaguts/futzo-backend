@@ -382,4 +382,41 @@ return [
             'is_completed' => false,
         ],
     ],
+    'availability' => [
+        'monday' => [
+            'enabled' => false,
+            'start' => ['hours' => '09', 'minutes' => '00'],
+            'end' => ['hours' => '17', 'minutes' => '00'],
+        ],
+        'tuesday' => [
+            'enabled' => false,
+            'start' => ['hours' => '09', 'minutes' => '00'],
+            'end' => ['hours' => '17', 'minutes' => '00'],
+        ],
+        'wednesday' => [
+            'enabled' => false,
+            'start' => ['hours' => '09', 'minutes' => '00'],
+            'end' => ['hours' => '17', 'minutes' => '00'],
+        ],
+        'thursday' => [
+            'enabled' => false,
+            'start' => ['hours' => '09', 'minutes' => '00'],
+            'end' => ['hours' => '17', 'minutes' => '00'],
+        ],
+        'friday' => [
+            'enabled' => true,
+            'start' => ['hours' => '09', 'minutes' => '00'],
+            'end' => ['hours' => '17', 'minutes' => '00'],
+        ],
+        'saturday' => [
+            'enabled' => true,
+            'start' => ['hours' => '09', 'minutes' => '00'],
+            'end' => ['hours' => '17', 'minutes' => '00'],
+        ],
+        'sunday' => [
+            'enabled' => true,
+            'start' => ['hours' => '09', 'minutes' => '00'],
+            'end' => ['hours' => '17', 'minutes' => '00'],
+        ],
+    ]
 ];

@@ -92,8 +92,7 @@ class Tournament extends Model implements HasMedia
 
     public function locations(): BelongsToMany
     {
-        return $this->belongsToMany(Location::class, 'location_tournament')
-            ->using(LocationTournament::class)
+        return $this->belongsToMany(Location::class, LocationTournament::class)
             ->whereNull('location_tournament.deleted_at');
     }
 

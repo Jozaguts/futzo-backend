@@ -139,7 +139,7 @@ class TournamentController extends Controller
 
     public function scheduleSettings(int $tournamentId): ScheduleSettingsResource
     {
-        $tournament = Tournament::with(['configuration', 'format', 'footballType', 'locations.tags'])
+        $tournament = Tournament::with(['configuration', 'format', 'footballType', 'locations'])
             ->findOrFail($tournamentId);
         return new ScheduleSettingsResource($tournament);
     }

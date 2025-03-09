@@ -49,15 +49,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::apiResources(['game-action-details' => GameActionDetailController::class]);
         Route::apiResources(['lineups' => LineupsController::class]);
         Route::apiResources(['leagues' => \App\Http\Controllers\LeaguesController::class]);
-        Route::apiResources(['locations' => \App\Http\Controllers\LocationController::class]);
         Route::get('leagues/{leagueId}/tournaments', [\App\Http\Controllers\LeaguesController::class, 'getTournaments']);
-
         Route::get('positions', \App\Http\Controllers\PositionsController::class);
         require __DIR__ . '/tournaments/routes.php';
         require __DIR__ . '/teams/routes.php';
         require __DIR__ . '/dashboard/routes.php';
         require __DIR__ . '/players/routes.php';
         require __DIR__ . '/profile/routes.php';
+        require __DIR__ . '/locations/routes.php';
     });
 });
 

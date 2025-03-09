@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\LocationStoreRequest;
 use App\Http\Requests\LocationUpdateRequest;
 use App\Http\Resources\LocationCollection;
+use App\Http\Resources\LocationFieldCollection;
 use App\Http\Resources\LocationResource;
 use App\Models\Field;
 use App\Models\LeagueField;
@@ -139,7 +140,7 @@ class LocationController extends Controller
     {
         try {
             auth()->user()->league->locations()->detach($location->id);
-            
+
             return response()->json(['message' => 'Location deleted successfully'], 200);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);
@@ -150,4 +151,11 @@ class LocationController extends Controller
     {
         return new LocationCollection(auth()->user()->league->locations);
     }
+
+    public function fields(Request $request): LocationFieldCollection
+    {
+        $locationIds = explode(',', $request->query('location_ids'));
+        return new LocationFieldCollection(Field::whereIn('location_id', $locationIds)->get());
+    }
+
 }

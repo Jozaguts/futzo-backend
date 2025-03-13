@@ -11,10 +11,11 @@ class LocationFieldCollection extends ResourceCollection
     {
         return $this->collection->map(function ($field, $key) {
             return [
-                'id' => $field->id,
+                'field_id' => $field->id,
                 'step' => ++$key,
-                'name' => $field->name,
+                'field_name' => $field->name,
                 'location_name' => $field->location->name,
+                'location_id' => $field->location->id,
                 'availability' => $field->leaguesFields->map(function ($leagueField) {
                     return [...$leagueField->availability, 'isCompleted' => false];
                 })->toArray()[0]

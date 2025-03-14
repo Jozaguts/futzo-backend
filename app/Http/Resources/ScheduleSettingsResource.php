@@ -10,7 +10,7 @@ class ScheduleSettingsResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'round_trip' => $this->configuration->round_trip,
+            'round_trip' => $this->resource->configuration->round_trip,
             'start_date' => $this->start_date?->format('Y-m-d'),
             'end_date' => $this->end_date?->format('Y-m-d'),
             'elimination_round_trip' => $this->configuration->elimination_round_trip ?? null,

@@ -171,4 +171,17 @@ class CreateTournamentScheduleRequest extends FormRequest
             'elimination_round_trip' => $validated['elimination_phase']['round_trip']
         ];
     }
+
+    public function tiebrakersData($tournamentId): array
+    {
+        $validated = $this->validated();
+        return collect($validated['regular_phase']['tiebreakers'])->map(function ($tiebreaker) use ($tournamentId) {
+            return [
+                'tournament_configuration_id' => $tournamentId,
+                'rule' => $tiebreaker['rule'],
+                'priority' => $tiebreaker['priority'],
+                'is_active' => $tiebreaker['is_active'],
+            ];
+        })->toArray();
+    }
 }

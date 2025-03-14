@@ -17,6 +17,7 @@ use App\Models\MatchSchedule;
 use App\Models\Tournament;
 use App\Models\TournamentConfiguration;
 use App\Models\TournamentFormat;
+use App\Models\TournamentTiebreaker;
 use App\Services\ScheduleGeneratorService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -200,8 +201,18 @@ class TournamentController extends Controller
                 $request->tournamentConfigurationData()
             )
         );
-//        $scheduleGeneratorService->generateFor($tournament);
+        $tiebreakersData = $request->tiebrakersData($tournamentId);
 
-        return response()->json(['message' => 'El calendario se está creando, cuando esté preparado se le notificará.'], 201);
+        foreach ($tiebreakersData as $tiebreaker) {
+            $tournament->configuration->tiebreakers()->save(
+                TournamentTiebreaker::updateOrCreate(
+                    ['tournament_configuration_id' => $tournament->configuration->id, 'rule' => $tiebreaker['rule']],
+                    $tiebreaker
+                )
+            );
+        }
+
+//        $scheduleGeneratorService->generateFor($tournament);
+        return response()->json(['message' => 'El calendario se está creando, cuando esté preparado se le notificará.', $tiebreakersData], 201);
     }
 }

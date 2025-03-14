@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\DTO\TournamentDTO;
 use App\Events\TournamentCreatedEvent;
+use App\Http\Requests\CreateTournamentScheduleRequest;
 use App\Http\Requests\TournamentStoreRequest;
 use App\Http\Requests\TournamentUpdateRequest;
 use App\Http\Requests\UpdateTournamentStatusRequest;
@@ -14,9 +15,12 @@ use App\Http\Resources\TournamentResource;
 use App\Models\Location;
 use App\Models\MatchSchedule;
 use App\Models\Tournament;
+use App\Models\TournamentConfiguration;
 use App\Models\TournamentFormat;
+use App\Services\ScheduleGeneratorService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Spatie\MediaLibrary\MediaCollections\Exceptions\FileDoesNotExist;
 use Spatie\MediaLibrary\MediaCollections\Exceptions\FileIsTooBig;
@@ -170,5 +174,34 @@ class TournamentController extends Controller
         $status = $request->get('status', 'scheduled');
         $schedule = MatchSchedule::where(['tournament_id' => $tournamentId, 'status' => $status])->first();
         return new MatchScheduleResource($schedule);
+    }
+
+    public function schedule(CreateTournamentScheduleRequest $request, ScheduleGeneratorService $scheduleGeneratorService, int $tournamentId): JsonResponse
+    {
+        $data = $request->validated();
+        $tournamentData = $data['general'];
+        $tournament = Tournament::where('id', $tournamentId)
+            ->where('league_id', auth()->user()->league->id)
+            ->firstOrFail();
+        $startDate = Carbon::parse($tournamentData['start_date']);
+        if ($startDate->isPast()) {
+            return response()->json(['error' => 'La fecha de inicio no puede ser en el pasado.'], 400);
+        }
+        $locations = collect($tournamentData['locations'])->pluck('id');
+
+        $availableLocations = Location::whereIn('id', $locations)->get();
+
+        if ($availableLocations->isEmpty()) {
+            return response()->json(['error' => 'No hay locaciones disponibles para este torneo.'], 400);
+        }
+        $tournament->configuration()->save(
+            TournamentConfiguration::updateOrCreate(
+                ['tournament_id' => $tournamentId],
+                $request->tournamentConfigurationData()
+            )
+        );
+//        $scheduleGeneratorService->generateFor($tournament);
+
+        return response()->json(['message' => 'El calendario se está creando, cuando esté preparado se le notificará.'], 201);
     }
 }

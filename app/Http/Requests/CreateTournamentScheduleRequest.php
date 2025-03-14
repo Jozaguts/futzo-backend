@@ -172,7 +172,7 @@ class CreateTournamentScheduleRequest extends FormRequest
         ];
     }
 
-    public function tiebrakersData($tournamentId): array
+    public function tiebreakersData($tournamentId): array
     {
         $validated = $this->validated();
         return collect($validated['regular_phase']['tiebreakers'])->map(function ($tiebreaker) use ($tournamentId) {
@@ -183,5 +183,12 @@ class CreateTournamentScheduleRequest extends FormRequest
                 'is_active' => $tiebreaker['is_active'],
             ];
         })->toArray();
+    }
+
+    public function getEliminationPhaseData(): array
+    {
+        $validated = $this->validated();
+        unset($validated['elimination_phase']['teams_to_next_round'], $validated['elimination_phase']['round_trip']);
+        return $validated['elimination_phase'];
     }
 }

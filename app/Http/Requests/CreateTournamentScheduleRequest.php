@@ -9,6 +9,11 @@ use Illuminate\Validation\Rule;
 
 class CreateTournamentScheduleRequest extends FormRequest
 {
+    public function authorize(): bool
+    {
+        return true;
+    }
+
     public function rules(): array
     {
         $tournamentId = $this->input('general.tournament_id');
@@ -150,45 +155,5 @@ class CreateTournamentScheduleRequest extends FormRequest
             'fields_phase.*.availability.sunday.end.minutes' => 'required|string',
             'fields_phase.*.availability.sunday.enabled' => 'required|boolean',
         ];
-    }
-
-    public function authorize(): bool
-    {
-        return true;
-    }
-
-    public function tournamentConfigurationData(): array
-    {
-        $validated = $this->validated();
-
-        return [
-            'tournament_format_id' => $validated['general']['tournament_format_id'],
-            'football_type_id' => $validated['general']['football_type_id'],
-            'game_time' => $validated['general']['game_time'],
-            'time_between_games' => $validated['general']['time_between_games'],
-            'round_trip' => $validated['regular_phase']['round_trip'],
-            'group_stage' => $validated['regular_phase']['group_stage'] ?? false,
-            'elimination_round_trip' => $validated['elimination_phase']['round_trip']
-        ];
-    }
-
-    public function tiebreakersData($tournamentId): array
-    {
-        $validated = $this->validated();
-        return collect($validated['regular_phase']['tiebreakers'])->map(function ($tiebreaker) use ($tournamentId) {
-            return [
-                'tournament_configuration_id' => $tournamentId,
-                'rule' => $tiebreaker['rule'],
-                'priority' => $tiebreaker['priority'],
-                'is_active' => $tiebreaker['is_active'],
-            ];
-        })->toArray();
-    }
-
-    public function getEliminationPhaseData(): array
-    {
-        $validated = $this->validated();
-        unset($validated['elimination_phase']['teams_to_next_round'], $validated['elimination_phase']['round_trip']);
-        return $validated['elimination_phase'];
     }
 }

@@ -15,20 +15,18 @@ use App\Http\Resources\TournamentResource;
 use App\Models\Location;
 use App\Models\MatchSchedule;
 use App\Models\Tournament;
-use App\Models\TournamentConfiguration;
 use App\Models\TournamentFormat;
-use App\Models\TournamentPhase;
-use App\Models\TournamentTiebreaker;
 use App\Services\ScheduleGeneratorService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Spatie\MediaLibrary\MediaCollections\Exceptions\FileDoesNotExist;
 use Spatie\MediaLibrary\MediaCollections\Exceptions\FileIsTooBig;
 
 class TournamentController extends Controller
 {
+
+
     public function index(Request $request): TournamentCollection
     {
 
@@ -178,51 +176,13 @@ class TournamentController extends Controller
         return new MatchScheduleResource($schedule);
     }
 
-    public function schedule(CreateTournamentScheduleRequest $request, ScheduleGeneratorService $scheduleGeneratorService, int $tournamentId): JsonResponse
+    public function schedule(CreateTournamentScheduleRequest $request, ScheduleGeneratorService $scheduleGeneratorService, Tournament $tournament): JsonResponse
     {
-        $data = $request->validated();
-        $tournamentData = $data['general'];
-        $tournament = Tournament::where('id', $tournamentId)
-            ->where('league_id', auth()->user()->league->id)
-            ->firstOrFail();
-        $startDate = Carbon::parse($tournamentData['start_date']);
-        if ($startDate->isPast()) {
-            return response()->json(['error' => 'La fecha de inicio no puede ser en el pasado.'], 400);
-        }
-        $locations = collect($tournamentData['locations'])->pluck('id');
+        $scheduleGeneratorService
+            ->setTournament($tournament)
+            ->saveConfiguration($request->validated())
+            ->makeSchedule();
 
-        $availableLocations = Location::whereIn('id', $locations)->get();
-
-        if ($availableLocations->isEmpty()) {
-            return response()->json(['error' => 'No hay locaciones disponibles para este torneo.'], 400);
-        }
-        $tournament->configuration()->save(
-            TournamentConfiguration::updateOrCreate(
-                ['tournament_id' => $tournamentId],
-                $request->tournamentConfigurationData()
-            )
-        );
-        $tiebreakersData = $request->tiebreakersData($tournamentId);
-
-        foreach ($tiebreakersData as $tiebreaker) {
-            $tournament->configuration->tiebreakers()->save(
-                TournamentTiebreaker::updateOrCreate(
-                    ['tournament_configuration_id' => $tournament->configuration->id, 'rule' => $tiebreaker['rule']],
-                    $tiebreaker
-                )
-            );
-        }
-
-        $eliminationPhaseData = $request->getEliminationPhaseData();
-        foreach ($eliminationPhaseData['phases'] as $eliminationPhase) {
-            $tournament->phases()->save(
-                TournamentPhase::updateOrCreate(
-                    ['tournament_id' => $tournamentId, 'name' => $eliminationPhase['name']],
-                    $eliminationPhase
-                )
-            );
-        }
-//        $scheduleGeneratorService->generateFor($tournament);
-        return response()->json(['message' => 'El calendario se está creando, cuando esté preparado se le notificará.'], 201);
+        return response()->json(['message' => 'Calendario generado correctamente']);
     }
 }

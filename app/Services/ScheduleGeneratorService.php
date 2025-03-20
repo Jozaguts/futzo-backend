@@ -38,35 +38,94 @@ class ScheduleGeneratorService
 
     public function makeSchedule()
     {
+        // todo al front el el paso 4 debo de agregar la opcion de descartar o desactivar un campo y descartar o desactivar un dia
+        // todo ademas motrarle al usario cuantos partidos se van a jugar y cuantos slots se van a ocupar si tiene suficientes slots o de mas
+        $break_time = 15;
+        $unexpected_time = 15;
         $config = $this->tournament->configuration;
         $teams = $this->tournament->teams()->pluck('teams.id')->toArray();
         $fields = TournamentField::where('tournament_id', $this->tournament->id)->get();
+
         if (count($teams) < 2) {
             throw new RuntimeException("No hay suficientes equipos para generar encuentros.");
         }
-        $scheduleDate = Carbon::parse($this->tournament->start_date);
+
+        $matchDuration = $config->game_time + $break_time + $unexpected_time; // 90 min juego + 15 min descanso + 15 extra
+        $availableSlots = $this->generateAvailableSlots($fields, $this->tournament->start_date, $matchDuration);
+        $totalMatches = count($teams) / 2 * (count($teams) - 1);
+
+        if (count($availableSlots) < $totalMatches) {
+            throw new RuntimeException("No hay suficientes horarios disponibles para los partidos.");
+        }
+
         $matches = [];
-        for ($i = 0, $iMax = count($teams); $i < $iMax; $i++) {
-            for ($j = $i + 1, $jMax = count($teams); $j < $jMax; $j++) {
-                $field = $fields->random();
-                $availability = $field->availability;
-                $day = array_key_first($availability);
-                $matchTime = Carbon::parse($scheduleDate)->setTime($availability[$day]['start']['hours'], $availability[$day]['start']['minutes']);
+        $currentSlotIndex = 0;
+
+        foreach ($this->generateFixtures($teams, $config->round_trip) as $fixtures) {
+            foreach ($fixtures as $match) {
+                if ($currentSlotIndex >= count($availableSlots)) {
+                    throw new RuntimeException("No hay suficientes slots disponibles para programar todos los partidos.");
+                }
+
+                $slot = $availableSlots[$currentSlotIndex++];
 
                 $matches[] = [
                     'tournament_id' => $this->tournament->id,
-                    'team_home_id' => $teams[$i],
-                    'team_away_id' => $teams[$j],
-                    'field_id' => $field->field_id,
-                    'match_date' => $matchTime,
+                    'team_home_id' => $match[0],
+                    'team_away_id' => $match[1],
+                    'field_id' => $slot['field_id'],
+                    'match_date' => $slot['match_time']->toDateTimeString(),
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];
-
-                $scheduleDate->addMinutes($config->game_time + $config->time_between_games);
             }
         }
+
         return $matches;
+    }
+
+    private function generateFixtures(array $teams, bool $roundTrip)
+    {
+        $fixtures = [];
+        $teamCount = count($teams);
+        for ($i = 0; $i < $teamCount - 1; $i++) {
+            for ($j = $i + 1; $j < $teamCount; $j++) {
+                $fixtures[] = [$teams[$i], $teams[$j]];
+                if ($roundTrip) {
+                    $fixtures[] = [$teams[$j], $teams[$i]];
+                }
+            }
+        }
+        return array_chunk($fixtures, $teamCount / 2); // Divide en jornadas
+    }
+
+    private function generateAvailableSlots($fields, $startDate, $matchDuration)
+    {
+        $availableSlots = [];
+        $scheduleDate = Carbon::parse($startDate);
+
+        while (count($availableSlots) < 100) { // Evitar loops infinitos, asegurar disponibilidad
+            foreach ($fields as $field) {
+                foreach ($field->availability as $day => $schedule) {
+                    if (!$schedule['enabled']) {
+                        continue;
+                    }
+
+                    $start = Carbon::parse($scheduleDate)->setTime($schedule['start']['hours'], $schedule['start']['minutes']);
+                    $end = Carbon::parse($scheduleDate)->setTime($schedule['end']['hours'], $schedule['end']['minutes']);
+
+                    while ($start->copy()->addMinutes($matchDuration)->lessThanOrEqualTo($end)) {
+                        $availableSlots[] = [
+                            'field_id' => $field->field_id,
+                            'match_time' => $start->copy()
+                        ];
+                        $start->addMinutes($matchDuration);
+                    }
+                }
+            }
+            $scheduleDate->addDay(); // Pasar al siguiente día disponible después de agotar los slots
+        }
+        return $availableSlots;
     }
 
     public function saveConfiguration($data): self

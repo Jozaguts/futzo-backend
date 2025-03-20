@@ -103,7 +103,9 @@ class Tournament extends Model implements HasMedia
 
     public function fields(): BelongsToMany
     {
-        return $this->belongsToMany(Field::class, 'tournament_fields')->withPivot('availability');
+        return $this->belongsToMany(Field::class, 'tournament_fields')
+            ->using(TournamentFieldPivot::class)
+            ->withPivot('availability');
     }
 
     public function registerMediaCollections(?Media $media = null): void

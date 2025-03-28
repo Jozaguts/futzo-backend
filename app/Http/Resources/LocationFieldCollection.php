@@ -61,7 +61,7 @@ class LocationFieldCollection extends ResourceCollection
                 $endHour, $endMinute
             );
 
-            $intervals = [['value' => '*', 'text' => 'Todo el dia', 'selected' => false]];
+            $intervals = [['value' => '*', 'text' => 'Todo el dia', 'selected' => true]];
             for ($time = $start; $time + $step <= $end; $time += $step) {
                 $hourStart = sprintf('%02d:%02d', intdiv($time, 60), $time % 60);
                 $intervals[] = [

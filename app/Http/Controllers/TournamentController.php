@@ -8,10 +8,10 @@ use App\Http\Requests\CreateTournamentScheduleRequest;
 use App\Http\Requests\TournamentStoreRequest;
 use App\Http\Requests\TournamentUpdateRequest;
 use App\Http\Requests\UpdateTournamentStatusRequest;
-use App\Http\Resources\MatchScheduleResource;
 use App\Http\Resources\ScheduleSettingsResource;
 use App\Http\Resources\TournamentCollection;
 use App\Http\Resources\TournamentResource;
+use App\Http\Resources\TournamentScheduleCollection;
 use App\Models\Location;
 use App\Models\MatchSchedule;
 use App\Models\Tournament;
@@ -169,11 +169,11 @@ class TournamentController extends Controller
         return response()->json($location);
     }
 
-    public function getTournamentSchedule(Request $request, int $tournamentId): MatchScheduleResource
+    public function getTournamentSchedule(Request $request, int $tournamentId): TournamentScheduleCollection
     {
         $status = $request->get('status', 'scheduled');
-        $schedule = MatchSchedule::where(['tournament_id' => $tournamentId, 'status' => $status])->first();
-        return new MatchScheduleResource($schedule);
+        $schedule = MatchSchedule::where(['tournament_id' => $tournamentId, 'status' => $status])->get();
+        return new TournamentScheduleCollection($schedule);
     }
 
     public function schedule(CreateTournamentScheduleRequest $request, Tournament $tournament): JsonResponse

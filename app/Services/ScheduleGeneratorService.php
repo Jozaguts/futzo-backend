@@ -74,6 +74,7 @@ class ScheduleGeneratorService
         $matches = [];
         $teamRounds = [];
         $weekStart = Carbon::parse($this->tournament->start_date)->startOfWeek($startOfWeekDay);
+        $globalFieldIndex = 0;
 
         foreach ($fixturesByRound as $round => $fixtures) {
             $weekKey = $weekStart->toDateString();
@@ -86,13 +87,13 @@ class ScheduleGeneratorService
             $weekFieldSlots = $slotsByWeekAndField[$weekKey];
             $fieldSlotPointers = array_fill_keys(array_keys($weekFieldSlots->toArray()), 0);
             $fieldsAvailable = array_keys($weekFieldSlots->toArray());
-            $fieldIndex = 0;
 
             foreach ($fixtures as $match) {
                 $assigned = false;
                 $attempts = 0;
+
                 while ($attempts < count($fieldsAvailable)) {
-                    $fieldId = $fieldsAvailable[$fieldIndex];
+                    $fieldId = $fieldsAvailable[$globalFieldIndex % count($fieldsAvailable)];
                     $slots = $weekFieldSlots[$fieldId];
                     $slotPointer = $fieldSlotPointers[$fieldId];
 
@@ -127,9 +128,10 @@ class ScheduleGeneratorService
 
                         Log::info("Asignado partido ronda {$matchRound}: {$match[0]} vs {$match[1]} en campo {$fieldId} a las {$matchTime->format('H:i')} ({$matchTime->toDateString()})");
                         $assigned = true;
+                        $globalFieldIndex++;
                         break;
                     }
-                    $fieldIndex = ($fieldIndex + 1) % count($fieldsAvailable);
+                    $globalFieldIndex++;
                     $attempts++;
                 }
 
@@ -153,6 +155,7 @@ class ScheduleGeneratorService
                 'match_date' => $match['match_date'],
                 'match_time' => $match['match_time'],
                 'round' => $match['round'],
+                'field_id' => $match['field_id'],
             ], $match);
         }
     }

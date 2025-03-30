@@ -19,28 +19,34 @@ class MatchSchedule extends Model
         'location_id',
         'referee_id',
         'status',
-        'result'
+        'result',
+        'round'
     ];
-    protected  $casts = [
+    protected $casts = [
         'match_date' => 'date',
-        'match_time' => 'time'
+        'match_time' => 'datetime:H:i:s',
     ];
+
     public function tournament()
     {
         return $this->belongsTo(Tournament::class);
     }
+
     public function homeTeam()
     {
         return $this->belongsTo(Team::class, 'home_team_id');
     }
+
     public function awayTeam()
     {
         return $this->belongsTo(Team::class, 'away_team_id');
     }
+
     public function location()
     {
         return $this->belongsTo(Location::class);
     }
+
     public function referee()
     {
         return $this->belongsTo(Referee::class);

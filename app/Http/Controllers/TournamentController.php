@@ -176,12 +176,13 @@ class TournamentController extends Controller
         return new MatchScheduleResource($schedule);
     }
 
-    public function schedule(CreateTournamentScheduleRequest $request, ScheduleGeneratorService $scheduleGeneratorService, Tournament $tournament): JsonResponse
+    public function schedule(CreateTournamentScheduleRequest $request, Tournament $tournament): JsonResponse
     {
-        $matches = $scheduleGeneratorService
-            ->setTournament($tournament)
+        $service = new ScheduleGeneratorService();
+        $matches = $service->setTournament($tournament)
             ->saveConfiguration($request->validated())
             ->makeSchedule();
+        $service->persistScheduleToMatchSchedules($matches);
 
         return response()->json(['message' => 'Calendario generado correctamente', 'data' => $matches]);
     }

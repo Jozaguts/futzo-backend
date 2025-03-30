@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -16,6 +15,8 @@ return new class extends Migration
             $table->unsignedBigInteger('tournament_id');
             $table->unsignedBigInteger('home_team_id');
             $table->unsignedBigInteger('away_team_id');
+            $table->unsignedBigInteger('field_id')->nullable();
+            $table->unsignedInteger('round');
             $table->date('match_date');
             $table->time('match_time');
             $table->unsignedBigInteger('location_id');
@@ -24,6 +25,7 @@ return new class extends Migration
             $table->string('result')->nullable();
 
 
+            $table->foreign('field_id')->references('id')->on('fields')->onDelete('set null');
             $table->foreign('tournament_id')->references('id')->on('tournaments');
             $table->foreign('home_team_id')->references('id')->on('teams');
             $table->foreign('away_team_id')->references('id')->on('teams');

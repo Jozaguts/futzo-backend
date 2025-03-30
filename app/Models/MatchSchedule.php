@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class MatchSchedule extends Model
@@ -18,6 +19,7 @@ class MatchSchedule extends Model
         'match_time',
         'location_id',
         'referee_id',
+        'field_id',
         'status',
         'result',
         'round'
@@ -27,28 +29,33 @@ class MatchSchedule extends Model
         'match_time' => 'datetime:H:i:s',
     ];
 
-    public function tournament()
+    public function tournament(): BelongsTo
     {
         return $this->belongsTo(Tournament::class);
     }
 
-    public function homeTeam()
+    public function homeTeam(): BelongsTo
     {
         return $this->belongsTo(Team::class, 'home_team_id');
     }
 
-    public function awayTeam()
+    public function awayTeam(): BelongsTo
     {
         return $this->belongsTo(Team::class, 'away_team_id');
     }
 
-    public function location()
+    public function location(): BelongsTo
     {
         return $this->belongsTo(Location::class);
     }
 
-    public function referee()
+    public function referee(): BelongsTo
     {
         return $this->belongsTo(Referee::class);
+    }
+
+    public function field(): BelongsTo
+    {
+        return $this->belongsTo(Field::class);
     }
 }

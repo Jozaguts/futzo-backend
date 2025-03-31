@@ -2,16 +2,54 @@
 
 namespace App\Http\Resources;
 
-use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 
 /** @see \App\Models\MatchSchedule */
 class TournamentScheduleCollection extends ResourceCollection
 {
-    public function toArray(Request $request): array
+    public function toArray($request): array
     {
-        return [
-            'data' => $this->collection,
-        ];
+        return $this->collection
+            ->groupBy('round')
+            ->map(function ($matches, $round) {
+                return [
+                    'round' => (int)$round,
+                    'date' => optional($matches->first())->match_date?->toDateString(),
+                    'matches' => $matches->map(function ($match) {
+                        return [
+                            'id' => $match->id,
+                            'home' => [
+                                'id' => $match->homeTeam->id,
+                                'name' => $match->homeTeam->name,
+                                'image' => 'https://ui-avatars.com/api/?name=' . $match->homeTeam->name . '&background=9155FD&color=fff',
+                                'goals' => $match->result?->home_goals ?? 0
+                            ],
+                            'away' => [
+                                'id' => $match->awayTeam->id,
+                                'name' => $match->awayTeam->name,
+                                'image' => 'https://ui-avatars.com/api/?name=' . $match->awayTeam->name . '&background=8A8D93&color=fff',
+                                'goals' => $match->result?->away_goals ?? 0
+                            ],
+                            'details' => [
+                                'date' => optional($match->match_date)->translatedFormat('D, j/n'),
+                                'time' => optional($match->match_time)->format('h:i A'),
+                                'field' => [
+                                    'id' => $match->field_id,
+                                    'name' => optional($match->field)->name ?? 'Campo desconocido'
+                                ],
+                                'location' => [
+                                    'id' => $match->location_id,
+                                    'name' => optional($match->location)->name ?? 'Ubicación desconocida'
+                                ],
+                                'referee' => optional($match->referee)->name ?? 'Por asignar'
+                            ],
+                            'status' => $match->status,
+                            'result' => $match->result,
+                        ];
+                    })->values(),
+
+                ];
+            })->values()->toArray();
     }
+
 }

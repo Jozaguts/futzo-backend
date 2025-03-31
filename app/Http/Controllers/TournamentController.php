@@ -169,11 +169,34 @@ class TournamentController extends Controller
         return response()->json($location);
     }
 
-    public function getTournamentSchedule(Request $request, int $tournamentId): TournamentScheduleCollection
+    public function getTournamentSchedule(Request $request, int $tournamentId): JsonResponse
     {
         $status = $request->get('status', 'scheduled');
-        $schedule = MatchSchedule::where(['tournament_id' => $tournamentId, 'status' => $status])->get();
-        return new TournamentScheduleCollection($schedule);
+        $page = (int)$request->get('page', 1);
+        $tournament = Tournament::with('teams:id,name')->findOrFail($tournamentId);
+        $perPage = 1;
+        $skip = ($page - 1) * $perPage;
+        $schedule = MatchSchedule::where([
+            'tournament_id' => $tournamentId,
+            'status' => $status
+        ])
+            ->orderBy('round')
+            ->get()
+            ->groupBy('round')
+            ->slice($skip, $perPage)
+            ->flatten();
+        return response()->json([
+            'tournament' => $tournament,
+            'rounds' => TournamentScheduleCollection::make($schedule)->toArray($request),
+            'pagination' => [
+                'current_page' => $page,
+                'per_page' => $perPage,
+                'total_rounds' => MatchSchedule::where([
+                    'tournament_id' => $tournamentId,
+                    'status' => $status
+                ])->distinct('round')->count('round')
+            ]
+        ]);
     }
 
     public function schedule(CreateTournamentScheduleRequest $request, Tournament $tournament): JsonResponse

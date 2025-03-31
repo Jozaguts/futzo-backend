@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 
 #[ScopedBy(\App\Scopes\LeagueScope::class)]
 class Tournament extends Model implements HasMedia
@@ -39,6 +40,14 @@ class Tournament extends Model implements HasMedia
         'start_date' => 'date',
         'end_date' => 'date',
     ];
+
+    protected function startDate(): Attribute
+    {
+
+        return Attribute::make(
+            get: fn($value) => $value ? \Carbon\Carbon::parse($value)->translatedFormat('D d M y') : null,
+        );
+    }
 
     protected static function booted(): void
     {

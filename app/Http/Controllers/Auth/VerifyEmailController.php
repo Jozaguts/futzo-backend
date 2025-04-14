@@ -6,47 +6,38 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\VerifyEmailRequest;
 use App\Models\User;
 use Illuminate\Auth\Events\Verified;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 
 class VerifyEmailController extends Controller
 {
-	/**
-	 * Mark the authenticated user's email address as verified.
-	 */
-	public function __invoke(VerifyEmailRequest $request): \Illuminate\Http\JsonResponse
-	{
-		$data = $request->validated();
-		$isPhone = isset($data['phone']);
-		$user = User::query()
-			->where([
-				'verification_token' => $data['code'],
-				$isPhone ? 'phone' : 'email' => $data[$isPhone ? 'phone' : 'email']
-			])
-			->first();
+    /**
+     * Mark the authenticated user's email address as verified.
+     */
+    public function __invoke(VerifyEmailRequest $request): JsonResponse
+    {
+        $data = $request->validated();
 
-		if ($this->hasVerifiedEmail($user)) {
-			$message = 'Correo electrónico ya ha sido verificado.';
-			return response()->json(['message' => $message], 401);
-		}
+        $user = User::where('verification_token', $data['code'])
+            ->where(function ($query) use ($data) {
+                if (isset($data['phone'])) {
+                    $query->where('phone', $data['phone']);
+                } else {
+                    $query->where('email', $data['email']);
+                }
+            })->firstOrFail();
 
-		if ($this->markEmailAsVerified($user)) {
-			event(new Verified($user));
-		}
-		$message = 'Correo electrónico verificado correctamente.';
-		// generate cookie session and login user
-		Auth::login($user);
-		return response()->json(['message' => $message]);
-	}
+        $this->markEmailAsVerified($user);
 
-	private function hasVerifiedEmail($user): bool
-	{
-		return !is_null($user->verified_at);
-	}
+        event(new Verified($user));
 
-	private function markEmailAsVerified($user): bool
-	{
-		return $user->forceFill([
-			'verified_at' => $user->freshTimestamp(),
-		])->save();
-	}
+        return response()->json(['message' => 'Cuenta verificada exitosamente.']);
+    }
+
+    private function markEmailAsVerified(User $user): void
+    {
+        $user->update([
+            'verified_at' => $user->freshTimestamp(),
+        ]);
+    }
 }

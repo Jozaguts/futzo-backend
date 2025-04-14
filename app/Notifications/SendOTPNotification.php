@@ -9,27 +9,27 @@ use Illuminate\Notifications\Notification;
 
 class SendOTPNotification extends Notification implements ShouldQueue
 {
-	use Queueable;
+    use Queueable;
 
-	protected int $otp;
-	protected string $buttonText;
+    protected int $otp;
+    protected string $textButton;
 
-	public function __construct($otp, $buttonText)
-	{
-		$this->otp = $otp;
-		$this->buttonText = $buttonText;
-	}
+    public function __construct($otp, $textButton)
+    {
+        $this->otp = $otp;
+        $this->textButton = $textButton;
+    }
 
-	public function via($notifiable): array
-	{
-		return [WhatsAppChannel::class];
-	}
+    public function via($notifiable): array
+    {
+        return [WhatsAppChannel::class];
+    }
 
-	public function toWhatsApp($notifiable): array
-	{
-		return [
-			'otp' => $this->otp,
-			'button_text' => $this->buttonText,
-		];
-	}
+    public function toWhatsApp($notifiable): array
+    {
+        return [
+            'otp' => $this->otp,
+            'text_button' => $this->textButton,
+        ];
+    }
 }

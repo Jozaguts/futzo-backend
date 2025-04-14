@@ -40,7 +40,7 @@ class Kernel extends HttpKernel
 
         'api' => [
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
-            \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
+            \Illuminate\Routing\Middleware\ThrottleRequests::class . ':api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
 
             \Illuminate\Session\Middleware\StartSession::class, // Add this line
@@ -70,5 +70,6 @@ class Kernel extends HttpKernel
         'verified' => \App\Http\Middleware\CustomEnsureEmailIsVerified::class,
         'hasRole' => \App\Http\Middleware\CheckUserHasRole::class,
         'ensureUserOwnsProfile' => \App\Http\Middleware\EnsureUserOwnsProfile::class,
+        'hasNotLeague' => \App\Http\Middleware\HasNotLeagueMiddleware::class,
     ];
 }

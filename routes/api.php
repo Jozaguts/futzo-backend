@@ -35,8 +35,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
         return new UserResource($request->user());
     });
     Route::prefix('admin')->group(function () {
-        Route::get('leagues/football/types', [LeaguesController::class, 'getFootballTypes']);
-        Route::get('leagues/locations', [LeaguesController::class, 'leagueLocations']);
         Route::apiResource('/roles', RoleAndPermissionsController::class);
         Route::apiResources(['genders' => GenderController::class]);
         Route::apiResources(['categories' => CategoryController::class]);
@@ -48,9 +46,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::apiResources(['game-time-details' => GameTimeDetailsController::class]);
         Route::apiResources(['game-action-details' => GameActionDetailController::class]);
         Route::apiResources(['lineups' => LineupsController::class]);
-        Route::apiResources(['leagues' => \App\Http\Controllers\LeaguesController::class]);
-        Route::get('leagues/{leagueId}/tournaments', [\App\Http\Controllers\LeaguesController::class, 'getTournaments']);
         Route::get('positions', \App\Http\Controllers\PositionsController::class);
+
+        require __DIR__ . '/leagues/routes.php';
         require __DIR__ . '/tournaments/routes.php';
         require __DIR__ . '/teams/routes.php';
         require __DIR__ . '/dashboard/routes.php';

@@ -39,6 +39,12 @@ return [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
         'redirect' => env('GOOGLE_REDIRECT_URI')
-    ]
+    ],
+    'whatsapp' => [
+        'token' => env('WHATSAPP_TOKEN'),
+        'phone_id' => env('WHATSAPP_PHONE_ID', 609111265623001),
+        'account_id' => env('WHATSAPP_ACCOUNT_ID', 3960924894160168),
+        'url' => env('WHATSAPP_URL', 'https://graph.facebook.com/v22.0'),
+    ],
 
 ];

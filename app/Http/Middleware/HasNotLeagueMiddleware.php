@@ -9,9 +9,9 @@ class HasNotLeagueMiddleware
 {
     public function handle(Request $request, Closure $next)
     {
-        if ($request->user()->has('league')) {
+        if (!empty($request->user()->league_id)) {
             return response()->json([
-                'message' => 'User already has a league'
+                'message' => "El usuario ya tiene una liga registrada  \"{$request->user()->league->name}\"",
             ], 403);
         }
         return $next($request);

@@ -31,7 +31,7 @@ class LocationCollection extends ResourceCollection
                 'availability' => $availability,
                 'fields_count' => $location->fields->count(),
                 'position' => $location->position,
-                'tags' => [],
+                'tags' => $location->tags->pluck('name'),
                 'image' => $this->imagesAvailable[array_rand($this->imagesAvailable)],
                 'autocomplete_prediction' => $location->autocomplete_prediction,
                 'completed' => true,

@@ -13,27 +13,28 @@ class LocationCollection extends ResourceCollection
     public function toArray(Request $request): array
     {
         return $this->collection->map(function ($location) {
+            $availability = $location->fields->map(function ($field) {
+                return $field->leaguesFields->map(fn($leagueField) => [
+                    'id' => $field->id,
+                    'name' => $field->name,
+                    'type' => $field->type,
+                    'isCompleted' => false,
+
+                    ...$leagueField->availability
+                ]);
+            })->flatten(1)->toArray();
             return [
                 'id' => $location->id,
                 'name' => $location->name,
                 'city' => $location->city,
                 'address' => $location->address,
-                'availability' => $location->fields->map(function ($field) {
-                    return [
-                        'id' => $field->id,
-                        'name' => $field->name,
-                        'type' => $field->type,
-                        'availability' => [
-                            'leagues' => $field->leaguesFields->map(fn($leagueField) => $leagueField->availability),
-                            'tournaments' => $field->tournamentsFields->map(fn($tournamentField) => $tournamentField->availability),
-                        ]
-                    ];
-                }),
+                'availability' => $availability,
                 'fields_count' => $location->fields->count(),
                 'position' => $location->position,
                 'tags' => [],
                 'image' => $this->imagesAvailable[array_rand($this->imagesAvailable)],
-                'autocomplete_prediction' => $location->autocomplete_prediction
+                'autocomplete_prediction' => $location->autocomplete_prediction,
+                'completed' => true,
             ];
         })->toArray();
     }

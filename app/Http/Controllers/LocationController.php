@@ -43,7 +43,6 @@ class LocationController extends Controller
             $location = Location::create($locationData);
 
             $league = auth()->user()->league;
-
             if ($league) {
                 $league->locations()->attach($location->id, ['updated_at' => now(), 'created_at' => now()]);
             }
@@ -78,7 +77,7 @@ class LocationController extends Controller
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
-            logger('Location creation failed', ['message' => $e->getMessage()]);
+            logger('Location creation failed', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
         }
         return new LocationResource($location);
     }

@@ -39,13 +39,20 @@ class Tournament extends Model implements HasMedia
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
+
     ];
 
-    protected function startDate(): Attribute
+    protected function startDateToString(): Attribute
     {
-
         return Attribute::make(
-            get: fn($value) => $value ? \Carbon\Carbon::parse($value)->translatedFormat('D d M y') : null,
+            get: fn($value, $attributes) => $attributes['start_date'] ? \Carbon\Carbon::parse($attributes['start_date'])->translatedFormat('D d M y') : null,
+        );
+    }
+
+    protected function endDateToString(): Attribute
+    {
+        return Attribute::make(
+            get: fn($value, $attributes) => $attributes['end_date'] ? \Carbon\Carbon::parse($attributes['end_date'])->translatedFormat('D d M y') : null,
         );
     }
 

@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Route;
 Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])
     ->middleware('guest');
 Route::post('/reset-password-phone', [PasswordResetLinkController::class, 'resetWithPhoneToken'])->middleware('guest');
+Route::post('/verify-reset-token', [PasswordResetLinkController::class, 'verifyResetToken'])->middleware('guest');
 
 
 Route::post('/reset-password', [NewPasswordController::class, 'store'])

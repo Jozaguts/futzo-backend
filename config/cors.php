@@ -22,7 +22,9 @@ return [
         'verify',
         'auth/*/redirect',
         'auth/*/callback',
-        'forgot-password'
+        'forgot-password',
+        'reset-password',
+        'verify-reset-token',
     ],
 
     'allowed_methods' => ['*'],

@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
@@ -23,13 +26,42 @@ class NewPasswordController extends Controller
     {
         $request->validate([
             'token' => ['required'],
-            'email' => ['required', 'email'],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'email' => ['required_without:phone', 'email', 'exists:users,email'],
+            'phone' => ['required_without:email', 'regex:/^\+?[1-9]\d{1,14}$/', 'exists:users,phone'],
+            'password' => ['required', Rules\Password::defaults()],
         ]);
 
-        // Here we will attempt to reset the user's password. If it is successful we
-        // will update the password on an actual user model and persist it to the
-        // database. Otherwise we will parse the error and return the response.
+        $isPhone = $request->has('phone');
+        if ($isPhone) {
+            $user = User::where('phone', $request->phone)->first();
+
+            if ($user->verification_token !== null) {
+                throw ValidationException::withMessages([
+                    'token' => ['Debes verificar el código antes de cambiar la contraseña.'],
+                ]);
+            }
+            $record = DB::table('phone_password_resets')
+                ->where('phone', $request->phone)
+                ->where('token', $request->token)
+                ->first();
+
+            if (!$record || Carbon::parse($record->created_at)->addMinutes(15)->isPast()) {
+                throw ValidationException::withMessages([
+                    'token' => ['El código es inválido o ha expirado.'],
+                ]);
+            }
+
+            $user = User::where('phone', $request->phone)->first();
+            $user->forceFill([
+                'password' => $request->password,
+                'remember_token' => Str::random(60),
+            ])->save();
+
+            event(new PasswordReset($user));
+            DB::table('phone_password_resets')->where('phone', $request->phone)->delete();
+
+            return response()->json(['status' => 'Contraseña actualizada con éxito', 'code' => 200]);
+        }
         $status = Password::reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
             function ($user) use ($request) {

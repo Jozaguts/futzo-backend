@@ -28,7 +28,7 @@ class TournamentCollection extends ResourceCollection
                     'name' => $tournament->format->name,
                 ],
                 'start_date_to_string' => $tournament->start_date_to_string,
-                'start_date' => $tournament->start_date->format('Y-m-d'),
+                'start_date' => $tournament->start_date,
                 'end_date' => $tournament->end_date,
                 'status' => $tournament->status,
                 'name' => $tournament->name,

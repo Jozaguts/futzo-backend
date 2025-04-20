@@ -31,7 +31,7 @@ class TournamentScheduleCollection extends ResourceCollection
                                 'goals' => $match->result?->away_goals ?? 0
                             ],
                             'details' => [
-                                'date' => optional($match->match_date)->translatedFormat('D, j/n'),
+                                'date' => optional($match->match_date)->translatedFormat('D j/n'),
                                 'time' => optional($match->match_time)->format('h:i A'),
                                 'field' => [
                                     'id' => $match->field_id,

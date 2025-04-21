@@ -25,7 +25,7 @@ class TeamFactory extends Factory
             'email' => $this->faker->unique()->safeEmail,
             'phone' => $this->faker->phoneNumber(),
             'description' => $this->faker->sentence(10),
-            'image' => $this->faker->imageUrl(),
+            'image' => '',
             'colors' => config('constants.colors'),
             'created_at' => $this->faker->randomElement([now()->startOfMonth(), now()->endOfMonth()]),
         ];

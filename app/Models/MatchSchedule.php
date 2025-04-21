@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -28,6 +29,13 @@ class MatchSchedule extends Model
         'match_date' => 'date',
         'match_time' => 'datetime:H:i:s',
     ];
+
+    protected function matchDateToString(): Attribute
+    {
+        return Attribute::make(
+            get: fn($value, $attributes) => $attributes['match_date'] ? \Carbon\Carbon::parse($attributes['match_date'])->translatedFormat('D d M y') : null,
+        );
+    }
 
     public function tournament(): BelongsTo
     {

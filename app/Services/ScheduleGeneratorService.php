@@ -165,26 +165,42 @@ class ScheduleGeneratorService
         $fixtures = [];
         $teamCount = count($teams);
         $rounds = $teamCount - 1;
+
         if ($teamCount % 2 !== 0) {
-            $teams[] = null;
-            $rounds++;
+            $teams[] = null; // equipo fantasma
+            $teamCount++;
+            $rounds = $teamCount - 1;
         }
 
-        $mid = (int)(count($teams) / 2);
+        $half = $teamCount / 2;
+        $rotation = $teams;
+
         for ($round = 0; $round < $rounds; $round++) {
             $pairings = [];
-            for ($i = 0; $i < $mid; $i++) {
-                $home = $teams[$i];
-                $away = $teams[count($teams) - 1 - $i];
-                if ($home && $away) {
+            for ($i = 0; $i < $half; $i++) {
+                $home = $rotation[$i];
+                $away = $rotation[$teamCount - 1 - $i];
+
+                if (!is_null($home) && !is_null($away)) {
                     $pairings[] = [$home, $away];
-                    if ($roundTrip) {
-                        $pairings[] = [$away, $home];
-                    }
                 }
             }
-            array_splice($teams, 1, 0, array_pop($teams));
+
             $fixtures[] = $pairings;
+
+            // rotación de equipos (excepto el primero)
+            $fixed = array_shift($rotation);
+            $last = array_pop($rotation);
+            array_unshift($rotation, $fixed);
+            array_splice($rotation, 1, 0, [$last]);
+        }
+
+        if ($roundTrip) {
+            // agregar la vuelta: invertir local y visitante
+            foreach ($fixtures as $round) {
+                $reverseRound = array_map(fn($match) => [$match[1], $match[0]], $round);
+                $fixtures[] = $reverseRound;
+            }
         }
 
         return $fixtures;

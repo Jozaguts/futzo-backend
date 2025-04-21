@@ -173,7 +173,7 @@ class TournamentController extends Controller
     {
         $status = $request->get('status', 'scheduled');
         $page = (int)$request->get('page', 1);
-        $tournament = Tournament::with(['teams:id,name', 'category:id,name'])->findOrFail($tournamentId);
+        $tournament = TournamentResource::make(Tournament::with(['teams:id,name', 'category:id,name'])->findOrFail($tournamentId));
         $perPage = 1;
         $skip = ($page - 1) * $perPage;
         $schedule = MatchSchedule::where([

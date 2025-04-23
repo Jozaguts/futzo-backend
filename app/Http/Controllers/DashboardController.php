@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\NextGamesCollection;
 use App\Http\Resources\NextGamesResource;
-use App\Models\MatchSchedule;
+use App\Models\Game;
 use App\Services\DashboardStatsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -29,7 +29,7 @@ class DashboardController extends Controller
     {
         $nowDate = now()->toDateString();
         $nowTime = now()->toTimeString();
-        $nextGames = MatchSchedule::where('status', 'scheduled')
+        $nextGames = Game::where('status', 'programado')
             ->where(function ($query) use ($nowDate, $nowTime) {
                 $query->where('match_date', '>', $nowDate)
                     ->orWhere(function ($q) use ($nowDate, $nowTime) {

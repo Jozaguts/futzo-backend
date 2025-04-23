@@ -7,13 +7,14 @@ use App\Events\TournamentCreatedEvent;
 use App\Http\Requests\CreateTournamentScheduleRequest;
 use App\Http\Requests\TournamentStoreRequest;
 use App\Http\Requests\TournamentUpdateRequest;
+use App\Http\Requests\UpdateTournamentRoundRequest;
 use App\Http\Requests\UpdateTournamentStatusRequest;
 use App\Http\Resources\ScheduleSettingsResource;
 use App\Http\Resources\TournamentCollection;
 use App\Http\Resources\TournamentResource;
 use App\Http\Resources\TournamentScheduleCollection;
+use App\Models\Game;
 use App\Models\Location;
-use App\Models\MatchSchedule;
 use App\Models\Tournament;
 use App\Models\TournamentFormat;
 use App\Services\ScheduleGeneratorService;
@@ -171,12 +172,12 @@ class TournamentController extends Controller
 
     public function getTournamentSchedule(Request $request, int $tournamentId): JsonResponse
     {
-        $status = $request->get('status', 'scheduled');
+        $status = $request->get('status', 'programado');
         $page = (int)$request->get('page', 1);
         $tournament = TournamentResource::make(Tournament::with(['teams:id,name', 'category:id,name'])->findOrFail($tournamentId));
         $perPage = 1;
         $skip = ($page - 1) * $perPage;
-        $schedule = MatchSchedule::where([
+        $schedule = Game::where([
             'tournament_id' => $tournamentId,
             'status' => $status
         ])
@@ -191,7 +192,7 @@ class TournamentController extends Controller
             'pagination' => [
                 'current_page' => $page,
                 'per_page' => $perPage,
-                'total_rounds' => MatchSchedule::where([
+                'total_rounds' => Game::where([
                     'tournament_id' => $tournamentId,
                     'status' => $status
                 ])->distinct('round')->count('round')
@@ -208,5 +209,22 @@ class TournamentController extends Controller
         $service->persistScheduleToMatchSchedules($matches);
 
         return response()->json(['message' => 'Calendario generado correctamente', 'data' => $matches]);
+    }
+
+    public function updateTournamentRound(UpdateTournamentRoundRequest $request, Tournament $tournament, int $roundId): JsonResponse
+    {
+        $data = $request->validated();
+        $matches = $data['matches'];
+        foreach ($matches as $match) {
+            $tournament->schedules()
+                ->where('round', $roundId)
+                ->where('id', $match['id'])
+                ->update([
+                    'home_goals' => $match['home']['goals'],
+                    'away_goals' => $match['away']['goals'],
+                    'status' => 'completed'
+                ]);
+        }
+        return response()->json(['message' => 'Partido actualizado correctamente']);
     }
 }

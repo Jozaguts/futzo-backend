@@ -2,9 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\Game;
 use App\Models\LeagueField;
 use App\Models\Location;
-use App\Models\MatchSchedule;
 use App\Models\Tournament;
 use App\Models\TournamentConfiguration;
 use App\Models\TournamentField;
@@ -123,7 +123,7 @@ class ScheduleGeneratorService
                             'match_date' => $matchTime->toDateString(),
                             'match_time' => $matchTime->format('H:i:s'),
                             'round' => $matchRound,
-                            'status' => 'scheduled',
+                            'status' => 'programado',
                         ];
 
                         Log::info("Asignado partido ronda {$matchRound}: {$match[0]} vs {$match[1]} en campo {$fieldId} a las {$matchTime->format('H:i')} ({$matchTime->toDateString()})");
@@ -148,7 +148,7 @@ class ScheduleGeneratorService
     public function persistScheduleToMatchSchedules(array $matches): void
     {
         foreach ($matches as $match) {
-            MatchSchedule::updateOrCreate([
+            Game::updateOrCreate([
                 'tournament_id' => $match['tournament_id'],
                 'home_team_id' => $match['home_team_id'],
                 'away_team_id' => $match['away_team_id'],
@@ -156,6 +156,7 @@ class ScheduleGeneratorService
                 'match_time' => $match['match_time'],
                 'round' => $match['round'],
                 'field_id' => $match['field_id'],
+                'league_id' => auth()->user()->league->id
             ], $match);
         }
     }

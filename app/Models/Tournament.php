@@ -114,7 +114,7 @@ class Tournament extends Model implements HasMedia
 
     public function schedules(): HasMany
     {
-        return $this->hasMany(MatchSchedule::class);
+        return $this->hasMany(Game::class);
     }
 
     public function fields(): BelongsToMany

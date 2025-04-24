@@ -13,9 +13,11 @@ return new class extends Migration {
         Schema::create('games', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('home_team_id');
+            $table->integer('home_goals')->nullable()->default(0);
             $table->foreign('home_team_id')->references('id')->on('teams')->onDelete('cascade');
             $table->unsignedBigInteger('away_team_id');
             $table->foreign('away_team_id')->references('id')->on('teams')->onDelete('cascade');
+            $table->integer('away_goals')->nullable()->default(0);
             $table->unsignedBigInteger('winner_team_id')->nullable();
             $table->foreign('winner_team_id')->references('id')->on('teams');
             $table->unsignedBigInteger('tournament_id');

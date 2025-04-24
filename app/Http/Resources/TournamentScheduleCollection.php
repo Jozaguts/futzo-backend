@@ -4,7 +4,6 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\ResourceCollection;
 
-/** @see \App\Models\MatchSchedule */
 class TournamentScheduleCollection extends ResourceCollection
 {
     public function toArray($request): array
@@ -14,21 +13,23 @@ class TournamentScheduleCollection extends ResourceCollection
             ->map(function ($matches, $round) {
                 return [
                     'round' => (int)$round,
+                    'isEditable' => false,
                     'date' => optional($matches->first())->match_date?->toDateString(),
                     'matches' => $matches->map(function ($match) {
                         return [
                             'id' => $match->id,
+
                             'home' => [
                                 'id' => $match->homeTeam->id,
                                 'name' => $match->homeTeam->name,
                                 'image' => 'https://ui-avatars.com/api/?name=' . $match->homeTeam->name . '&background=9155FD&color=fff',
-                                'goals' => $match->result?->home_goals ?? 0
+                                'goals' => $match->home_goals
                             ],
                             'away' => [
                                 'id' => $match->awayTeam->id,
                                 'name' => $match->awayTeam->name,
                                 'image' => 'https://ui-avatars.com/api/?name=' . $match->awayTeam->name . '&background=8A8D93&color=fff',
-                                'goals' => $match->result?->away_goals ?? 0
+                                'goals' => $match->away_goals
                             ],
                             'details' => [
                                 'date' => optional($match->match_date)->translatedFormat('D j/n'),

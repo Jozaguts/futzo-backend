@@ -29,7 +29,7 @@ class DashboardController extends Controller
     {
         $nowDate = now()->toDateString();
         $nowTime = now()->toTimeString();
-        $nextGames = Game::where('status', 'programado')
+        $nextGames = Game::where('status', Game::STATUS_SCHEDULED)
             ->where(function ($query) use ($nowDate, $nowTime) {
                 $query->where('match_date', '>', $nowDate)
                     ->orWhere(function ($q) use ($nowDate, $nowTime) {

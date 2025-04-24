@@ -18,6 +18,7 @@ Route::prefix('tournaments')->group(function () {
     Route::get('formats', [TournamentController::class, 'getTournamentFormats']);
     Route::get('{tournament}', [TournamentController::class, 'show']);
     Route::put('{tournament}', [TournamentController::class, 'update']);
+    Route::post('{tournament}/rounds/{roundId}', [TournamentController::class, 'updateTournamentRound']);
 
 
 });

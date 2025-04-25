@@ -227,4 +227,15 @@ class TournamentController extends Controller
         }
         return response()->json(['message' => 'Partido actualizado correctamente']);
     }
+
+    public function updateGameStatus(Request $request, int $tournamentId, int $roundId)
+    {
+        $status = $request->input('status');
+
+        Game::where('tournament_id', $tournamentId)
+            ->where('round', $roundId)
+            ->update(['status' => $status]);
+
+        return response()->json(['message', 'Estado de partido actulizado correctamente']);
+    }
 }

@@ -14,7 +14,7 @@ class RoundStatusService
             ->unique();
 
         if ($statuses->count() === 1 && $statuses->first() === Game::STATUS_SCHEDULED) {
-            return 'programada';
+            return 'programado';
         }
 
         if ($statuses->contains(Game::STATUS_IN_PROGRESS)) {
@@ -22,7 +22,7 @@ class RoundStatusService
         }
 
         if ($statuses->contains(Game::STATUS_COMPLETED) && $statuses->count() === 1) {
-            return 'completada';
+            return 'completado';
         }
 
         if ($statuses->contains(Game::STATUS_COMPLETED) && $statuses->count() > 1) {
@@ -30,7 +30,7 @@ class RoundStatusService
         }
 
         if ($statuses->every(fn($s) => in_array($s, [Game::STATUS_COMPLETED, Game::STATUS_CANCELED]))) {
-            return 'cancelada';
+            return 'cancelado';
         }
 
         return 'mixta';

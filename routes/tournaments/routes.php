@@ -19,6 +19,5 @@ Route::prefix('tournaments')->group(function () {
     Route::get('{tournament}', [TournamentController::class, 'show']);
     Route::put('{tournament}', [TournamentController::class, 'update']);
     Route::post('{tournament}/rounds/{roundId}', [TournamentController::class, 'updateTournamentRound']);
-
-
+    Route::put('{tournament}/schedule/rounds/{roundId}', [TournamentController::class, 'updateGameStatus']);
 });

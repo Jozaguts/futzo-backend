@@ -172,7 +172,7 @@ class TournamentController extends Controller
 
     public function getTournamentSchedule(Request $request, int $tournamentId): JsonResponse
     {
-        $status = $request->get('status', false);
+        $status = $request->get('status', []);
         $page = (int)$request->get('page', 1);
         $tournament = TournamentResource::make(Tournament::with(['teams:id,name', 'category:id,name'])->findOrFail($tournamentId));
         $perPage = 1;
@@ -181,7 +181,7 @@ class TournamentController extends Controller
             'tournament_id' => $tournamentId
         ])
             ->when($status, function ($query) use ($status) {
-                return $query->where('status', $status);
+                return $query->whereIn('status', $status);
             })
             ->orderBy('round')
             ->get()
@@ -196,8 +196,10 @@ class TournamentController extends Controller
                 'per_page' => $perPage,
                 'total_rounds' => Game::where([
                     'tournament_id' => $tournamentId,
-                    'status' => $status
-                ])->distinct('round')->count('round')
+                ])->when($status, function ($query) use ($status) {
+                    $query->whereIn('status', $status);
+                })
+                    ->distinct('round')->count('round'),
             ]
         ]);
     }

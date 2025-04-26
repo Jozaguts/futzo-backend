@@ -32,7 +32,7 @@ class NextGamesResource extends JsonResource
                 'name' => $this->field->name,
             ],
             'match_date' => $this->match_date_to_string,
-            'match_time' => $this->match_time->format('H:i'),
+            'match_time' => $this->match_time
         ];
     }
 }

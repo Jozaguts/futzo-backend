@@ -18,7 +18,7 @@ class RoundStatusService
         }
 
         if ($statuses->contains(Game::STATUS_IN_PROGRESS)) {
-            return 'en progreso';
+            return 'en_progreso';
         }
 
         if ($statuses->contains(Game::STATUS_COMPLETED) && $statuses->count() === 1) {

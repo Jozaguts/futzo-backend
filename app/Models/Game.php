@@ -53,7 +53,7 @@ class Game extends Model
     protected function matchDateToString(): Attribute
     {
         return Attribute::make(
-            get: fn($value, $attributes) => $attributes['date'] ? \Carbon\Carbon::parse($attributes['date'])->translatedFormat('D d M y') : null,
+            get: fn($value, $attributes) => $attributes['match_date'] ? \Carbon\Carbon::parse($attributes['match_date'])->translatedFormat('D d M y') : null,
         );
     }
 

@@ -418,5 +418,6 @@ return [
             'start' => ['hours' => '09', 'minutes' => '00'],
             'end' => ['hours' => '17', 'minutes' => '00'],
         ],
-    ]
+    ],
+    'logo_path' => env('FUTZO_LOGO_PATH', 'images/text only/logo-17.png')
 ];

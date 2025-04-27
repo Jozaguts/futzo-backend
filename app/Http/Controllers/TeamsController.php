@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Events\RegisteredTeamCoach;
 use App\Events\RegisteredTeamPresident;
+use App\Exports\TeamsTemplateExport;
 use App\Http\Requests\TeamStoreRequest;
 use App\Http\Requests\TeamUpdateRequest;
 use App\Http\Resources\TeamCollection;
@@ -13,6 +14,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 
 class TeamsController extends Controller
 {
@@ -180,5 +182,10 @@ class TeamsController extends Controller
         event(new $eventClass($user, $temporaryPassword));
 
         return $user;
+    }
+
+    public function downloadTeamsTemplate()
+    {
+        return Excel::download(new TeamsTemplateExport, 'plantilla_importacion_equipos.xlsx');
     }
 }

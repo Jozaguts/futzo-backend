@@ -77,7 +77,7 @@ class TeamStoreRequest extends FormRequest
             ->exists();
     }
 
-    public function messages()
+    public function messages(): array
     {
         return [
             'team.name.required' => 'El nombre del equipo es requerido',

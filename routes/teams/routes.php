@@ -9,6 +9,7 @@ Route::prefix('teams')->group(function () {
     Route::get('template', [TeamsController::class, 'downloadTeamsTemplate']);
     Route::get('', [TeamsController::class, 'index']);
     Route::get('{id}', [TeamsController::class, 'show']);
+    Route::post('import', [TeamsController::class, 'import']);
     Route::post('', [TeamsController::class, 'store']);
     Route::put('{id}', [TeamsController::class, 'update']);
     Route::delete('{id}', [TeamsController::class, 'destroy']);

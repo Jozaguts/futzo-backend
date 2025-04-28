@@ -5,16 +5,21 @@ namespace App\Http\Controllers;
 use App\Events\RegisteredTeamCoach;
 use App\Events\RegisteredTeamPresident;
 use App\Exports\TeamsTemplateExport;
+use App\Http\Requests\ImportTeamsRequest;
 use App\Http\Requests\TeamStoreRequest;
 use App\Http\Requests\TeamUpdateRequest;
 use App\Http\Resources\TeamCollection;
 use App\Http\Resources\TeamResource;
 use App\Models\Team;
+use App\Models\Tournament;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
+use PhpOffice\PhpSpreadsheet\Exception;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class TeamsController extends Controller
 {
@@ -38,7 +43,7 @@ class TeamsController extends Controller
         return new TeamCollection($teams);
     }
 
-    public function show($id)
+    public function show($id): TeamResource
     {
         return new TeamResource(Team::findOrFail($id));
     }
@@ -153,12 +158,12 @@ class TeamsController extends Controller
         }
     }
 
-    public function destroy($id)
+    public function destroy($id): void
     {
 
     }
 
-    private function createOrUpdateUser($userData, $request, $role, $roleName, $eventClass)
+    private function createOrUpdateUser($userData, $request, $role, $roleName, $eventClass, $sendEmail = true): ?User
     {
         if (!$userData) {
             return null;
@@ -179,13 +184,208 @@ class TeamsController extends Controller
         $user->league()->associate(auth()->user()->league);
         $user->save();
         $user->assignRole($roleName);
-        event(new $eventClass($user, $temporaryPassword));
+        if ($sendEmail) {
+            event(new $eventClass($user, $temporaryPassword));
+        }
 
         return $user;
     }
 
-    public function downloadTeamsTemplate()
+    /**
+     * @throws Exception
+     * @throws \PhpOffice\PhpSpreadsheet\Writer\Exception
+     */
+    public function downloadTeamsTemplate(): BinaryFileResponse
     {
         return Excel::download(new TeamsTemplateExport, 'plantilla_importacion_equipos.xlsx');
     }
+
+    /**
+     * @throws \Throwable
+     */
+    public function import(ImportTeamsRequest $request): ?JsonResponse
+    {
+
+        try {
+            $spreadsheet = IOFactory::load($request->file('file'));
+            $tournament = Tournament::find($request->get('tournament_id'));
+            $sheetNames = $spreadsheet->getSheetNames();
+            $found = false;
+            $teamsData = [];
+
+            foreach ($sheetNames as $name) {
+                $sheet = $spreadsheet->getSheetByName($name);
+                if (!$sheet) {
+                    continue;
+                }
+
+                $header = $sheet->rangeToArray('A1:O1', null, true, true, true)[1];
+
+                if ($this->isValidHeader($header)) {
+                    $found = true;
+                    $rows = $sheet->toArray(null, true, true, true);
+                    array_shift($rows); // quitar header
+                    $teamsData = $rows;
+                    break;
+                }
+            }
+            if (!$found) {
+                return response()->json([
+                    'message' => 'No se encontró una hoja de datos válida. Asegúrese de que las columnas coincidan con el formato requerido.',
+                ], 422);
+            }
+            DB::beginTransaction();
+            foreach ($teamsData as $row) {
+                $this->storeTeamFromRow($row, $tournament);
+            }
+            DB::commit();
+            return response()->json(['message' => 'Equipos importados exitosamente.']);
+
+        } catch (Exception $e) {
+            DB::rollBack();
+            report($e);
+            return response()->json([
+                'message' => 'Ocurrió un error procesando el archivo.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    private function isValidHeader($header): bool
+    {
+        $expected = [
+            'A' => 'Nombre del equipo',
+            'B' => 'Correo del equipo',
+            'C' => 'Teléfono del equipo',
+            'D' => 'Dirección',
+            'E' => 'Color local primario',
+            'F' => 'Color local secundario',
+            'G' => 'Color visitante primario',
+            'H' => 'Color visitante secundario',
+            'I' => 'Nombre del presidente',
+            'J' => 'Teléfono del presidente',
+            'K' => 'Correo del presidente',
+            'L' => 'Nombre del entrenador',
+            'M' => 'Teléfono del entrenador',
+            'N' => 'Correo del entrenador',
+        ];
+
+        foreach ($expected as $column => $expectedValue) {
+            if (trim($header[$column]) !== $expectedValue) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * @throws \JsonException
+     */
+    private function storeTeamFromRow($row, $tournament): void
+    {
+        $data = [
+            'team' => [
+                'name' => $row['A'],
+                'email' => $row['B'],
+                'phone' => $row['C'],
+                'address' => $this->normalizeAddress($row['D']),
+                'colors' => json_encode([
+                    'home' => [
+                        'primary' => $row['E'],
+                        'secondary' => $row['F'],
+                    ],
+                    'away' => [
+                        'primary' => $row['G'],
+                        'secondary' => $row['H'],
+                    ],
+                ], JSON_THROW_ON_ERROR),
+                'category_id' => $tournament->category->id,
+                'tournament_id' => $tournament->id,
+            ],
+            'president' => [
+                'name' => $row['I'],
+                'phone' => $row['J'],
+                'email' => $row['K'],
+            ],
+            'coach' => [
+                'name' => $row['L'],
+                'phone' => $row['M'],
+                'email' => $row['N'],
+            ],
+        ];
+
+        $formRequest = TeamStoreRequest::create('', 'POST', $data);
+        $formRequest->setContainer(app())->setRedirector(app('redirect'));
+        $formRequest->validateResolved();
+        $president = $this->createOrUpdateUser(
+            $formRequest['president'] ?? null,
+            request(),
+            'president',
+            'dueño de equipo',
+            RegisteredTeamPresident::class,
+            false
+        );
+        $coach = $this->createOrUpdateUser($formRequest['coach'] ?? null,
+            request(),
+            'coach',
+            'entrenador',
+            RegisteredTeamCoach::class,
+            false
+        );
+
+        $team = Team::create([
+            'name' => $data['team']['name'],
+            'president_id' => $president?->id ?? null,
+            'coach_id' => $coach?->id ?? null,
+            'phone' => $data['team']['phone'] ?? null,
+            'email' => $data['team']['email'] ?? null,
+            'address' => json_decode($data['team']['address'], false, 512, JSON_THROW_ON_ERROR),
+            'colors' => json_decode($data['team']['colors'], false, 512, JSON_THROW_ON_ERROR)
+        ]);
+        $team->leagues()->attach(auth()->user()->league_id);
+        $team->categories()->attach($data['team']['category_id']);
+        $team->tournaments()->attach($data['team']['tournament_id']);
+    }
+
+    /**
+     * @throws \JsonException
+     */
+    private function normalizeAddress($value)
+    {
+        $value = trim($value);
+        return json_encode([
+            'terms' => [
+                [
+                    'value' => $value,
+                    'offset' => 0,
+                ],
+            ],
+            'types' => [
+                'establishment',
+                'tourist_attraction',
+                'point_of_interest',
+                'park',
+            ],
+            'place_id' => null,
+            'reference' => null,
+            'description' => $value,
+            'matched_substrings' => [
+                [
+                    'length' => strlen($value),
+                    'offset' => 0,
+                ],
+            ],
+            'structured_formatting' => [
+                'main_text' => $value,
+                'secondary_text' => null,
+                'main_text_matched_substrings' => [
+                    [
+                        'length' => strlen($value),
+                        'offset' => 0,
+                    ],
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR);
+    }
+
 }

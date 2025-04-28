@@ -49,10 +49,7 @@ class LeaguesController extends Controller
 
     public function getTournaments($leagueId): TournamentByLeagueCollection
     {
-
-//        $tournament = League::find($leagueId)->tournaments();
-//        return response()->json($tournament);
-        $tournament = League::find($leagueId)->tournaments()->withCount('teams')->get();
+        $tournament = League::find($leagueId)?->tournaments()->withCount('teams')->get();
 
         return new TournamentByLeagueCollection($tournament);
     }

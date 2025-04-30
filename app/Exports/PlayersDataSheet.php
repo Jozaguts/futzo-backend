@@ -21,8 +21,6 @@ class PlayersDataSheet implements FromCollection, WithTitle, WithColumnWidths, W
                 'teléfono',
                 'fecha_nacimiento',
                 'nacionalidad',
-                'equipo',
-                'categoria',
                 'posicion',
                 'numero',
                 'altura',
@@ -53,8 +51,6 @@ class PlayersDataSheet implements FromCollection, WithTitle, WithColumnWidths, W
             'J' => 10,
             'K' => 10,
             'L' => 10,
-            'M' => 15,
-            'N' => 30,
         ];
     }
 

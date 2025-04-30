@@ -28,8 +28,6 @@ class PlayersInstructionsSheet implements FromCollection, WithTitle, WithColumnW
             ['teléfono', 'Teléfono del jugador', 'No', '+52 333 123 4567'],
             ['fecha_nacimiento', 'Fecha de nacimiento (YYYY-MM-DD)', 'Sí', '2001-05-23'],
             ['nacionalidad', 'Nacionalidad', 'Sí', 'Mexicano'],
-            ['equipo', 'Nombre del equipo donde juega', 'Sí', 'Tigres FC'],
-            ['categoria', 'Categoría', 'Sí', 'Sub-20'],
             ['posicion', 'Posición', 'Sí', 'Delantero'],
             ['numero', 'Número de camiseta', 'No', '9'],
             ['altura', 'Altura en centímetros', 'No', '180'],

@@ -388,4 +388,15 @@ class TeamsController extends Controller
         ], JSON_THROW_ON_ERROR);
     }
 
+    public function search(Request $request): JsonResponse
+    {
+        $value = $request->get('value', false);
+        $teams = Team::with('tournaments.configuration:id:max_players_per_team')
+            ->withCount('players')
+            ->when($value && $value !== '', fn($query) => $query->where('name', 'like', "%$value%"))
+            ->paginate(10, ['*'], 'page', $request->get('page', 1));
+
+        return response()->json($teams);
+    }
+
 }

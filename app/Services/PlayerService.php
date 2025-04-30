@@ -19,6 +19,7 @@ class PlayerService
     /**
      * @throws FileDoesNotExist
      * @throws FileIsTooBig
+     * @throws \Throwable
      */
     public function store(PlayerStoreRequest $request): void
     {

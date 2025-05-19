@@ -186,6 +186,9 @@ class ScheduleGeneratorService
                 $away = $rotation[$teamCount - 1 - $i];
 
                 if (!is_null($home) && !is_null($away)) {
+                    if ($round % 2 !== 0) {
+                        [$home, $away] = [$away, $home];
+                    }
                     $pairings[] = [$home, $away];
                 }
             }

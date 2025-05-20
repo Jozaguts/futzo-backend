@@ -75,8 +75,11 @@ class TeamsController extends Controller
                     'image' => $media->getUrl('default'),
                 ]);
             }
-
-            $team->leagues()->attach(auth()->user()->league_id);
+            $league_id = auth()?->user()?->league_id;
+            if (!$league_id) {
+                $league_id = Tournament::where('id', $data['team']['tournament_id'])->first()->league?->id;
+            }
+            $team->leagues()->attach($league_id);
             $team->categories()->attach($data['team']['category_id']);
             $team->tournaments()->attach($data['team']['tournament_id']);
             DB::commit();

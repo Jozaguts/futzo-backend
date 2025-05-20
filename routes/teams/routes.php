@@ -9,9 +9,9 @@ Route::prefix('teams')->group(function () {
     Route::get('template', [TeamsController::class, 'downloadTeamsTemplate']);
     Route::get('search', [TeamsController::class, 'search']);
     Route::get('', [TeamsController::class, 'index']);
-    Route::get('{id}', [TeamsController::class, 'show']);
+    Route::get('{id}', [TeamsController::class, 'show'])->withoutMiddleware('auth:sanctum');
     Route::post('import', [TeamsController::class, 'import']);
-    Route::post('', [TeamsController::class, 'store']);
+    Route::post('', [TeamsController::class, 'store'])->withoutMiddleware('auth:sanctum');
     Route::put('{id}', [TeamsController::class, 'update']);
     Route::delete('{id}', [TeamsController::class, 'destroy']);
 });

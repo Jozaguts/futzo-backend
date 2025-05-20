@@ -37,7 +37,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::prefix('admin')->group(function () {
         Route::apiResource('/roles', RoleAndPermissionsController::class);
         Route::apiResources(['genders' => GenderController::class]);
-        Route::apiResources(['categories' => CategoryController::class]);
         Route::apiResources(['referees' => RefereeController::class]);
         Route::apiResources(['penalties' => PenaltyController::class]);
         Route::apiResources(['penalty-goal-keepers' => PenaltyGoalKeeperController::class]);
@@ -55,6 +54,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         require __DIR__ . '/players/routes.php';
         require __DIR__ . '/profile/routes.php';
         require __DIR__ . '/locations/routes.php';
+        require __DIR__ . '/categories/routes.php';
     });
 });
 

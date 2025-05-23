@@ -24,7 +24,7 @@ class UserFactory extends Factory
             'name' => fake()->firstName(),
             'last_name' => fake()->lastName(),
             'email' => fake()->unique()->safeEmail(),
-            'phone' => fake()->phoneNumber(),
+            'phone' => '+52 ' . fake()->numerify('322 ### ## ##'),
             'verified_at' => now(),
             'verification_token' => random_int(1000, 9999),
             'password' => '$2y$10$RENqDsgT5rr0sjujwq1v4uoTXC9K9f7KMa1ilMFOdG2DMf7Xwm2TS', // password.

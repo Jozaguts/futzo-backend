@@ -34,8 +34,6 @@ class DatabaseSeeder extends Seeder
         $user->assignRole('super administrador');
         $this->call(CountriesSeeder::class);
         $this->call(PositionsTableSeeder::class);
-        $this->call(LocationTableSeeder::class);
-//        $this->call(FieldsTableSeeder::class);
         $this->call(CategoriesTableSeeder::class);
         $this->call(TournamentFormatTableSeeder::class);
         $this->call(FootballTypesTableSedder::class);
@@ -43,12 +41,14 @@ class DatabaseSeeder extends Seeder
         $this->call(ActionsTableSeeder::class);
         $this->call(CouponsTableSeeder::class);
         $this->call(LeaguesTableSeeder::class);
+        $this->call(LocationsTableSeeder::class);
+        $this->call(FieldsTableSeeder::class);
 //        $this->call(LeagueFieldTableSeeder::class);
         $user->league_id = League::first()->id;
         $user->save();
 //        $this->call(UserSeeder::class);
-//        $this->call(TournamentTableSeeder::class);
-//        $this->call(TeamsTableSeeder::class);
+        $this->call(TournamentTableSeeder::class);
+        $this->call(TeamsTableSeeder::class);
 //        $this->call(PlayerSeeder::class);
 //        $this->call(GameSeeder::class);
 //        $this->call(GamePlayerSeeder::class);

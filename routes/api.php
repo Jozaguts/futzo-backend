@@ -40,7 +40,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::apiResources(['referees' => RefereeController::class]);
         Route::apiResources(['penalties' => PenaltyController::class]);
         Route::apiResources(['penalty-goal-keepers' => PenaltyGoalKeeperController::class]);
-        Route::apiResources(['games' => GameController::class]);
         Route::apiResources(['game-details' => GameGeneralDetailsController::class]);
         Route::apiResources(['game-time-details' => GameTimeDetailsController::class]);
         Route::apiResources(['game-action-details' => GameActionDetailController::class]);
@@ -55,6 +54,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         require __DIR__ . '/profile/routes.php';
         require __DIR__ . '/locations/routes.php';
         require __DIR__ . '/categories/routes.php';
+        require __DIR__ . '/games/routes.php';
     });
 });
 

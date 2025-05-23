@@ -9,6 +9,7 @@ use App\Http\Requests\TournamentStoreRequest;
 use App\Http\Requests\TournamentUpdateRequest;
 use App\Http\Requests\UpdateTournamentRoundRequest;
 use App\Http\Requests\UpdateTournamentStatusRequest;
+use App\Http\Resources\FieldResource;
 use App\Http\Resources\ScheduleSettingsResource;
 use App\Http\Resources\TournamentCollection;
 use App\Http\Resources\TournamentResource;
@@ -20,6 +21,7 @@ use App\Models\TournamentFormat;
 use App\Services\ScheduleGeneratorService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
 use Spatie\MediaLibrary\MediaCollections\Exceptions\FileDoesNotExist;
 use Spatie\MediaLibrary\MediaCollections\Exceptions\FileIsTooBig;
@@ -248,5 +250,16 @@ class TournamentController extends Controller
             ->update(['status' => $status]);
 
         return response()->json(['message', 'Estado de partido actulizado correctamente']);
+    }
+
+    public function fields(Tournament $tournament): AnonymousResourceCollection
+    {
+        return FieldResource::collection($tournament->fields)
+            ->additional([
+                'meta' => [
+                    'tournament_id' => $tournament->id,
+                    'tournament_name' => $tournament->name
+                ]
+            ]);
     }
 }

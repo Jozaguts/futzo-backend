@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\TournamentField;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 
@@ -28,58 +29,94 @@ class LocationFieldCollection extends ResourceCollection
                 'location_name' => $field->location->name,
                 'location_id' => $field->location->id,
                 'disabled' => false,
-                'availability' => $this->transformAvailability($leagueField->availability),
+                'availability' => $this->transformAvailability($leagueField->availability, $field->id),
             ];
         })->toArray();
     }
 
-    private function transformAvailability(array $availability): array
+    private function transformAvailability(array $availability, int $fieldId, ?int $excludeTournamentId = null): array
     {
+        // 1) Traer todas las reservas de tournament_fields
+        $query = TournamentField::where('field_id', $fieldId);
+        if ($excludeTournamentId) {
+            $query->where('tournament_id', '!=', $excludeTournamentId);
+        }
+        $bookings = $query->pluck('availability')->all();
+
+        // 2) Construir dos mapas:
+        //    a) $bookedSlots[day] = [ '09:00', '10:00', ... ]
+        //    b) $fullDay[day] = true  si existe reserva “Todo el día”
+        $bookedSlots = [];
+        $fullDay = [];
+
+        foreach ($bookings as $json) {
+            foreach ($json as $day => $data) {
+                if (!isset($data['intervals'])) {
+                    continue;
+                }
+                foreach ($data['intervals'] as $interval) {
+                    if ($interval['value'] === '*' && !empty($interval['selected'])) {
+                        // marca todo el día como reservado
+                        $fullDay[$day] = true;
+                    }
+                    // si hay un slot seleccionado distinto de '*', agrégalo
+                    if ($interval['value'] !== '*' && !empty($interval['selected'])) {
+                        $bookedSlots[$day][] = $interval['value'];
+                    }
+                }
+            }
+        }
+
+        // 3) Generar respuesta marcando disabled según $
         $result = [];
         $daysOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
         foreach ($daysOrder as $day) {
-            // Ignora si no hay datos o no está habilitado
-            if (!isset($availability[$day]) || $day === 'isCompleted' || empty($availability[$day]['enabled'])) {
+            if (!isset($availability[$day]) || empty($availability[$day]['enabled'])) {
                 continue;
             }
 
-            // Convertir la hora de inicio y fin a minutos
-            $startHour = (int)$availability[$day]['start']['hours'];
-            $startMinute = (int)$availability[$day]['start']['minutes'];
-            $endHour = (int)$availability[$day]['end']['hours'];
-            $endMinute = (int)$availability[$day]['end']['minutes'];
+            $startH = (int)$availability[$day]['start']['hours'];
+            $startM = (int)$availability[$day]['start']['minutes'];
+            $endH = (int)$availability[$day]['end']['hours'];
+            $endM = (int)$availability[$day]['end']['minutes'];
 
-            $start = $startHour * 60 + $startMinute;
-            $end = $endHour * 60 + $endMinute;
-            $step = 60; // Intervalo de 1 hora (60 minutos)
+            $start = $startH * 60 + $startM;
+            $end = $endH * 60 + $endM;
+            $step = 60;
 
-            // Rango total disponible
-            $availableRange = sprintf(
-                '%02d:%02d a %02d:%02d',
-                $startHour, $startMinute,
-                $endHour, $endMinute
-            );
+            $intervals = [
+                [
+                    'value' => '*',
+                    'text' => 'Todo el día',
+                    'selected' => true,
+                    // si fullDay marca este día, deshabilita también “Todo el día”
+                    'disabled' => !empty($fullDay[$day]),
+                ],
+            ];
 
-            $intervals = [['value' => '*', 'text' => 'Todo el dia', 'selected' => true]];
-            for ($time = $start; $time + $step <= $end; $time += $step) {
-                $hourStart = sprintf('%02d:%02d', intdiv($time, 60), $time % 60);
+            for ($t = $start; $t + $step <= $end; $t += $step) {
+                $slot = sprintf('%02d:%02d', intdiv($t, 60), $t % 60);
                 $intervals[] = [
-                    'value' => $hourStart,
-                    'text' => $hourStart,
-                    'selected' => false
+                    'value' => $slot,
+                    'text' => $slot,
+                    'selected' => false,
+                    // deshabilita si:
+                    //  - ya está reservado puntualmente ($bookedSlots)
+                    //  - **o** si fullDay está activo
+                    'disabled' => !empty($fullDay[$day]) || in_array($slot, $bookedSlots[$day] ?? [], true),
                 ];
             }
 
             $result[$day] = [
                 'enabled' => true,
-                'available_range' => $availableRange,
+                'available_range' => sprintf('%02d:%02d a %02d:%02d', $startH, $startM, $endH, $endM),
                 'intervals' => $intervals,
-                'label' => self::dayLabels[$day]
+                'label' => self::dayLabels[$day],
             ];
         }
-        $result['isCompleted'] = false;
 
+        $result['isCompleted'] = false;
         return $result;
     }
 }

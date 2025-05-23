@@ -89,7 +89,7 @@ class LocationFieldCollection extends ResourceCollection
                 [
                     'value' => '*',
                     'text' => 'Todo el día',
-                    'selected' => true,
+                    'selected' => false,
                     // si fullDay marca este día, deshabilita también “Todo el día”
                     'disabled' => !empty($fullDay[$day]),
                 ],

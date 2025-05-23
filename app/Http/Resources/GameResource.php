@@ -32,6 +32,7 @@ class GameResource extends JsonResource
             'details' => [
                 'date' => optional($this->match_date)->translatedFormat('D j/n'),
                 'raw_date' => optional($this->match_date)->toDateTimeString(),
+                'raw_time' => $this->match_time,
                 'time' => $this->match_time
                     ? [
                         'hours' => Carbon::createFromFormat('H:i', $this->match_time)->hour,

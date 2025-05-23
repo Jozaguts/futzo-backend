@@ -26,6 +26,8 @@ class ScheduleGeneratorService
         'friday' => 'Viernes',
         'saturday' => 'Sábado'
     ];
+    private const GLOBAL_REST = 15;
+    private const UNEXPECTED_BUFFER = 15;
     private Tournament $tournament;
 
     public function setTournament(Tournament $tournament): self
@@ -36,115 +38,128 @@ class ScheduleGeneratorService
 
     public function makeSchedule(): array
     {
-        $break_time = 15;
-        $unexpected_time = 15;
         $config = $this->tournament->configuration;
+        $gameTime = $config->game_time;
+        $adminGap = $config->time_between_games;
+        $matchDuration = $gameTime
+            + self::GLOBAL_REST
+            + $adminGap
+            + self::UNEXPECTED_BUFFER;
         $teams = $this->tournament->teams()->pluck('teams.id')->toArray();
         $fields = TournamentField::where('tournament_id', $this->tournament->id)->get();
 
-        if (count($teams) < 2) {
-            throw new RuntimeException("No hay suficientes equipos para generar encuentros.");
-        }
+        // 1) elegir ida y vuelta según fase
+        // asumiendo que el formato "liga" es tournament_format_id = 1
+        $useRoundTrip = $config->tournament_format_id === 1
+            ? $config->round_trip    // liga: usar ida y vuelta según este flag
+            : $config->elimination_round_trip;  // otros formatos (elim.): usar este otro
 
-        $matchDuration = $config->game_time + $break_time + $unexpected_time;
+        // 2) generar fixtures
+        $fixturesByRound = $this->generateFixtures($teams, $useRoundTrip);
+        $totalRounds = count($fixturesByRound);
+
+        // 3) generar solo tantas semanas como rondas
+        $weeksToGenerate = $totalRounds;
+
+        // 4) slot availabilities
         $leagueAvailabilities = LeagueField::whereIn('field_id', $fields->pluck('field_id'))
             ->get()
             ->keyBy('field_id')
             ->map(fn($f) => $f->availability);
 
-        $fieldLocations = DB::table('fields')
-            ->select('id', 'location_id')
-            ->pluck('location_id', 'id');
+        $availableSlots = $this->generateAvailableSlots(
+            $fields,
+            $this->tournament->start_date,
+            $matchDuration,
+            $leagueAvailabilities,
+            $weeksToGenerate
+        );
 
-        $fixturesByRound = $this->generateFixtures($teams, $config->round_trip);
-        $totalRounds = count($fixturesByRound);
-        $weeksToGenerate = $totalRounds + 2;
-
-        $availableSlots = $this->generateAvailableSlots($fields, $this->tournament->start_date, $matchDuration, $leagueAvailabilities, $weeksToGenerate);
-
+        // 5) agrupar por semana y campo
         $startOfWeekDay = Carbon::parse($this->tournament->start_date)->dayOfWeek;
-        $slotsByWeekAndField = collect($availableSlots)->groupBy(function ($slot) use ($startOfWeekDay) {
-            return Carbon::parse($slot['match_time'])->startOfWeek($startOfWeekDay)->toDateString();
-        })->map(function ($weekSlots) {
-            return $weekSlots->groupBy('field_id');
-        });
+        $slotsByWeekAndField = collect($availableSlots)
+            ->groupBy(fn($slot) => Carbon::parse($slot['match_time'])
+                ->startOfWeek($startOfWeekDay)
+                ->toDateString(),
+            )->map(fn($week) => $week->groupBy('field_id'));
 
-        Log::info("Resumen de slots agrupados por semana:", $slotsByWeekAndField->map(fn($week) => $week->map->count())->toArray());
+        // 6) encontrar primera semana válida
+        $weekStart = $this->findFirstAvailableWeekStart(
+            $slotsByWeekAndField->toArray(),
+            Carbon::parse($this->tournament->start_date)
+        );
 
+        // 7) asignar partido por ronda en cada semana
         $matches = [];
         $teamRounds = [];
-        $weekStart = $this->findFirstAvailableWeekStart($slotsByWeekAndField->toArray(), Carbon::parse($this->tournament->start_date));
-        $globalFieldIndex = 0;
-
+        $globalIndex = 0;
         foreach ($fixturesByRound as $round => $fixtures) {
             $weekKey = $weekStart->toDateString();
-            Log::info("Jornada {$round} intenta asignarse en la semana que inicia en $weekKey");
-
             if (!isset($slotsByWeekAndField[$weekKey])) {
-                throw new RuntimeException("No hay disponibilidad configurada para la semana de la jornada " . ($round + 1));
+                throw new RuntimeException("No hay disponibilidad para la semana de la jornada " . ($round + 1));
             }
-
             $weekFieldSlots = $slotsByWeekAndField[$weekKey];
-            $fieldSlotPointers = array_fill_keys(array_keys($weekFieldSlots->toArray()), 0);
+            $fieldPointers = array_fill_keys(array_keys($weekFieldSlots->toArray()), 0);
             $fieldsAvailable = array_keys($weekFieldSlots->toArray());
 
-            foreach ($fixtures as $match) {
+            foreach ($fixtures as $pair) {
                 $assigned = false;
                 $attempts = 0;
-                $currentFieldIndex = $globalFieldIndex;
+                $idx = $globalIndex;
                 while ($attempts < count($fieldsAvailable)) {
-                    $fieldId = $fieldsAvailable[$currentFieldIndex % count($fieldsAvailable)];
+                    $fieldId = $fieldsAvailable[$idx % count($fieldsAvailable)];
                     $slots = $weekFieldSlots[$fieldId];
-                    $slotPointer = $fieldSlotPointers[$fieldId];
+                    $ptr = $fieldPointers[$fieldId] ?? 0;
 
-                    if (isset($slots[$slotPointer])) {
-                        $slot = $slots[$slotPointer];
-                        $fieldSlotPointers[$fieldId]++;
+                    if (isset($slots[$ptr])) {
+                        $slot = $slots[$ptr];
+                        $fieldPointers[$fieldId]++;
                         $matchTime = $slot['match_time'];
-                        $locationId = $fieldLocations[$fieldId] ?? throw new RuntimeException("No se encontró location_id para field_id $fieldId");
+                        $location = DB::table('fields')->where('id', $fieldId)->value('location_id');
 
+                        // evitar doble partido equipo misma ronda
                         $matchRound = $round + 1;
-                        foreach ([$match[0], $match[1]] as $teamId) {
-                            if (isset($teamRounds[$matchRound][$teamId])) {
-                                continue 2;
-                            }
+                        if (isset($teamRounds[$matchRound][$pair[0]]) ||
+                            isset($teamRounds[$matchRound][$pair[1]])
+                        ) {
+                            $idx++;
+                            $attempts++;
+                            continue;
                         }
-
-                        foreach ([$match[0], $match[1]] as $teamId) {
-                            $teamRounds[$matchRound][$teamId] = true;
-                        }
+                        $teamRounds[$matchRound][$pair[0]] = true;
+                        $teamRounds[$matchRound][$pair[1]] = true;
 
                         $matches[] = [
                             'tournament_id' => $this->tournament->id,
-                            'home_team_id' => $match[0],
-                            'away_team_id' => $match[1],
+                            'home_team_id' => $pair[0],
+                            'away_team_id' => $pair[1],
                             'field_id' => $fieldId,
-                            'location_id' => $locationId,
+                            'location_id' => $location,
                             'match_date' => $matchTime->toDateString(),
                             'match_time' => $matchTime->format('H:i:s'),
                             'round' => $matchRound,
                             'status' => 'programado',
                         ];
-
-                        Log::info("Asignado partido ronda {$matchRound}: {$match[0]} vs {$match[1]} en campo {$fieldId} a las {$matchTime->format('H:i')} ({$matchTime->toDateString()})");
-                        $globalFieldIndex++; // solo si se asignó
+                        $globalIndex++;
                         $assigned = true;
                         break;
                     }
 
-                    $currentFieldIndex++;
+                    $idx++;
                     $attempts++;
                 }
-
                 if (!$assigned) {
-                    throw new RuntimeException("No hay slots disponibles válidos para el partido entre {$match[0]} y {$match[1]}.");
+                    throw new RuntimeException("No hay slots válidos para el partido {$pair[0]} vs {$pair[1]}.");
                 }
             }
+
+            // avanzar a la siguiente semana
             $weekStart->addWeek();
         }
 
         return $matches;
     }
+
 
     public function persistScheduleToMatchSchedules(array $matches): void
     {
@@ -221,52 +236,68 @@ class ScheduleGeneratorService
 
         for ($i = 0; $i < $daysToGenerate; $i++) {
             foreach ($fields as $field) {
-                $fieldAvailability = $field->availability;
-                $leagueAvailability = $leagueAvailabilities[$field->field_id] ?? null;
-                if (!$leagueAvailability) {
+                $fieldId = $field->field_id;
+                $tournSched = $field->availability;
+                $leagueAvail = $leagueAvailabilities[$fieldId] ?? null;
+                if (!$leagueAvail) {
                     continue;
                 }
 
-                foreach ($fieldAvailability as $day => $schedule) {
-                    if (
-                        !isset($schedule['enabled'], $schedule['intervals']) ||
-                        !$schedule['enabled'] ||
-                        !isset($leagueAvailability[$day]) ||
-                        !($leagueAvailability[$day]['enabled'] ?? false)
-                    ) {
-                        continue;
-                    }
+                // día de la semana en minúsculas, ej. 'monday'
+                $day = strtolower($scheduleDate->format('l'));
 
-                    foreach ($schedule['intervals'] as $interval) {
-                        if (!$interval['selected']) {
-                            continue;
-                        }
+                // disponibilidad para este torneo en ese día
+                if (empty($tournSched[$day]['enabled'])) {
+                    continue;
+                }
+                $intervals = collect($tournSched[$day]['intervals'])
+                    ->filter(fn($int) => !empty($int['selected']));
 
-                        if ($interval['value'] === '*') {
-                            $start = Carbon::parse($scheduleDate)->setTime(
-                                $leagueAvailability[$day]['start']['hours'],
-                                $leagueAvailability[$day]['start']['minutes']
-                            );
-                            $end = Carbon::parse($scheduleDate)->setTime(
-                                $leagueAvailability[$day]['end']['hours'],
-                                $leagueAvailability[$day]['end']['minutes']
-                            );
-                        } else {
-                            [$hour, $minute] = explode(':', $interval['value']);
-                            $start = Carbon::parse($scheduleDate)->setTime($hour, $minute);
-                            $end = $start->copy()->addMinutes(60);
-                        }
+                if ($intervals->isEmpty()) {
+                    continue;
+                }
 
-                        while ($start->copy()->addMinutes($matchDuration)->lessThanOrEqualTo($end)) {
-                            $availableSlots[] = [
-                                'field_id' => $field->field_id,
-                                'match_time' => $start->copy()
-                            ];
-                            $start->addMinutes($matchDuration);
-                        }
+                // límite global de la liga
+                $leagueEnd = $scheduleDate->copy()
+                    ->setTime(
+                        $leagueAvail[$day]['end']['hours'],
+                        $leagueAvail[$day]['end']['minutes']
+                    );
+
+                // caso “todo el día”
+                if ($intervals->first()['value'] === '*') {
+                    $blockStart = $scheduleDate->copy()
+                        ->setTime(
+                            $leagueAvail[$day]['start']['hours'],
+                            $leagueAvail[$day]['start']['minutes']
+                        );
+                    $blockEnd = $leagueEnd;
+                } else {
+                    // 1) convertir cada value ('09:00','10:00',...) en un Carbon
+                    $times = $intervals->map(fn($int) => $scheduleDate->copy()->setTime(
+                        ...explode(':', $int['value'])
+                    )
+                    );
+                    // 2) rango desde el mínimo hasta el máximo + matchDuration
+                    $blockStart = $times->min();
+                    $blockEnd = $times->max()->copy()->addMinutes($matchDuration);
+                    // 3) no pasarnos de la liga
+                    if ($blockEnd->greaterThan($leagueEnd)) {
+                        $blockEnd = $leagueEnd;
                     }
                 }
+
+                // finalmente, generar slots con paso = matchDuration
+                $cursor = $blockStart->copy();
+                while ($cursor->copy()->addMinutes($matchDuration)->lessThanOrEqualTo($blockEnd)) {
+                    $availableSlots[] = [
+                        'field_id' => $fieldId,
+                        'match_time' => $cursor->copy(),
+                    ];
+                    $cursor->addMinutes($matchDuration);
+                }
             }
+
             $scheduleDate->addDay();
         }
 
@@ -315,7 +346,7 @@ class ScheduleGeneratorService
                     'time_between_games' => $generalData['time_between_games'],
                     'round_trip' => $generalData['round_trip'],
                     'group_stage' => $generalData['group_stage'] ?? false,
-                    'elimination_round_trip' => $generalData['round_trip']
+                    'elimination_round_trip' => $generalData['elimination_round_trip'] ?? false,
                 ]
             )
         );
@@ -357,6 +388,13 @@ class ScheduleGeneratorService
 
     private function saveFieldsPhase($data): void
     {
+        $config = $this->tournament->configuration;
+        $gameTime = $config->game_time;
+        $adminGap = $config->time_between_games;
+        $blockDuration = $gameTime
+            + self::GLOBAL_REST
+            + $adminGap
+            + self::UNEXPECTED_BUFFER;
         $fields = array_map(static function ($field) {
             unset($field['availability']['isCompleted']);
             $field['availability'] = array_filter($field['availability'], static fn($day) => $day['enabled'] ?? false);
@@ -387,7 +425,7 @@ class ScheduleGeneratorService
                         // Interpretar el valor como una hora exacta (e.j. 09) y reservar una
                         [$hour, $minute] = explode(':', $interval['value']);
                         $requestedStart = (int)$hour * 60 + (int)$minute;
-                        $requestedEnd = $requestedStart + 60; // asumir 1 hora de duración por bloque
+                        $requestedEnd = $requestedStart + $blockDuration;
                     }
                     // Validar solapamientos con otros torneos
                     $this->validateNoTimeConflict($field['field_id'], $day, $requestedStart, $requestedEnd, $field['field_name']);
@@ -400,7 +438,6 @@ class ScheduleGeneratorService
                 ['availability' => $field['availability']]
             );
         }
-
     }
 
     private function findFirstAvailableWeekStart(array $slotsByWeekAndField, Carbon $startDate): Carbon

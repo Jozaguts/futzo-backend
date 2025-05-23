@@ -142,12 +142,15 @@ return [
             'tournament_format_id' => 1, // Torneo de Liga
             'football_type_id' => 1, // Fútbol 11
             'max_teams' => 20,
-            'min_teams' => 10,
-            'max_players_per_team' => 18,
+            'min_teams' => 8,
+            'max_players_per_team' => 25,
             'min_players_per_team' => 11,
             'max_teams_per_player' => 1,
             'game_time' => 90,
             'time_between_games' => 0,
+            'round_trip' => 1,
+            'group_stage' => 0,
+            'elimination_round_trip' => 0
         ],
         [
             'tournament_format_id' => 2, // Liga y Eliminatoria
@@ -159,6 +162,9 @@ return [
             'max_teams_per_player' => 1,
             'game_time' => 90,
             'time_between_games' => 0,
+            'round_trip' => 0,
+            'group_stage' => 1,
+            'elimination_round_trip' => 1
         ],
         [
             'tournament_format_id' => 3, // Eliminatoria
@@ -170,6 +176,9 @@ return [
             'max_teams_per_player' => 1,
             'game_time' => 90,
             'time_between_games' => 0,
+            'round_trip' => 1,
+            'group_stage' => 0,
+            'elimination_round_trip' => 1
         ],
         [
             'tournament_format_id' => 4, // Sistema Suizo
@@ -181,6 +190,9 @@ return [
             'max_teams_per_player' => 1,
             'game_time' => 90,
             'time_between_games' => 0,
+            'round_trip' => 0,
+            'group_stage' => 0,
+            'elimination_round_trip' => 0
         ],
         // Fútbol 7
         [
@@ -193,6 +205,9 @@ return [
             'max_teams_per_player' => 1,
             'game_time' => 60,
             'time_between_games' => 0,
+            'round_trip' => 1,
+            'group_stage' => 0,
+            'elimination_round_trip' => 0
         ],
         [
             'tournament_format_id' => 2, // Liga y Eliminatoria
@@ -204,6 +219,9 @@ return [
             'max_teams_per_player' => 1,
             'game_time' => 60,
             'time_between_games' => 0,
+            'round_trip' => 0,
+            'group_stage' => 1,
+            'elimination_round_trip' => 1
         ],
         [
             'tournament_format_id' => 3, // Eliminatoria
@@ -215,6 +233,9 @@ return [
             'max_teams_per_player' => 1,
             'game_time' => 60,
             'time_between_games' => 0,
+            'round_trip' => 1,
+            'group_stage' => 0,
+            'elimination_round_trip' => 1
         ],
         [
             'tournament_format_id' => 4, // Sistema Suizo
@@ -226,6 +247,9 @@ return [
             'max_teams_per_player' => 1,
             'game_time' => 60,
             'time_between_games' => 0,
+            'round_trip' => 0,
+            'group_stage' => 0,
+            'elimination_round_trip' => 0
         ],
         // Fútbol Sala
         [
@@ -238,6 +262,9 @@ return [
             'max_teams_per_player' => 1,
             'game_time' => 40,
             'time_between_games' => 0,
+            'round_trip' => 1,
+            'group_stage' => 0,
+            'elimination_round_trip' => 0
         ],
         [
             'tournament_format_id' => 2, // Liga y Eliminatoria
@@ -249,6 +276,9 @@ return [
             'max_teams_per_player' => 1,
             'game_time' => 40,
             'time_between_games' => 0,
+            'round_trip' => 0,
+            'group_stage' => 1,
+            'elimination_round_trip' => 1
         ],
         [
             'tournament_format_id' => 3, // Eliminatoria
@@ -260,6 +290,9 @@ return [
             'max_teams_per_player' => 1,
             'game_time' => 40,
             'time_between_games' => 0,
+            'round_trip' => 1,
+            'group_stage' => 0,
+            'elimination_round_trip' => 1
         ],
         [
             'tournament_format_id' => 4, // Sistema Suizo
@@ -271,6 +304,9 @@ return [
             'max_teams_per_player' => 1,
             'game_time' => 40,
             'time_between_games' => 0,
+            'round_trip' => 0,
+            'group_stage' => 0,
+            'elimination_round_trip' => 0
         ],
         // Fútbol Playa
         [
@@ -283,6 +319,9 @@ return [
             'max_teams_per_player' => 1,
             'game_time' => 60,
             'time_between_games' => 0,
+            'round_trip' => 1,
+            'group_stage' => 0,
+            'elimination_round_trip' => 0
         ],
         [
             'tournament_format_id' => 2, // Liga y Eliminatoria
@@ -294,6 +333,9 @@ return [
             'max_teams_per_player' => 1,
             'game_time' => 60,
             'time_between_games' => 0,
+            'round_trip' => 0,
+            'group_stage' => 1,
+            'elimination_round_trip' => 1
         ],
         [
             'tournament_format_id' => 3, // Eliminatoria
@@ -305,6 +347,9 @@ return [
             'max_teams_per_player' => 1,
             'game_time' => 60,
             'time_between_games' => 0,
+            'round_trip' => 1,
+            'group_stage' => 0,
+            'elimination_round_trip' => 1
         ],
         [
             'tournament_format_id' => 4, // Sistema Suizo
@@ -316,6 +361,9 @@ return [
             'max_teams_per_player' => 1,
             'game_time' => 60,
             'time_between_games' => 0,
+            'round_trip' => 0,
+            'group_stage' => 0,
+            'elimination_round_trip' => 0
         ],
     ],
     'tiebreakers' => [

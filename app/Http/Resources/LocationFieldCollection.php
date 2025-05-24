@@ -32,7 +32,7 @@ class LocationFieldCollection extends ResourceCollection
         // cada bloque durará:
         $step = $gameTime + $adminGap + $restGlobal + $buffer; // p.ej. 120
 
-        return $this->collection->map(function ($field, $key) use ($step, $tournamentId) {
+        return $this->collection->map(function ($field, $key) use ($tournamentId) {
             $leagueField = $field->leaguesFields->first();
 
             return [
@@ -42,11 +42,12 @@ class LocationFieldCollection extends ResourceCollection
                 'location_id' => $field->location->id,
                 'location_name' => $field->location->name,
                 'disabled' => false,
+                // PASAMOS slot de 60 minutos
                 'availability' => $this->transformAvailability(
                     $leagueField->availability,
                     $field->id,
                     $tournamentId,
-                    $step
+                    60  // **1 hora**
                 ),
             ];
         })->toArray();
@@ -56,17 +57,16 @@ class LocationFieldCollection extends ResourceCollection
      * Transforma la disponibilidad de la liga en bloques de $step minutos,
      * permitiendo arrancar en cada hora marcada.
      */
-    private function transformAvailability(array $availability, int $fieldId, int $excludeTournamentId, int $step): array
+    private function transformAvailability(array $availability, int $fieldId, int $excludeTournamentId, int $slotDuration): array
     {
-        // 1) Reservas de otros torneos
+        // 1) Sacamos reservas de otros torneos
         $query = TournamentField::where('field_id', $fieldId);
         if ($excludeTournamentId) {
             $query->where('tournament_id', '!=', $excludeTournamentId);
         }
         $bookings = $query->pluck('availability')->all();
 
-        $bookedSlots = []; // ['monday'=>['09:00','10:00',...], ...]
-        $fullDay = []; // ['monday'=>true, ...]
+        $bookedSlots = []; // ej. ['monday'=>['09:00','11:00', ...], ...]
 
         foreach ($bookings as $json) {
             foreach ($json as $day => $data) {
@@ -74,54 +74,49 @@ class LocationFieldCollection extends ResourceCollection
                     continue;
                 }
                 foreach ($data['intervals'] as $int) {
-                    if ($int['value'] === '*' && !empty($int['selected'])) {
-                        $fullDay[$day] = true;
-                    }
-                    if ($int['value'] !== '*' && !empty($int['selected'])) {
-                        $bookedSlots[$day][] = $int['value'];
+                    // si está marcado y es un slot concreto (ya no hay '*')
+                    if (!empty($int['selected']) && is_array($int['value'])) {
+                        // value: ['start'=>'09:00','end'=>'11:00']
+                        $bookedSlots[$day][] = $int['value']['start'];
                     }
                 }
             }
         }
 
+        // 2) Generamos slots de 1 hora dentro de cada día habilitado
         $result = [];
-        $daysOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+        $daysOrder = array_keys(self::dayLabels);
 
         foreach ($daysOrder as $day) {
             if (empty($availability[$day]['enabled'])) {
                 continue;
             }
 
-            $startH = (int)$availability[$day]['start']['hours'];
-            $startM = (int)$availability[$day]['start']['minutes'];
-            $endH = (int)$availability[$day]['end']['hours'];
-            $endM = (int)$availability[$day]['end']['minutes'];
+            // convertir límites a minutos desde medianoche
+            $sh = (int)$availability[$day]['start']['hours'];
+            $sm = (int)$availability[$day]['start']['minutes'];
+            $eh = (int)$availability[$day]['end']['hours'];
+            $em = (int)$availability[$day]['end']['minutes'];
 
-            $start = $startH * 60 + $startM;
-            $end = $endH * 60 + $endM;
+            $start = $sh * 60 + $sm;
+            $end = $eh * 60 + $em;
 
             $intervals = [];
-            //  Generamos bloques de $step minutos desde $start hasta <= $end
-            for ($t = $start; $t + $step <= $end; $t += $step) {
+            // crear bloques de slotDuration (60) minutos
+            for ($t = $start; $t + $slotDuration <= $end; $t += $slotDuration) {
                 $from = sprintf('%02d:%02d', intdiv($t, 60), $t % 60);
-                $to = sprintf('%02d:%02d', intdiv($t + $step, 60), ($t + $step) % 60);
-
+                $to = sprintf('%02d:%02d', intdiv($t + $slotDuration, 60), ($t + $slotDuration) % 60);
 
                 $intervals[] = [
                     'value' => ['start' => $from, 'end' => $to],
                     'text' => "$from – $to",
                     'selected' => false,
-                    'disabled' => in_array($from, $bookedSlots[$day] ?? [], true) || !empty($fullDay[$day]),
+                    'disabled' => in_array($from, $bookedSlots[$day] ?? [], true),
                 ];
             }
 
-            $result[$day] = [
-                'enabled' => true,
-                'available_range' => sprintf('%02d:%02d a %02d:%02d', $startH, $startM, $endH, $endM),
-                'intervals' => $intervals,
-                'label' => self::dayLabels[$day],
-            ];
-            if ($t < $end) {
+            // si sobra un fragmento parcial al final, lo mostramos deshabilitado
+            if (isset($t) && $t < $end) {
                 $from = sprintf('%02d:%02d', intdiv($t, 60), $t % 60);
                 $to = sprintf('%02d:%02d', intdiv($end, 60), $end % 60);
                 $intervals[] = [
@@ -132,6 +127,13 @@ class LocationFieldCollection extends ResourceCollection
                     'is_partial' => true,
                 ];
             }
+
+            $result[$day] = [
+                'enabled' => true,
+                'available_range' => sprintf('%02d:%02d a %02d:%02d', $sh, $sm, $eh, $em),
+                'intervals' => $intervals,
+                'label' => self::dayLabels[$day],
+            ];
         }
 
         $result['isCompleted'] = false;

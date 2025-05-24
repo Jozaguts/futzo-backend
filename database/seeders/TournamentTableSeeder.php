@@ -12,6 +12,8 @@ use Illuminate\Database\Seeder;
 
 class TournamentTableSeeder extends Seeder
 {
+    private const FORMAT_WITHOUT_PHASES = 'Torneo de Liga';
+
     /**
      * Run the database seeds.
      */
@@ -21,8 +23,11 @@ class TournamentTableSeeder extends Seeder
         $league = League::firstOrFail();
         $category = Category::firstOrFail();
         $locations = Location::pluck('id')->all();
-        $defaultConfigs = config('constants.default_tournament_configuration');
-        foreach ($defaultConfigs as $config) {
+        $defaults = config('constants.default_tournament_configuration');
+        $tiebreakersConfig = config('constants.tiebreakers');
+        $phasesConfig = config('constants.phases');
+
+        foreach ($defaults as $config) {
             // Crear torneo con formato y tipo de fútbol según configuración predeterminada
             $tournament = Tournament::factory()->create([
                 'league_id' => $league->id,
@@ -49,6 +54,26 @@ class TournamentTableSeeder extends Seeder
                 'max_teams_per_player' => $config['max_teams_per_player'],
                 'elimination_round_trip' => $config['elimination_round_trip'],
             ]);
+            // 4) Insertar tiebreakers
+            foreach ($tiebreakersConfig as $tb) {
+                $tb['tournament_configuration_id'] = $tournament->configuration->id;
+                $tournament->configuration->tiebreakers()->create($tb);
+            }
+
+            // 5) Insertar fases
+            // obtener nombre del formato para comparar
+            $formatName = $tournament->format->name;
+            if ($formatName === self::FORMAT_WITHOUT_PHASES) {
+                // Solo fase “Tabla general”
+                $tournament->phases()->create(
+                    collect($phasesConfig)->firstWhere('name', 'Tabla general')
+                );
+            } else {
+                // Todas menos la fase “Tabla general”
+                collect($phasesConfig)
+                    ->reject(fn($p) => $p['name'] === 'Tabla general')
+                    ->each(fn($p) => $tournament->phases()->create($p));
+            }
         }
     }
 }

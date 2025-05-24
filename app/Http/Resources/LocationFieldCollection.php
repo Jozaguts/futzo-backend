@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\TournamentConfiguration;
 use App\Models\TournamentField;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
@@ -20,59 +21,74 @@ class LocationFieldCollection extends ResourceCollection
 
     public function toArray(Request $request): array
     {
-        return $this->collection->map(function ($field, $key) {
+        $tournamentId = $request->query('tournament_id');
+        $config = TournamentConfiguration::where('tournament_id', $tournamentId)->firstOrFail();
+
+        $gameTime = $config->game_time;            // p.ej. 90
+        $adminGap = $config->time_between_games;   // p.ej.  0–15
+        $buffer = 15;                            // tiempo imprevistos
+        $restGlobal = 15;                            // descanso reglamentario
+
+        // cada bloque durará:
+        $step = $gameTime + $adminGap + $restGlobal + $buffer; // p.ej. 120
+
+        return $this->collection->map(function ($field, $key) use ($step, $tournamentId) {
             $leagueField = $field->leaguesFields->first();
+
             return [
                 'field_id' => $field->id,
-                'step' => ++$key,
+                'step' => $key + 1,
                 'field_name' => $field->name,
-                'location_name' => $field->location->name,
                 'location_id' => $field->location->id,
+                'location_name' => $field->location->name,
                 'disabled' => false,
-                'availability' => $this->transformAvailability($leagueField->availability, $field->id),
+                'availability' => $this->transformAvailability(
+                    $leagueField->availability,
+                    $field->id,
+                    $tournamentId,
+                    $step
+                ),
             ];
         })->toArray();
     }
 
-    private function transformAvailability(array $availability, int $fieldId, ?int $excludeTournamentId = null): array
+    /**
+     * Transforma la disponibilidad de la liga en bloques de $step minutos,
+     * permitiendo arrancar en cada hora marcada.
+     */
+    private function transformAvailability(array $availability, int $fieldId, int $excludeTournamentId, int $step): array
     {
-        // 1) Traer todas las reservas de tournament_fields
+        // 1) Reservas de otros torneos
         $query = TournamentField::where('field_id', $fieldId);
         if ($excludeTournamentId) {
             $query->where('tournament_id', '!=', $excludeTournamentId);
         }
         $bookings = $query->pluck('availability')->all();
 
-        // 2) Construir dos mapas:
-        //    a) $bookedSlots[day] = [ '09:00', '10:00', ... ]
-        //    b) $fullDay[day] = true  si existe reserva “Todo el día”
-        $bookedSlots = [];
-        $fullDay = [];
+        $bookedSlots = []; // ['monday'=>['09:00','10:00',...], ...]
+        $fullDay = []; // ['monday'=>true, ...]
 
         foreach ($bookings as $json) {
             foreach ($json as $day => $data) {
-                if (!isset($data['intervals'])) {
+                if (empty($data['intervals'])) {
                     continue;
                 }
-                foreach ($data['intervals'] as $interval) {
-                    if ($interval['value'] === '*' && !empty($interval['selected'])) {
-                        // marca todo el día como reservado
+                foreach ($data['intervals'] as $int) {
+                    if ($int['value'] === '*' && !empty($int['selected'])) {
                         $fullDay[$day] = true;
                     }
-                    // si hay un slot seleccionado distinto de '*', agrégalo
-                    if ($interval['value'] !== '*' && !empty($interval['selected'])) {
-                        $bookedSlots[$day][] = $interval['value'];
+                    if ($int['value'] !== '*' && !empty($int['selected'])) {
+                        $bookedSlots[$day][] = $int['value'];
                     }
                 }
             }
         }
 
-        // 3) Generar respuesta marcando disabled según $
         $result = [];
         $daysOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
         foreach ($daysOrder as $day) {
-            if (!isset($availability[$day]) || empty($availability[$day]['enabled'])) {
+            if (empty($availability[$day]['enabled'])) {
                 continue;
             }
 
@@ -83,28 +99,19 @@ class LocationFieldCollection extends ResourceCollection
 
             $start = $startH * 60 + $startM;
             $end = $endH * 60 + $endM;
-            $step = 60;
 
-            $intervals = [
-                [
-                    'value' => '*',
-                    'text' => 'Todo el día',
-                    'selected' => false,
-                    // si fullDay marca este día, deshabilita también “Todo el día”
-                    'disabled' => !empty($fullDay[$day]),
-                ],
-            ];
-
+            $intervals = [];
+            //  Generamos bloques de $step minutos desde $start hasta <= $end
             for ($t = $start; $t + $step <= $end; $t += $step) {
-                $slot = sprintf('%02d:%02d', intdiv($t, 60), $t % 60);
+                $from = sprintf('%02d:%02d', intdiv($t, 60), $t % 60);
+                $to = sprintf('%02d:%02d', intdiv($t + $step, 60), ($t + $step) % 60);
+
+
                 $intervals[] = [
-                    'value' => $slot,
-                    'text' => $slot,
+                    'value' => ['start' => $from, 'end' => $to],
+                    'text' => "$from – $to",
                     'selected' => false,
-                    // deshabilita si:
-                    //  - ya está reservado puntualmente ($bookedSlots)
-                    //  - **o** si fullDay está activo
-                    'disabled' => !empty($fullDay[$day]) || in_array($slot, $bookedSlots[$day] ?? [], true),
+                    'disabled' => in_array($from, $bookedSlots[$day] ?? [], true) || !empty($fullDay[$day]),
                 ];
             }
 
@@ -114,6 +121,17 @@ class LocationFieldCollection extends ResourceCollection
                 'intervals' => $intervals,
                 'label' => self::dayLabels[$day],
             ];
+            if ($t < $end) {
+                $from = sprintf('%02d:%02d', intdiv($t, 60), $t % 60);
+                $to = sprintf('%02d:%02d', intdiv($end, 60), $end % 60);
+                $intervals[] = [
+                    'value' => ['start' => $from, 'end' => $to],
+                    'text' => "$from – $to",
+                    'selected' => false,
+                    'disabled' => true,
+                    'is_partial' => true,
+                ];
+            }
         }
 
         $result['isCompleted'] = false;

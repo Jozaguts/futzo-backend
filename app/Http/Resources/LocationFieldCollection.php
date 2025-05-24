@@ -57,7 +57,7 @@ class LocationFieldCollection extends ResourceCollection
      * Transforma la disponibilidad de la liga en bloques de $step minutos,
      * permitiendo arrancar en cada hora marcada.
      */
-    private function transformAvailability(array $availability, int $fieldId, int $excludeTournamentId, int $slotDuration): array
+    private function transformAvailability(array $availability, int $fieldId, int $excludeTournamentId, int $step): array
     {
         // 1) Sacamos reservas de otros torneos
         $query = TournamentField::where('field_id', $fieldId);
@@ -85,43 +85,45 @@ class LocationFieldCollection extends ResourceCollection
 
         // 2) Generamos slots de 1 hora dentro de cada día habilitado
         $result = [];
-        $daysOrder = array_keys(self::dayLabels);
+        $daysOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
         foreach ($daysOrder as $day) {
             if (empty($availability[$day]['enabled'])) {
                 continue;
             }
 
-            // convertir límites a minutos desde medianoche
-            $sh = (int)$availability[$day]['start']['hours'];
-            $sm = (int)$availability[$day]['start']['minutes'];
-            $eh = (int)$availability[$day]['end']['hours'];
-            $em = (int)$availability[$day]['end']['minutes'];
+            $startH = (int)$availability[$day]['start']['hours'];
+            $startM = (int)$availability[$day]['start']['minutes'];
+            $endH = (int)$availability[$day]['end']['hours'];
+            $endM = (int)$availability[$day]['end']['minutes'];
 
-            $start = $sh * 60 + $sm;
-            $end = $eh * 60 + $em;
+            $start = $startH * 60 + $startM;
+            $end = $endH * 60 + $endM;
 
             $intervals = [];
-            // crear bloques de slotDuration (60) minutos
-            for ($t = $start; $t + $slotDuration <= $end; $t += $slotDuration) {
-                $from = sprintf('%02d:%02d', intdiv($t, 60), $t % 60);
-                $to = sprintf('%02d:%02d', intdiv($t + $slotDuration, 60), ($t + $slotDuration) % 60);
+            // Generar bloques completos de $step
+            for ($t = $start; $t + $step <= $end; $t += $step) {
+                $fromText = sprintf('%02d:%02d', intdiv($t, 60), $t % 60);
+                $toText = sprintf('%02d:%02d', intdiv($t + $step, 60), ($t + $step) % 60);
 
                 $intervals[] = [
-                    'value' => ['start' => $from, 'end' => $to],
-                    'text' => "$from – $to",
+                    // <-- aquí sólo la hora de inicio como value
+                    'value' => $fromText,
+                    'text' => $fromText,
                     'selected' => false,
-                    'disabled' => in_array($from, $bookedSlots[$day] ?? [], true),
+                    'disabled' => in_array($fromText, $bookedSlots[$day] ?? [], true)
+                        || !empty($fullDay[$day]),
                 ];
             }
 
-            // si sobra un fragmento parcial al final, lo mostramos deshabilitado
+            // Si queda un bloque parcial al final...
             if (isset($t) && $t < $end) {
-                $from = sprintf('%02d:%02d', intdiv($t, 60), $t % 60);
-                $to = sprintf('%02d:%02d', intdiv($end, 60), $end % 60);
+                $fromText = sprintf('%02d:%02d', intdiv($t, 60), $t % 60);
+                $toText = sprintf('%02d:%02d', intdiv($end, 60), $end % 60);
+
                 $intervals[] = [
-                    'value' => ['start' => $from, 'end' => $to],
-                    'text' => "$from – $to",
+                    'value' => $fromText,
+                    'text' => $fromText,
                     'selected' => false,
                     'disabled' => true,
                     'is_partial' => true,
@@ -130,7 +132,7 @@ class LocationFieldCollection extends ResourceCollection
 
             $result[$day] = [
                 'enabled' => true,
-                'available_range' => sprintf('%02d:%02d a %02d:%02d', $sh, $sm, $eh, $em),
+                'available_range' => sprintf('%02d:%02d a %02d:%02d', $startH, $startM, $endH, $endM),
                 'intervals' => $intervals,
                 'label' => self::dayLabels[$day],
             ];

@@ -2,19 +2,12 @@
 
 namespace Tests\Feature;
 
-use Tests\TestCase;
 
-class PreRegisterTest extends TestCase
-{
-    /**
-     * A basic feature test example.
-     */
-    public function test_pre_register(): void
-    {
-        $email = fake()->email;
+it('pre-registers a user correctly', function () {
 
-        $response = $this->postJson('/api/v1/pre-register',['email' => $email]);
+    $email = fake()->email;
 
-        $response->assertStatus(201);
-    }
-}
+    $response = $this->postJson('/api/v1/pre-register', ['email' => $email]);
+
+    $response->assertStatus(201);
+});

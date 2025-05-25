@@ -36,7 +36,7 @@ class DatabaseSeeder extends Seeder
         $this->call(PositionsTableSeeder::class);
         $this->call(CategoriesTableSeeder::class);
         $this->call(TournamentFormatTableSeeder::class);
-        $this->call(FootballTypesTableSedder::class);
+        $this->call(FootballTypesTableSeeder::class);
         $this->call(DefaultTournamentConfigurationTableSeeder::class);
         $this->call(ActionsTableSeeder::class);
         $this->call(CouponsTableSeeder::class);

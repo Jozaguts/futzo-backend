@@ -9,7 +9,7 @@ use Illuminate\Notifications\Notifiable;
 
 class PreRegister extends Model
 {
-    use HasFactory, Notifiable;
+    use Notifiable;
 
     protected $fillable = ['email', 'coupon_id'];
 

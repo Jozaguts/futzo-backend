@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class DefaultTournamentConfiguration extends Model
 {
+    use HasFactory;
+    
     protected $fillable = [
         'tournament_format_id',
         'football_type_id',

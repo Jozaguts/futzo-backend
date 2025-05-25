@@ -1,13 +1,12 @@
 <?php
 
-namespace Tests\Feature;
+use Database\Seeders\CouponsTableSeeder;
 
-
-it('pre-registers a user correctly', function () {
-
+it('stores a pre register correctly', function () {
+    $this->seed(CouponsTableSeeder::class);
     $email = fake()->email;
-
     $response = $this->postJson('/api/v1/pre-register', ['email' => $email]);
 
     $response->assertStatus(201);
+
 });

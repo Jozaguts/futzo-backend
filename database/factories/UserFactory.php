@@ -29,7 +29,6 @@ class UserFactory extends Factory
             'verification_token' => random_int(1000, 9999),
             'password' => '$2y$10$RENqDsgT5rr0sjujwq1v4uoTXC9K9f7KMa1ilMFOdG2DMf7Xwm2TS', // password.
             'remember_token' => Str::random(10),
-            'league_id' => 1,
         ];
     }
 

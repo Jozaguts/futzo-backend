@@ -19,7 +19,7 @@ class FieldFactory extends Factory
             'dimensions' => Field::defaultDimensions,
             'created_at' => Carbon::now(),
             'updated_at' => Carbon::now(),
-            'location_id' => Location::factory(),
+            'location_id' => Location::factory()->id,
         ];
     }
 }

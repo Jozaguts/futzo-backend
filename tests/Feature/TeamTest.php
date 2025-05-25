@@ -10,96 +10,86 @@ use Illuminate\Support\Facades\Storage;
 use Tests\InitUser;
 use Tests\TestCase;
 
-class TeamTest extends TestCase
-{
-    use RefreshDatabase, InitUser;
+beforeEach(function () {
+    $this->user = $this->initUser();
+    $this->addLeague();
+});
 
-    /**
-     * A basic feature test example.
-     */
-    public function test_store_team(): void
-    {
-        $this->initUser();
-        Storage::fake('public');
-        $image = UploadedFile::fake()->image('logo-test.jpg')->mimeType('image/jpeg');
-        $coachImage = UploadedFile::fake()->image('coach-test.jpg')->mimeType('image/jpeg');
-        $category = Category::factory()->create();
-        $tournament = Tournament::withoutEvents(static fn() => Tournament::factory()->create());
-        $tournament->category()->associate($category);
-        $tournament->save();
-        $address = json_encode(config('constants.address'), JSON_THROW_ON_ERROR | true);
+it('stores a team correctly', function () {
+    Storage::fake('public');
+    $image = UploadedFile::fake()->image('logo-test.jpg')->mimeType('image/jpeg');
+    $coachImage = UploadedFile::fake()->image('coach-test.jpg')->mimeType('image/jpeg');
+    $category = Category::factory()->create();
+    $tournament = Tournament::withoutEvents(static fn() => Tournament::factory()->create());
+    $tournament->category()->associate($category);
+    $tournament->save();
+    $address = json_encode(config('constants.address'), JSON_THROW_ON_ERROR | true);
 
-        $expectedColors = json_encode(config('constants.colors'), JSON_THROW_ON_ERROR | true);
+    $expectedColors = json_encode(config('constants.colors'), JSON_THROW_ON_ERROR | true);
 
-        $response = $this->json('POST', '/api/v1/admin/teams', [
-            'team' => [
-                'name' => 'test 1',
-                'address' => $address,
-                'image' => $image,
-                'email' => fake()->email,
-                'phone' => fake()->phoneNumber,
-                'colors' => $expectedColors,
-                'category_id' => 1,
-                'tournament_id' => $tournament->id,
-            ],
-            'president' => [
-                'name' => 'John Doe',
-                'phone' => fake()->phoneNumber,
-                'email' => fake()->email,
-            ],
-            'coach' => [
-                'name' => 'John Doe',
-                'phone' => fake()->phoneNumber,
-                'email' => fake()->email,
-                'image' => $coachImage,
-            ],
-        ]);
-        $response->assertStatus(201);
-
-        $this->assertDatabaseHas('users', [
+    $response = $this->json('POST', '/api/v1/admin/teams', [
+        'team' => [
+            'name' => 'test 1',
+            'address' => $address,
+            'image' => $image,
+            'email' => fake()->email,
+            'phone' => fake()->phoneNumber,
+            'colors' => $expectedColors,
+            'category_id' => 1,
+            'tournament_id' => $tournament->id,
+        ],
+        'president' => [
             'name' => 'John Doe',
-            'email' => $response->json('coach.email'),
-            'phone' => $response->json('coach.phone'),
-        ]);
-
-        $this->assertDatabaseHas('users', [
+            'phone' => fake()->phoneNumber,
+            'email' => fake()->email,
+        ],
+        'coach' => [
             'name' => 'John Doe',
-            'email' => $response->json('president.email'),
-            'phone' => $response->json('president.phone'),
-        ]);
-    }
+            'phone' => fake()->phoneNumber,
+            'email' => fake()->email,
+            'image' => $coachImage,
+        ],
+    ]);
+    $response->assertStatus(201);
 
-    public function test_store_team_without_coach_and_owner(): void
-    {
-        $this->initUser();
-        Storage::fake('public');
-        $image = UploadedFile::fake()->image('logo-test.jpg')->mimeType('image/jpeg');
-        $category = Category::factory()->create();
-        $tournament = Tournament::withoutEvents(static fn() => Tournament::factory()->create());
-        $tournament->category()->associate($category);
-        $tournament->save();
-        $address = json_encode(config('constants.address'), JSON_THROW_ON_ERROR | true);
+    $this->assertDatabaseHas('users', [
+        'name' => 'John Doe',
+        'email' => $response->json('coach.email'),
+        'phone' => $response->json('coach.phone'),
+    ]);
 
-        $expectedColors = json_encode([], JSON_THROW_ON_ERROR);
+});
 
-        $response = $this->json('POST', '/api/v1/admin/teams', [
-            'team' => [
-                'name' => 'test 5',
-                'address' => $address,
-                'image' => $image,
-                'email' => fake()->email,
-                'phone' => fake()->phoneNumber,
-                'colors' => $expectedColors,
-                'category_id' => $tournament->category()->first()->id,
-                'tournament_id' => $tournament->id,
-            ],
-            'president' => [],
-            'coach' => [],
-        ]);
-        $response->assertStatus(201);
+it('stores a team with empty colors', function () {
+    Storage::fake('public');
+    $image = UploadedFile::fake()->image('logo-test.jpg')->mimeType('image/jpeg');
+    $category = Category::factory()->create();
+    $tournament = Tournament::withoutEvents(static fn() => Tournament::factory()->create());
+    $tournament->category()->associate($category);
+    $tournament->save();
+    $address = json_encode(config('constants.address'), JSON_THROW_ON_ERROR | true);
 
-        $this->assertDatabaseHas('teams', [
+    $expectedColors = json_encode([], JSON_THROW_ON_ERROR);
+
+    $response = $this->json('POST', '/api/v1/admin/teams', [
+        'team' => [
             'name' => 'test 5',
-        ]);
-    }
-}
+            'address' => $address,
+            'image' => $image,
+            'email' => fake()->email,
+            'phone' => fake()->phoneNumber,
+            'colors' => $expectedColors,
+            'category_id' => $tournament->category()->first()->id,
+            'tournament_id' => $tournament->id,
+        ],
+        'president' => [],
+        'coach' => [],
+    ]);
+    $response->assertStatus(201);
+
+    $this->assertDatabaseHas('teams', [
+        'name' => 'test 5',
+    ]);
+});
+
+

@@ -42,7 +42,7 @@ class TournamentResource extends JsonResource
             'thumbnail' => $this->thumbnail,
             'status' => $this->status,
             'league' => $this->league,
-            'max_teams' => $this->configuration->max_teams,
+            'max_teams' => optional($this->configuration)->max_teams,
         ];
     }
 }

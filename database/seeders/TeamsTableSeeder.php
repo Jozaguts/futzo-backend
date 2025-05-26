@@ -16,26 +16,28 @@ class TeamsTableSeeder extends Seeder
      */
     public function run(): void
     {
-        $league = League::firstOrFail();
-        $tournament = Tournament::firstOrFail();
-        $category = Category::firstOrFail();
+        Tournament::all()->each(function ($tournament) {
+            $category = Category::firstOrFail();
+            $league = League::firstOrFail();
 
-        Team::factory()
-            ->count(16)
-            // Generamos un presidente y un coach diferentes para cada equipo
-            ->state(function () use ($league) {
-                $coach = User::factory()->create(['league_id' => $league->id]);
-                $president = User::factory()->create(['league_id' => $league->id]);
+            Team::factory()
+                ->count(16)
+                // Generamos un presidente y un coach diferentes para cada equipo
+                ->state(function () use ($league) {
+                    $coach = User::factory()->create(['league_id' => $league->id]);
+                    $president = User::factory()->create(['league_id' => $league->id]);
 
-                return [
-                    'coach_id' => $coach->id,
-                    'president_id' => $president->id,
-                ];
-            })
-            // Relaciones belongsToMany
-            ->hasAttached($league, [], 'leagues')
-            ->hasAttached($category, [], 'categories')
-            ->hasAttached($tournament, [], 'tournaments')
-            ->create();
+                    return [
+                        'coach_id' => $coach->id,
+                        'president_id' => $president->id,
+                    ];
+                })
+                // Relaciones belongsToMany
+                ->hasAttached($league, [], 'leagues')
+                ->hasAttached($category, [], 'categories')
+                ->hasAttached($tournament, [], 'tournaments')
+                ->create();
+        })->firstOrFail();
+
     }
 }

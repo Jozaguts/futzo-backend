@@ -1,12 +1,15 @@
 <?php
 
+use App\Models\User;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\UploadedFile;
+use Laravel\Sanctum\Sanctum;
+
 
 beforeEach(function () {
-    $this->initUser();
+    $this->user = User::factory()->create();
+    Sanctum::actingAs($this->user, ['*']);
 });
-
 it('store a league and upload logo and banner', function () {
     Storage::fake('public');
     $logo = UploadedFile::fake()->image('logo-test.jpg');

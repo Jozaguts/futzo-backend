@@ -321,7 +321,7 @@ class ScheduleGeneratorService
     private function saveTournamentConfiguration($generalData): void
     {
         $tournament = Tournament::where('id', $this->tournament->id)
-            ->where('league_id', auth()->user()->league->id)
+            ->where('league_id', auth()->user()->league_id)
             ->firstOrFail();
         $startDate = Carbon::parse($generalData['start_date']);
 

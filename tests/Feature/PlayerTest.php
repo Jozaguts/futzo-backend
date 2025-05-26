@@ -11,10 +11,6 @@ use Illuminate\Support\Facades\Storage;
 use Tests\InitUser;
 use Tests\TestCase;
 
-beforeEach(function () {
-    $this->user = $this->initUser();
-});
-
 it('stores a player correctly', function () {
     Storage::fake('public');
     $image = UploadedFile::fake()->image('logo-test.jpg')->mimeType('image/jpeg');

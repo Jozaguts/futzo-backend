@@ -22,7 +22,7 @@ class LeagueScope implements Scope
                     ->pluck('team_id');
 
                 $builder->whereIn('teams.id', $teamIds);
-            } elseif ($model instanceof Tournament) {
+            } elseif ($model instanceof Tournament && auth()->check() && auth()->user()->league_id) {
                 $builder->where('league_id', auth()->user()->league_id);
             }
         }

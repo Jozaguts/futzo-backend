@@ -1,37 +1,26 @@
 <?php
 
+use App\Models\League;
 use App\Models\Tournament;
-use App\Models\Field;
-use App\Models\Location;
 use Carbon\CarbonInterface;
-use Database\Seeders\DefaultTournamentConfigurationTableSeeder;
-use Database\Seeders\FieldsTableSeeder;
-use Database\Seeders\LeaguesTableSeeder;
-use Database\Seeders\LocationsTableSeeder;
-use Database\Seeders\TeamsTableSeeder;
-use Database\Seeders\TournamentFormatTableSeeder;
-use Database\Seeders\TournamentTableSeeder;
 use Illuminate\Support\Carbon;
+use Laravel\Sanctum\Sanctum;
+use  App\Models\User;
+
+beforeEach(function () {
+    $this->user = User::first();
+    $this->user->assignRole('super administrador');
+    Sanctum::actingAs($this->user, ['*']);
+    $this->user->league_id = League::first()->id;
+    $this->user->saveQuietly();
+});
 
 it('genera un calendario para 16 equipos en liga ida y vuelta', function () {
     // 1) Prepara usuario y liga
-    $user = $this->initUser();
-    $this->seed([
-        TournamentFormatTableSeeder::class,
-        DefaultTournamentConfigurationTableSeeder::class,
-        LeaguesTableSeeder::class,
-        LocationsTableSeeder::class,
-        FieldsTableSeeder::class,
-    ]);
-    $this->addLeague();
-    $this->seed([
-        TournamentTableSeeder::class,
-        TeamsTableSeeder ::class
-    ]);
     $tournament = Tournament::first();
-    $location = Location::first();
-    $fields = Field::where('location_id', $location->id)->get();
-    $tournament->fields()->sync($fields->pluck('id'));
+    $location = $tournament->locations()->first();
+    $fields = $location->fields()->get();
+//    $tournament->fields()->sync($fields->pluck('id'));
     $payload = [
         'general' => [
             'tournament_id' => $tournament->id,
@@ -88,7 +77,6 @@ it('genera un calendario para 16 equipos en liga ida y vuelta', function () {
     ];
 
     $response = $this
-        ->actingAs($user, 'sanctum')
         ->postJson("/api/v1/admin/tournaments/{$tournament->id}/schedule", $payload);
 
     $response

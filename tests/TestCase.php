@@ -9,5 +9,5 @@ abstract class TestCase extends BaseTestCase
 {
     use CreatesApplication;
 
-//    protected bool $seed = true;
+    protected bool $seed = true;
 }

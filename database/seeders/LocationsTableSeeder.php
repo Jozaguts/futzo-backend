@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\League;
 use App\Models\Location;
 use Illuminate\Database\Seeder;
 
@@ -9,14 +10,13 @@ class LocationsTableSeeder extends Seeder
 {
     public function run(): void
     {
-        $locations = config('constants.locations');
-
-        foreach ($locations as $data) {
+        $league = League::firstOrFail();
+        foreach (config('constants.locations') as $data) {
             $location = Location::updateOrCreate(
                 ['id' => $data['id']],
                 $data
             );
-            $location->leagues()->syncWithoutDetaching([1]);
+            $league?->locations()->attach($location->id, ['updated_at' => now(), 'created_at' => now()]);
         }
     }
 }

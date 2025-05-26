@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Tournament;
 use App\Models\TournamentConfiguration;
 use App\Models\TournamentField;
 use Illuminate\Http\Request;
@@ -22,6 +23,10 @@ class LocationFieldCollection extends ResourceCollection
     public function toArray(Request $request): array
     {
         $tournamentId = $request->query('tournament_id');
+        $tournament = Tournament::findOrFail($tournamentId);
+        if ($tournament->league_id !== auth()->user()->league_id) {
+            abort(403, 'El torneo no pertenece a tu liga');
+        }
         $config = TournamentConfiguration::where('tournament_id', $tournamentId)->firstOrFail();
 
         $gameTime = $config->game_time;            // p.ej. 90
@@ -32,8 +37,11 @@ class LocationFieldCollection extends ResourceCollection
         // cada bloque durará:
         $step = $gameTime + $adminGap + $restGlobal + $buffer; // p.ej. 120
 
-        return $this->collection->map(function ($field, $key) use ($tournamentId) {
-            $leagueField = $field->leaguesFields->first();
+        return $this->collection->map(function ($field, $key) use ($tournament, $step) {
+            $leagueField = $field
+                ->leaguesFields()
+                ->where('league_id', $tournament->league_id)
+                ->first();
 
             return [
                 'field_id' => $field->id,
@@ -46,8 +54,9 @@ class LocationFieldCollection extends ResourceCollection
                 'availability' => $this->transformAvailability(
                     $leagueField->availability,
                     $field->id,
-                    $tournamentId,
-                    60  // **1 hora**
+                    $tournament->id,
+                    60,  // **1 hora**
+                    $tournament->league_id,
                 ),
             ];
         })->toArray();
@@ -57,27 +66,25 @@ class LocationFieldCollection extends ResourceCollection
      * Transforma la disponibilidad de la liga en bloques de $step minutos,
      * permitiendo arrancar en cada hora marcada.
      */
-    private function transformAvailability(array $availability, int $fieldId, int $excludeTournamentId, int $step): array
+    private function transformAvailability(array $leagueFieldGlobalAvailability, int $fieldId, int $excludeTournamentId, int $step, int $leagueId): array
     {
-        // 1) Sacamos reservas de otros torneos
-        $query = TournamentField::where('field_id', $fieldId);
-        if ($excludeTournamentId) {
-            $query->where('tournament_id', '!=', $excludeTournamentId);
-        }
-        $bookings = $query->pluck('availability')->all();
+        $bookings = TournamentField::where('field_id', $fieldId)
+            ->whereHas('tournament', function ($q) use ($leagueId, $excludeTournamentId) {
+                $q->where('league_id', $leagueId);
+                if ($excludeTournamentId) {
+                    $q->where('id', '!=', $excludeTournamentId);
+                }
+            })
+            ->pluck('availability')
+            ->all();
 
         $bookedSlots = []; // ej. ['monday'=>['09:00','11:00', ...], ...]
 
         foreach ($bookings as $json) {
             foreach ($json as $day => $data) {
-                if (empty($data['intervals'])) {
-                    continue;
-                }
-                foreach ($data['intervals'] as $int) {
-                    // si está marcado y es un slot concreto (ya no hay '*')
-                    if (!empty($int['selected']) && is_array($int['value'])) {
-                        // value: ['start'=>'09:00','end'=>'11:00']
-                        $bookedSlots[$day][] = $int['value']['start'];
+                foreach ($data['intervals'] ?? [] as $int) {
+                    if (!empty($int['selected']) && $int['selected'] === true && is_string($int['value'])) {
+                        $bookedSlots[$day][] = $int['value'];
                     }
                 }
             }
@@ -88,14 +95,14 @@ class LocationFieldCollection extends ResourceCollection
         $daysOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
         foreach ($daysOrder as $day) {
-            if (empty($availability[$day]['enabled'])) {
+            if (empty($leagueFieldGlobalAvailability[$day]['enabled'])) {
                 continue;
             }
 
-            $startH = (int)$availability[$day]['start']['hours'];
-            $startM = (int)$availability[$day]['start']['minutes'];
-            $endH = (int)$availability[$day]['end']['hours'];
-            $endM = (int)$availability[$day]['end']['minutes'];
+            $startH = (int)$leagueFieldGlobalAvailability[$day]['start']['hours'];
+            $startM = (int)$leagueFieldGlobalAvailability[$day]['start']['minutes'];
+            $endH = (int)$leagueFieldGlobalAvailability[$day]['end']['hours'];
+            $endM = (int)$leagueFieldGlobalAvailability[$day]['end']['minutes'];
 
             $start = $startH * 60 + $startM;
             $end = $endH * 60 + $endM;
@@ -104,22 +111,19 @@ class LocationFieldCollection extends ResourceCollection
             // Generar bloques completos de $step
             for ($t = $start; $t + $step <= $end; $t += $step) {
                 $fromText = sprintf('%02d:%02d', intdiv($t, 60), $t % 60);
-                $toText = sprintf('%02d:%02d', intdiv($t + $step, 60), ($t + $step) % 60);
 
                 $intervals[] = [
                     // <-- aquí sólo la hora de inicio como value
                     'value' => $fromText,
                     'text' => $fromText,
                     'selected' => false,
-                    'disabled' => in_array($fromText, $bookedSlots[$day] ?? [], true)
-                        || !empty($fullDay[$day]),
+                    'disabled' => in_array($fromText, $bookedSlots[$day] ?? [], true),
                 ];
             }
 
             // Si queda un bloque parcial al final...
             if (isset($t) && $t < $end) {
                 $fromText = sprintf('%02d:%02d', intdiv($t, 60), $t % 60);
-                $toText = sprintf('%02d:%02d', intdiv($end, 60), $end % 60);
 
                 $intervals[] = [
                     'value' => $fromText,

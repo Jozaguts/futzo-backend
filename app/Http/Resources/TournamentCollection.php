@@ -36,7 +36,7 @@ class TournamentCollection extends ResourceCollection
                 'teams' => $tournament->teams_count,
                 'players' => $tournament->players_count,
                 'matches' => $tournament->games_count,
-                'league' => $tournament->league->name,
+                'league' => $tournament->league?->name,
                 'location' => ($location = $tournament->locations->first()) ? [
                     'name' => $location->name,
                     'city' => $location->city,

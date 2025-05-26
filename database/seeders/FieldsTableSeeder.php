@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Field;
+use App\Models\League;
 use App\Models\LeagueField;
 use App\Models\Location;
 use Illuminate\Database\Seeder;
@@ -12,7 +13,7 @@ class FieldsTableSeeder extends Seeder
     public function run(): void
     {
 
-        $leagueId = 1;
+        $leagueId = League::first()->id;
         // Disponibilidad por defecto definida en config/constants.php bajo 'availability'
         $defaultAvailability = config('constants.availability');
 

@@ -11,40 +11,21 @@
 |
 */
 
-use Database\Seeders\ActionsTableSeeder;
-use Database\Seeders\CategoriesTableSeeder;
-use Database\Seeders\CountriesSeeder;
-use Database\Seeders\CouponsTableSeeder;
-use Database\Seeders\FootballTypesTableSeeder;
-use Database\Seeders\LeaguesTableSeeder;
-use Database\Seeders\PositionsTableSeeder;
-use Database\Seeders\RolesTableSeeder;
-use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Artisan;
+use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\PermissionRegistrar;
-use Tests\InitUser;
 use Tests\TestCase;
 
 uses(
     TestCase::class,
     RefreshDatabase::class,
-    InitUser::class,
 )
     ->beforeEach(function () {
-        $this->seed([
-            RolesTableSeeder::class,
-            LeaguesTableSeeder::class,
-            FootballTypesTableSeeder::class,
-            CountriesSeeder::class,
-            PositionsTableSeeder::class,
-            CategoriesTableSeeder::class,
-            ActionsTableSeeder::class,
-        ]);
+        $this->user = \App\Models\User::factory()->create();
+        Sanctum::actingAs($this->user, ['*']);
         $this->app
             ->make(PermissionRegistrar::class)
             ->forgetCachedPermissions();
-        $this->user = $this->initUser();
     })
     ->in('Feature');
 

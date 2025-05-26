@@ -16,8 +16,10 @@ class TournamentObserver
      */
     public function created(Tournament $tournament): void
     {
-        $tournament->league_id = auth()->user()->league_id;
-        $tournament->saveQuietly();
+        if (auth()->check()) {
+            $tournament->league_id = auth()->user()->league_id;
+            $tournament->saveQuietly();
+        }
 
     }
 

@@ -22,7 +22,6 @@ class AdminUserSeeder extends Seeder
             'remember_token' => Str::random(10),
         ]);
         $user->assignRole('super administrador');
-        Sanctum::actingAs($user, ['*']);
         $user->league_id = League::first()->id;
         $user->saveQuietly();
     }

@@ -7,8 +7,7 @@ use Laravel\Sanctum\Sanctum;
 
 
 beforeEach(function () {
-    $this->user = User::factory()->create();
-    Sanctum::actingAs($this->user, ['*']);
+    $this->withoutMiddleware();
 });
 it('store a league and upload logo and banner', function () {
     Storage::fake('public');

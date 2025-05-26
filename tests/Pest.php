@@ -11,6 +11,7 @@
 |
 */
 
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\PermissionRegistrar;
@@ -21,7 +22,7 @@ uses(
     RefreshDatabase::class,
 )
     ->beforeEach(function () {
-        $this->user = \App\Models\User::factory()->create();
+        $this->user = User::first();
         Sanctum::actingAs($this->user, ['*']);
         $this->app
             ->make(PermissionRegistrar::class)

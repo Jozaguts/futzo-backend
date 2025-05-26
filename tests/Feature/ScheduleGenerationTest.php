@@ -20,7 +20,6 @@ it('genera un calendario para 16 equipos en liga ida y vuelta', function () {
     $tournament = Tournament::first();
     $location = $tournament->locations()->first();
     $fields = $location->fields()->get();
-//    $tournament->fields()->sync($fields->pluck('id'));
     $payload = [
         'general' => [
             'tournament_id' => $tournament->id,

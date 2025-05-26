@@ -34,7 +34,8 @@ class Tournament extends Model implements HasMedia
         'tournament_format_id',
         'image',
         'thumbnail',
-        'football_type_id'
+        'football_type_id',
+        'league_id'
     ];
     protected $casts = [
         'start_date' => 'date',

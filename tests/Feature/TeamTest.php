@@ -4,16 +4,9 @@ namespace Tests\Feature;
 
 use App\Models\Category;
 use App\Models\Tournament;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
-use Tests\InitUser;
-use Tests\TestCase;
 
-beforeEach(function () {
-    $this->user = $this->initUser();
-    $this->addLeague();
-});
 
 it('stores a team correctly', function () {
     Storage::fake('public');

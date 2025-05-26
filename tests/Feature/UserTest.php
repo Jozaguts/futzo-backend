@@ -2,9 +2,7 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\InitUser;
-use Tests\TestCase;
+use App\Models\User;
 
 it('get users', function () {
     $this->json('POST', '/auth/register', [
@@ -21,10 +19,7 @@ it('get users', function () {
 });
 
 it('get users with pagination', function () {
-    $user = $this->initUser();
-    $response = $this
-        ->actingAs($user)
-        ->json('GET', '/api/v1/me');
+    $response = $this->getJson('/api/v1/me');
 
     $response
         ->assertStatus(200)
@@ -36,8 +31,7 @@ it('get users with pagination', function () {
         ]);
 });
 it('get user by id', function () {
-    $user = $this->initUser();
-
+    $user = User::first();
     $response = $this
         ->actingAs($user)
         ->json('PUT', "/api/v1/admin/profile/$user->id", [
@@ -48,12 +42,11 @@ it('get user by id', function () {
 });
 
 it('get user by id with wrong id', function () {
-    $user = $this->initUser();
-    $user2 = $this->initUser();
+    $user = User::first();
 
     $response = $this
-        ->actingAs($user2)
-        ->json('PUT', "/api/v1/admin/profile/$user->id", [
+        ->actingAs($user)
+        ->json('PUT', "/api/v1/admin/profile/2", [
             'name' => 'John',
             'email' => 'test@gmail.com',
             'phone' => '+523222397179',

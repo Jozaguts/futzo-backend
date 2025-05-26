@@ -2,9 +2,6 @@
 
 namespace Tests\Feature;
 
-beforeEach(function () {
-    $this->user = $this->initUser();
-});
 
 it('stores a location correctly', function () {
     $response = $this->postJson('/api/v1/admin/locations', [

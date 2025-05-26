@@ -11,12 +11,6 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use JsonException;
 
-beforeEach(function () {
-    $this->user = $this->initUser();
-    $this->addLeague();
-});
-
-
 it('get tournaments', function () {
 
     $response = $this->json('GET', '/api/v1/admin/tournaments');
@@ -102,7 +96,7 @@ it('get tournaments with filters', function () {
             'minMax' => json_encode([18, 32], JSON_THROW_ON_ERROR | true),
         ],
         'details' => [
-            'prize' => fake()->text(),
+            'prize' => fake()->text(10),
             'winner' => null,
             'description' => fake()->text(),
             'status' => null,
@@ -130,15 +124,9 @@ it('get tournaments with filters', function () {
 /**
  * @throws JsonException
  */
-it('get tournaments with filters and location', function () {
-    $format = TournamentFormat::find(1);
-    $category = Category::factory()->create();
-    $location = Location::factory()->create();
-    $tournament = Tournament::factory()->create();
-    $tournament->format()->associate($format);
-    $tournament->category()->associate($category);
-    $tournament->locations()->attach($location->id);
-    $tournament->save();
+it('update tournaments with filters and location', function () {
+    $tournament = Tournament::first();
+    $location = $tournament->locations()->first();
     $response = $this->json('PUT', '/api/v1/admin/tournaments/' . $tournament->id, [
         'basic' => [
             'name' => fake()->name,
@@ -149,7 +137,7 @@ it('get tournaments with filters and location', function () {
         'details' => [
             'start_date' => fake()->date('Y-m-d'),
             'end_date' => fake()->date('Y-m-d'),
-            'prize' => fake()->text(),
+            'prize' => fake()->text(10),
             'winner' => null,
             'description' => fake()->text(),
             'status' => null,
@@ -176,10 +164,7 @@ it('get tournaments with filters and location', function () {
  * @throws JsonException
  */
 it('get tournaments with filters and location without autocomplete', function () {
-    $location = Location::factory()->create();
-    $tournament = Tournament::factory()->create();
-    $tournament->locations()->attach($location->id);
-    $tournament->save();
+    $tournament = Tournament::first();
     $response = $this->json('PUT', '/api/v1/admin/tournaments/' . $tournament->id, [
         'basic' => [
             'name' => fake()->name,
@@ -190,7 +175,7 @@ it('get tournaments with filters and location without autocomplete', function ()
         'details' => [
             'start_date' => fake()->date('Y-m-d'),
             'end_date' => fake()->date('Y-m-d'),
-            'prize' => fake()->text(),
+            'prize' => fake()->text(10),
             'winner' => null,
             'description' => fake()->text(),
             'status' => null,
@@ -214,7 +199,7 @@ it('get tournaments with filters and location without autocomplete', function ()
 
 it('get tournaments with filters and location without autocomplete and without location', function () {
     $STATUS = ['creado', 'en curso', 'completado', 'cancelado'];
-    $tournament = Tournament::factory()->create();
+    $tournament = Tournament::first();
     $response = $this->json('PUT', '/api/v1/admin/tournaments/' . $tournament->id . '/status', [
         'status' => $STATUS[1]
     ]);

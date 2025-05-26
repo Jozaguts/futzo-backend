@@ -3,6 +3,8 @@
 namespace Database\Factories;
 
 use App\Models\Tournament;
+use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -22,10 +24,10 @@ class TournamentFactory extends Factory
      *
      * @return array
      */
-    public function definition()
+    public function definition(): array
     {
 
-        $status = $this->faker->randomElement(['creado', 'en curso', 'completado', 'cancelado']);
+        $status = 'creado';
         $startDate = $this->getStartDateBasedOnStatus($status);
         $endDate = $this->getEndDateBasedOnStatus($status, $startDate);
 
@@ -37,10 +39,10 @@ class TournamentFactory extends Factory
             'name' => 'Torneo ' . $this->faker->company,
             'image' => $this->faker->imageUrl(640, 480, 'sports', true, 'tournament'),
             'thumbnail' => $this->faker->imageUrl(150, 150, 'sports', true, 'thumbnail'),
-            'start_date' => $startDate,
+            'start_date' => Carbon::now()->next(CarbonInterface::FRIDAY)->startOfDay()->toIso8601String(),
             'end_date' => $endDate,
             'prize' => $this->faker->randomElement(['$5000', '$10000', '$15000']),
-            'winner' => $status === 'completado' ? $this->faker->company : null,
+            'winner' => null,
             'description' => $this->faker->paragraph,
             'status' => $status,
         ];

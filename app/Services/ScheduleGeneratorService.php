@@ -149,7 +149,7 @@ class ScheduleGeneratorService
                     $attempts++;
                 }
                 if (!$assigned) {
-                    throw new RuntimeException("No hay slots válidos para el partido {$pair[0]} vs {$pair[1]}.");
+                    throw new RuntimeException("La cantidad de horas seleccionadas no son suficientes para generar completamente las jornadas del calendario. Por favor, ajuste la disponibilidad de los campos o el número de equipos.");
                 }
             }
 
@@ -466,10 +466,20 @@ class ScheduleGeneratorService
             }
 
             foreach ($existingAvailability[$day]['intervals'] as $existingInterval) {
-                [$exStartH, $exStartM] = explode(':', $existingInterval['start']);
-                [$exEndH, $exEndM] = explode(':', $existingInterval['end']);
-                $existingStart = (int)$exStartH * 60 + (int)$exStartM;
-                $existingEnd = (int)$exEndH * 60 + (int)$exEndM;
+                if (!$existingInterval['selected']) {
+                    continue;
+                }
+                $slotValue = $existingInterval['value'];
+                $startTime = (string)$slotValue;
+                $endTime = Carbon::createFromFormat('H:i', $startTime)
+                    ?->addMinutes(60)
+                    ->format('H:i');
+                // 2) lo convertimos a minutos o Carbon para tu lógica de conflicto
+                [$exStartH, $exStartM] = explode(':', $startTime);
+                [$exEndH, $exEndM] = explode(':', $endTime);
+
+                $existingStart = $exStartH * 60 + $exStartM;
+                $existingEnd = $exEndH * 60 + $exEndM;
 
                 if (!($requestedEnd <= $existingStart || $requestedStart >= $existingEnd)) {
                     throw new RuntimeException(sprintf(
@@ -477,8 +487,8 @@ class ScheduleGeneratorService
                         $this->formatTime($requestedStart),
                         $this->formatTime($requestedEnd),
                         $fieldName,
-                        $existingInterval['start'],
-                        $existingInterval['end'],
+                        $existingStart,
+                        $existingEnd,
                         self::DAYS[$day]
                     ));
                 }

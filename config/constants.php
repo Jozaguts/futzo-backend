@@ -487,31 +487,37 @@ return [
     ],
     'phases' => [
         [
+            'id' => 1,
             'name' => 'Tabla general',
             'is_active' => true,
             'is_completed' => false,
         ],
         [
+            'id' => 2,
             'name' => 'Fase de grupos',
             'is_active' => true,
             'is_completed' => false,
         ],
         [
+            'id' => 3,
             'name' => 'Octavos de Final',
             'is_active' => false,
             'is_completed' => false,
         ],
         [
+            'id' => 4,
             'name' => 'Cuartos de Final',
             'is_active' => true,
             'is_completed' => false,
         ],
         [
+            'id' => 5,
             'name' => 'Semifinales',
             'is_active' => true,
             'is_completed' => false,
         ],
         [
+            'id' => 6,
             'name' => 'Final',
             'is_active' => true,
             'is_completed' => false,

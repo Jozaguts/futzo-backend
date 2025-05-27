@@ -12,6 +12,10 @@ class PhaseFactory extends Factory
 
     public function definition(): array
     {
-        return config('constants.phases')[0];
+        $phase = config('constants.phases')[0];
+        return [
+            'id' => $phase['id'],
+            'name' => $phase['name'],
+        ];
     }
 }

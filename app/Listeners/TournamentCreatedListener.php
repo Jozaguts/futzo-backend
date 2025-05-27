@@ -4,6 +4,7 @@ namespace App\Listeners;
 
 use App\Events\TournamentCreatedEvent;
 use App\Models\DefaultTournamentConfiguration;
+use App\Models\Phase;
 use App\Models\Tournament;
 use App\Models\TournamentConfiguration;
 
@@ -41,13 +42,23 @@ class TournamentCreatedListener
             $tieBreaker['tournament_configuration_id'] = $event->tournament->configuration->id;
             $event->tournament->configuration->tiebreakers()->create($tieBreaker);
         }
-        $phases = config('constants.phases');
         if ($event->tournament->format->name === $this->TOURNAMENT_WITHOUT_PHASES) {
-            $event->tournament->phases()->create($phases[0]);
+            $phase = Phase::first('name', $this->TOURNAMENT_WITHOUT_PHASES)->first();
+            $event->tournament->phases()->create([
+                'phase_id' => $phase->id,
+                'tournament_id' => $event->tournament->id,
+                'is_active' => true,
+                'is_completed' => false,
+            ]);
         } else {
-            $phasesWithoutGeneralTablePhase = array_filter($phases, fn($phase) => $phase['name'] !== $this->TOURNAMENT_WITHOUT_PHASES);
+            $phasesWithoutGeneralTablePhase = Phase::whereNot('name', $this->TOURNAMENT_WITHOUT_PHASES)->get();
             foreach ($phasesWithoutGeneralTablePhase as $phase) {
-                $event->tournament->phases()->create($phase);
+                $event->tournament->phases()->create([
+                    'phase_id' => $phase->id,
+                    'tournament_id' => $event->tournament->id,
+                    'is_active' => true,
+                    'is_completed' => false,
+                ]);
             }
         }
 

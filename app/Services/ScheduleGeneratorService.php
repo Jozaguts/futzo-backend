@@ -379,7 +379,7 @@ class ScheduleGeneratorService
         foreach ($data['phases'] as $eliminationPhase) {
             $this->tournament->phases()->save(
                 TournamentPhase::updateOrCreate(
-                    ['tournament_id' => $this->tournament->id, 'name' => $eliminationPhase['name']],
+                    ['tournament_id' => $this->tournament->id, 'phase_id' => $eliminationPhase['phase_id']],
                     $eliminationPhase
                 )
             );

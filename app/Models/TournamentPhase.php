@@ -10,6 +10,6 @@ class TournamentPhase extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $fillable = ['name', 'tournament_id', 'is_active', 'is_completed'];
+    protected $fillable = ['phase_id', 'tournament_id', 'is_active', 'is_completed'];
     protected $hidden = ['created_at', 'updated_at', 'deleted_at'];
 }

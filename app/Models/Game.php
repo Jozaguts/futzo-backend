@@ -98,4 +98,9 @@ class Game extends Model
     {
         return $this->belongsTo(Field::class);
     }
+
+    public function tournamentPhase(): BelongsTo
+    {
+        return $this->belongsTo(TournamentPhase::class, 'tournament_phase_id');
+    }
 }

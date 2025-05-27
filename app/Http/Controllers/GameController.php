@@ -7,8 +7,9 @@ use App\Models\Game;
 
 class GameController extends Controller
 {
-    public function show(Game $game): GameResource
+    public function show(int $gameId): GameResource
     {
+        $game = Game::with(["tournament.locations.fields"])->findOrFail($gameId);
         return new GameResource($game);
     }
 

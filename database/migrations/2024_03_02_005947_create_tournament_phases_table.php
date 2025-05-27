@@ -12,11 +12,12 @@ return new class extends Migration {
     {
         Schema::create('tournament_phases', static function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->unsignedBigInteger('tournament_id');
+            $table->unsignedBigInteger('phase_id');
             $table->boolean('is_active')->default(false);
             $table->boolean('is_completed')->default(false);
-            $table->unsignedBigInteger('tournament_id');
             $table->foreign('tournament_id')->references('id')->on('tournaments');
+            $table->foreign('phase_id')->references('id')->on('phases');
             $table->timestamps();
             $table->softDeletes();
         });

@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Category;
 use App\Models\League;
 use App\Models\Location;
+use App\Models\Phase;
 use App\Models\Tournament;
 use App\Models\TournamentFormat;
 use App\Models\FootballType;
@@ -66,16 +67,28 @@ class TournamentTableSeeder extends Seeder
             });
 
             // Insertamos fases según el formato
-            $allPhases = collect(config('constants.phases'));
+            $allPhases = Phase::all();
             if ($tournament->format->name === self::FORMAT_WITHOUT_PHASES) {
                 // Solo "Tabla general"
-                $phase = $allPhases->firstWhere('name', 'Tabla general');
-                $tournament->phases()->create($phase);
+                $phase = $allPhases->where('name', 'Tabla general')->first();
+                $tournament->phases()->create(
+                    [
+                        'phase_id' => $phase->id,
+                        'is_active' => true,
+                        'is_completed' => false,
+                    ]
+                );
             } else {
                 // Todas menos "Tabla general"
                 $allPhases
                     ->reject(fn($p) => $p['name'] === 'Tabla general')
-                    ->each(fn($p) => $tournament->phases()->create($p));
+                    ->each(fn($p) => $tournament->phases()->create(
+                        [
+                            'phase_id' => $p->id,
+                            'is_active' => false,
+                            'is_completed' => false,
+                        ]
+                    ));
             }
         }
 

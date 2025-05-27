@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
             DefaultTournamentConfigurationTableSeeder::class,
             ActionsTableSeeder::class,
             CouponsTableSeeder::class,
+            PhasesTableSeeder::class,
             LeaguesTableSeeder::class,
             AdminUserSeeder::class,
             LocationsTableSeeder::class,

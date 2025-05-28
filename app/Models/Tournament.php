@@ -62,9 +62,21 @@ class Tournament extends Model implements HasMedia
         self::observe(TournamentObserver::class);
     }
 
-    public function phases(): HasMany
+    public function tournamentPhases(): HasMany|Tournament
     {
-        return $this->hasMany(TournamentPhase::class, 'tournament_id', 'id');
+        return $this->hasMany(TournamentPhase::class);
+    }
+
+    public function phases(): HasManyThrough|Tournament
+    {
+        return $this->hasManyThrough(
+            Phase::class,
+            TournamentPhase::class,
+            'tournament_id', // FK en tournament_phases
+            'id',            // PK en phases
+            'id',            // PK en tournaments
+            'phase_id'       // FK en tournament_phases
+        );
     }
 
     public function configuration(): HasOne

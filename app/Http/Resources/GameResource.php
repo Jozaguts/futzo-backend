@@ -24,8 +24,9 @@ class GameResource extends JsonResource
             : $this->match_date->copy()->startOfDay();
         $dayOfWeek = strtolower($selectedDate->format('l'));
         // 2) Fase activa y sus límites
-        $currentPhase = $this->tournamentPhase;
-        $phaseGames = Game::where('tournament_id', $this->tournament_id)
+        $currentPhase = $this->resource->tournamentPhase;
+        $tournamentId = $this->resource->tournament_id;
+        $phaseGames = Game::where('tournament_id', $tournamentId)
             ->where('tournament_phase_id', $currentPhase->id);
         $phaseStart = $phaseGames->min('match_date');
         $phaseEnd = $phaseGames->max('match_date');
@@ -105,7 +106,24 @@ class GameResource extends JsonResource
             'id' => $this->id,
             'home' => ['id' => $this->homeTeam->id, 'name' => $this->homeTeam->name, 'image' => /* ... */ '', 'goals' => $this->home_goals],
             'away' => ['id' => $this->awayTeam->id, 'name' => $this->awayTeam->name, 'image' => /* ... */ '', 'goals' => $this->away_goals],
-            'details' => [ /* ... */],
+            'details' => [
+                'date' => optional($this->match_date)->translatedFormat('D j/n'),
+                'raw_date' => optional($this->match_date)->toDateTimeString(),
+                'raw_time' => $this->match_time,
+                'time' => $this->match_time ? [
+                    'hours' => Carbon::createFromFormat('H:i', $this->match_time)->hour,
+                    'minutes' => Carbon::createFromFormat('H:i', $this->match_time)->minute,
+                ] : null,
+                'field' => [
+                    'id' => $this->field_id,
+                    'name' => optional($this->field)->name ?: 'Campo desconocido',
+                ],
+                'location' => [
+                    'id' => $this->location_id,
+                    'name' => optional($this->location)->name ?: 'Ubicación desconocida',
+                ],
+                'referee' => optional($this->referee)->name ?: 'Por asignar',
+            ],
             'status' => $this->status,
             'result' => $this->result,
             'start_date' => $this->tournament->start_date,

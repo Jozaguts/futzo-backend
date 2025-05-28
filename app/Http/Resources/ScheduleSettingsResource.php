@@ -30,6 +30,7 @@ class ScheduleSettingsResource extends JsonResource
                     'name' => $tournamentPhase->phase->name,
                     'is_active' => $tournamentPhase->is_active,
                     'is_completed' => $tournamentPhase->is_completed,
+                    'tournament_id' => $this->id,
                 ];
             })->all(),
         ];

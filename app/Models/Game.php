@@ -33,7 +33,8 @@ class Game extends Model
         'home_goals',
         'away_goals',
         'match_date',
-        'match_time'
+        'match_time',
+        'tournament_phase_id'
     ];
     protected $casts = [
         'created_at' => 'datetime',

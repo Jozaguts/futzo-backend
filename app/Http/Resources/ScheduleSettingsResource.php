@@ -24,7 +24,14 @@ class ScheduleSettingsResource extends JsonResource
             'footballType' => $this->footballType ?? null,
             'locations' => $this->locations ?? [],
             'tiebreakers' => $this->configuration->tiebreakers ?? null,
-            'phases' => $this->phases ?? null,
+            'phases' => $this->tournamentPhases->load('phase')->map(function ($tournamentPhase) {
+                return [
+                    'id' => $tournamentPhase->phase->id,
+                    'name' => $tournamentPhase->phase->name,
+                    'is_active' => $tournamentPhase->is_active,
+                    'is_completed' => $tournamentPhase->is_completed,
+                ];
+            })->all(),
         ];
     }
 

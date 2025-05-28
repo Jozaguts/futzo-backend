@@ -44,7 +44,7 @@ class TournamentCreatedListener
         }
         if ($event->tournament->format->name === $this->TOURNAMENT_WITHOUT_PHASES) {
             $phase = Phase::first('name', $this->TOURNAMENT_WITHOUT_PHASES)->first();
-            $event->tournament->phases()->create([
+            $event->tournament->tournamentPhases()->create([
                 'phase_id' => $phase->id,
                 'tournament_id' => $event->tournament->id,
                 'is_active' => true,
@@ -53,7 +53,7 @@ class TournamentCreatedListener
         } else {
             $phasesWithoutGeneralTablePhase = Phase::whereNot('name', $this->TOURNAMENT_WITHOUT_PHASES)->get();
             foreach ($phasesWithoutGeneralTablePhase as $phase) {
-                $event->tournament->phases()->create([
+                $event->tournament->tournamentPhases()->create([
                     'phase_id' => $phase->id,
                     'tournament_id' => $event->tournament->id,
                     'is_active' => true,

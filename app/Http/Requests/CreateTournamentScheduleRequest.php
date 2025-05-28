@@ -76,7 +76,7 @@ class CreateTournamentScheduleRequest extends FormRequest
             'elimination_phase.round_trip' => 'required|boolean',
             'elimination_phase.phases' => 'required|array',
             'elimination_phase.phases.*.id' => 'required|integer',
-            'elimination_phase.phases.*.phase_id' => 'required|integer|exists:phases,id',
+            'elimination_phase.phases.*.name' => 'required|string|exists:phases,name',
             'elimination_phase.phases.*.is_active' => 'required|boolean',
             'elimination_phase.phases.*.is_completed' => 'required|boolean',
             'elimination_phase.phases.*.tournament_id' => 'required|integer',

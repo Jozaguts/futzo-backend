@@ -71,7 +71,7 @@ class TournamentTableSeeder extends Seeder
             if ($tournament->format->name === self::FORMAT_WITHOUT_PHASES) {
                 // Solo "Tabla general"
                 $phase = $allPhases->where('name', 'Tabla general')->first();
-                $tournament->phases()->create(
+                $tournament->tournamentPhases()->create(
                     [
                         'phase_id' => $phase->id,
                         'is_active' => true,
@@ -82,7 +82,7 @@ class TournamentTableSeeder extends Seeder
                 // Todas menos "Tabla general"
                 $allPhases
                     ->reject(fn($p) => $p['name'] === 'Tabla general')
-                    ->each(fn($p) => $tournament->phases()->create(
+                    ->each(fn($p) => $tournament->tournamentPhases()->create(
                         [
                             'phase_id' => $p->id,
                             'is_active' => false,

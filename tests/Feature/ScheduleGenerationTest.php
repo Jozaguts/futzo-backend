@@ -27,7 +27,15 @@ it('genera un calendario para 16 equipos en liga ida y vuelta', function () {
         'elimination_phase' => [
             'teams_to_next_round' => 8,
             'round_trip' => false,
-            'phases' => $tournament->phases->toArray(),
+            'phases' => $tournament->tournamentPhases->load('phase')->map(function ($tournamentPhase) use ($tournament) {
+                return [
+                    'tournament_id' => $tournament->id,
+                    'id' => $tournamentPhase->phase->id,
+                    'name' => $tournamentPhase->phase->name,
+                    'is_active' => $tournamentPhase->is_active,
+                    'is_completed' => $tournamentPhase->is_completed,
+                ];
+            })->all(),
         ],
         'fields_phase' => array_map(fn($f, $i) => [
             'field_id' => $f['id'],
@@ -116,7 +124,15 @@ it('no permite crear un calendario si las horas ya están reservadas', function 
         'elimination_phase' => [
             'teams_to_next_round' => 8,
             'round_trip' => false,
-            'phases' => $tournament->phases->toArray(),
+            'phases' => $tournament->tournamentPhases->load('phase')->map(function ($tournamentPhase) use ($tournament) {
+                return [
+                    'tournament_id' => $tournament->id,
+                    'id' => $tournamentPhase->phase->id,
+                    'name' => $tournamentPhase->phase->name,
+                    'is_active' => $tournamentPhase->is_active,
+                    'is_completed' => $tournamentPhase->is_completed,
+                ];
+            })->all(),
         ],
         'fields_phase' => array_map(fn($f, $i) => [
             'field_id' => $f['id'],

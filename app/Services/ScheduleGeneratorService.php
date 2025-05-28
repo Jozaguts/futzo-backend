@@ -163,7 +163,11 @@ class ScheduleGeneratorService
 
     public function persistScheduleToMatchSchedules(array $matches): void
     {
-        DB::transaction(function () use ($matches) {
+        $phase = TournamentPhase::where('tournament_id', $matches[0]['tournament_id'])
+            ->where('is_active', true)
+            ->first();
+
+        DB::transaction(function () use ($matches, $phase) {
             foreach ($matches as $match) {
                 Game::updateOrCreate([
                     'tournament_id' => $match['tournament_id'],
@@ -174,7 +178,10 @@ class ScheduleGeneratorService
                     'round' => $match['round'],
                     'field_id' => $match['field_id'],
                     'league_id' => auth()->user()->league->id
-                ], $match);
+                ], array_merge($match, [
+                        'tournament_phase_id' => $phase?->id,
+                    ])
+                );
             }
         });
     }
@@ -377,9 +384,9 @@ class ScheduleGeneratorService
     {
         unset($data['teams_to_next_round'], $data['round_trip']);
         foreach ($data['phases'] as $eliminationPhase) {
-            $this->tournament->phases()->save(
+            $this->tournament->tournamentPhases()->save(
                 TournamentPhase::updateOrCreate(
-                    ['tournament_id' => $this->tournament->id, 'phase_id' => $eliminationPhase['phase_id']],
+                    ['tournament_id' => $this->tournament->id, 'phase_id' => $eliminationPhase['id']],
                     $eliminationPhase
                 )
             );

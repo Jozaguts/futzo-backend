@@ -138,7 +138,7 @@ class LocationFieldCollection extends ResourceCollection
                 'enabled' => true,
                 'available_range' => sprintf('%02d:%02d a %02d:%02d', $startH, $startM, $endH, $endM),
                 'intervals' => $intervals,
-                'label' => self::dayLabels[$day],
+                'label' => config('constants.label_days')[$day]
             ];
         }
 

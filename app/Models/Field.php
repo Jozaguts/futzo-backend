@@ -47,8 +47,11 @@ class Field extends Model
 
     public function tournaments(): BelongsToMany
     {
-        return $this->belongsToMany(Tournament::class, 'tournament_fields')
-            ->using(TournamentFieldPivot::class)
-            ->withPivot('availability');
+        return $this->belongsToMany(Tournament::class, 'tournament_fields');
+    }
+
+    public function tournamentFields(): HasMany
+    {
+        return $this->hasMany(TournamentField::class);
     }
 }

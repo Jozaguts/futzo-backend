@@ -23,92 +23,124 @@ class GameResource extends JsonResource
             ? Carbon::parse($request->input('date'))->startOfDay()
             : $this->match_date->copy()->startOfDay();
         $dayOfWeek = strtolower($selectedDate->format('l'));
-        // 2) Fase activa y sus límites
+
+        // 2) Campo específico: del request o el original del juego
+        $fieldId = $request->input('field_id', $this->field_id);
+        // 3) Fase activa y sus límites
         $currentPhase = $this->resource->tournamentPhase;
         $tournamentId = $this->resource->tournament_id;
         $phaseGames = Game::where('tournament_id', $tournamentId)
             ->where('tournament_phase_id', $currentPhase->id);
         $phaseStart = $phaseGames->min('match_date');
         $phaseEnd = $phaseGames->max('match_date');
+        // 4) Si la fecha solicitada está fuera de la ventana de la fase, no hay opciones
         if ($request->has('date') && ($selectedDate->lt($phaseStart) || $selectedDate->gt($phaseEnd))) {
             $options = [];
         } else {
             // 3) Duración del partido (game_time + gap)
-            $config = $this->tournament->configuration;
+            $config = $this->resource->tournament->configuration;
             $matchDuration = $config->game_time + $config->time_between_games + 15 + 15;
 
-            // 4) Obtener IDs de canchas del torneo
-            $fieldIds = $this->tournament->fields()->pluck('field_id')->toArray();
+            // 6) Disponibilidad global de la liga solo para este campo
+            $leagueAvail = LeagueField::where('field_id', $fieldId)
+                ->first()
+                ->availability ?? [];
 
-            // 5) Disponibilidad global de liga
-            $leagueAvail = LeagueField::whereIn('field_id', $fieldIds)
-                ->get()->keyBy('field_id')->map->availability->toArray();
-
-            // 6) Bloqueos en tournament_fields
+            // 7) Bloqueos en tournament_fields solo para este campo
             $tournReserved = TournamentField::where('tournament_id', $this->tournament_id)
-                ->pluck('availability', 'field_id')->toArray();
+                ->where('field_id', $fieldId)
+                ->value('availability') ?? [];
 
-            // 7) Partidos ya agendados en la fase para la fecha
+            // 8) Partidos ya agendados en la fase para la fecha y campo
             $gamesReserved = $phaseGames
+                ->where('field_id', $fieldId)
                 ->whereDate('match_date', $selectedDate)
-                ->get()
-                ->groupBy('field_id')
-                ->map(fn($g) => $g->pluck('match_time')->map(fn($t) => substr($t, 0, 5))->toArray())
+                ->pluck('match_time')
+                ->map(fn($t) => substr($t, 0, 5))
                 ->toArray();
 
             // 8) Generar opciones de franjas
-            $options = [];
-            foreach ($leagueAvail as $fieldId => $daysConfig) {
-                $fieldOptions = [];
-                foreach ($daysConfig as $day => $cfg) {
-                    if (empty($cfg['enabled'])) {
-                        continue;
-                    }
-                    if ($request->has('date') && $day !== $dayOfWeek) {
-                        continue;
-                    }
-
-                    // Fecha concreta a iterar (dentro de faseStart/phaseEnd)
-                    $slotDate = $request->has('date')
-                        ? $selectedDate
-                        : Carbon::parse($phaseStart)->startOfWeek()->modify($day);
-
-                    // Generar slots entre start y end
-                    $start = $slotDate->copy()->setTime((int)$cfg['start']['hours'], (int)$cfg['start']['minutes']);
-                    $end = $slotDate->copy()->setTime((int)$cfg['end']['hours'], (int)$cfg['end']['minutes']);
-                    $allSlots = [];
-                    $cursor = $start->copy();
-                    while ($cursor->copy()->addMinutes($matchDuration)->lessThanOrEqualTo($end)) {
-                        $allSlots[] = $cursor->format('H:i');
-                        $cursor->addMinutes($matchDuration);
-                    }
-
-                    // Restar bloques reservados y juegos existentes
-                    $takenByConfig = [];
-                    if (isset($tournReserved[$fieldId][$day]['intervals'])) {
-                        $takenByConfig = collect($tournReserved[$fieldId][$day]['intervals'])
-                            ->filter(fn($i) => !empty($i['selected']))->pluck('value')->toArray();
-                    }
-                    $takenByGames = $gamesReserved[$fieldId] ?? [];
-
-                    $freeSlots = array_values(array_diff($allSlots, $takenByConfig, $takenByGames));
-                    if (!empty($freeSlots)) {
-                        $fieldOptions[$day] = $freeSlots;
-                    }
+            $intervals = [];
+            foreach ($leagueAvail as $day => $cfg) {
+                if (empty($cfg['enabled'])) {
+                    continue;
                 }
-                if ($fieldOptions) {
-                    $options[] = ['field_id' => $fieldId, 'available_intervals' => $fieldOptions];
+                if ($request->has('date') && $day !== $dayOfWeek) {
+                    continue;
+                }
+
+                // Determinar fecha a iterar dentro de fase
+                $slotDate = $request->has('date')
+                    ? $selectedDate
+                    : Carbon::parse($phaseStart)->startOfWeek()->modify($day);
+
+                // Generar todos los posibles inicios de slot
+                $start = $slotDate->copy()
+                    ->setTime((int)$cfg['start']['hours'], (int)$cfg['start']['minutes']);
+                $end = $slotDate->copy()
+                    ->setTime((int)$cfg['end']['hours'], (int)$cfg['end']['minutes']);
+
+                $allSlots = [];
+                $cursor = $start->copy();
+                while ($cursor->copy()->addMinutes($matchDuration)->lessThanOrEqualTo($end)) {
+                    $allSlots[] = $cursor->format('H:i');
+                    $cursor->addMinutes($matchDuration);
+                }
+
+                // Restar bloques reservados
+                $takenByConfig = [];
+                if (!empty($tournReserved[$day]['intervals'] ?? [])) {
+                    $takenByConfig = collect($tournReserved[$day]['intervals'])
+                        ->filter(fn($i) => !empty($i['selected']))
+                        ->pluck('value')
+                        ->toArray();
+                }
+
+                // Restar partidos existentes
+                $takenByGames = $gamesReserved;
+
+                // Calcular start/end de cada intervalo libre
+                $rawFree = array_values(array_diff($allSlots, $takenByConfig, $takenByGames));
+                $freeSlots = [];
+                foreach ($rawFree as $startTime) {
+                    $endTime = Carbon::createFromFormat('H:i', $startTime)
+                        ->addMinutes($matchDuration)
+                        ->format('H:i');
+                    $freeSlots[] = ['start' => $startTime, 'end' => $endTime];
+                }
+
+                if (!empty($freeSlots)) {
+                    $intervals['day'] = $day;
+                    $intervals['hours'] = $freeSlots;
                 }
             }
+            $options = [
+                ['field_id' => $fieldId, 'available_intervals' => $intervals]
+            ];
         }
-        // 9) Estructura de respuesta
         return [
             'id' => $this->id,
-            'home' => ['id' => $this->homeTeam->id, 'name' => $this->homeTeam->name, 'image' => /* ... */ '', 'goals' => $this->home_goals],
-            'away' => ['id' => $this->awayTeam->id, 'name' => $this->awayTeam->name, 'image' => /* ... */ '', 'goals' => $this->away_goals],
+            'home' => [
+                'id' => $this->homeTeam->id,
+                'name' => $this->homeTeam->name,
+                'image' => sprintf(
+                    'https://ui-avatars.com/api/?name=%s&background=9155FD&color=fff',
+                    urlencode($this->homeTeam->name)
+                ),
+                'goals' => $this->home_goals,
+            ],
+            'away' => [
+                'id' => $this->awayTeam->id,
+                'name' => $this->awayTeam->name,
+                'image' => sprintf(
+                    'https://ui-avatars.com/api/?name=%s&background=8A8D93&color=fff',
+                    urlencode($this->awayTeam->name)
+                ),
+                'goals' => $this->away_goals,
+            ],
             'details' => [
-                'date' => optional($this->match_date)->translatedFormat('D j/n'),
-                'raw_date' => optional($this->match_date)->toDateTimeString(),
+                'date' => $this->match_date->translatedFormat('D j/n'),
+                'raw_date' => $this->match_date->toDateTimeString(),
                 'raw_time' => $this->match_time,
                 'time' => $this->match_time ? [
                     'hours' => Carbon::createFromFormat('H:i', $this->match_time)->hour,
@@ -127,6 +159,7 @@ class GameResource extends JsonResource
             'status' => $this->status,
             'result' => $this->result,
             'start_date' => $this->tournament->start_date,
+            'end_date' => $this->tournament->games()->orderBy('match_date', 'desc')->first()->match_date,
             'options' => $options,
         ];
     }

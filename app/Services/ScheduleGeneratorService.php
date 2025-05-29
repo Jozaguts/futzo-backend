@@ -17,15 +17,6 @@ use RuntimeException;
 
 class ScheduleGeneratorService
 {
-    public const DAYS = [
-        'sunday' => 'Domingo',
-        'monday' => 'Lunes',
-        'tuesday' => 'Martes',
-        'wednesday' => 'Miércoles',
-        'thursday' => 'Jueves',
-        'friday' => 'Viernes',
-        'saturday' => 'Sábado'
-    ];
     private const GLOBAL_REST = 15;
     private const UNEXPECTED_BUFFER = 15;
     private Tournament $tournament;
@@ -496,7 +487,7 @@ class ScheduleGeneratorService
                         $fieldName,
                         $existingStart,
                         $existingEnd,
-                        self::DAYS[$day]
+                        config('constants.label_days')[$day]
                     ));
                 }
             }

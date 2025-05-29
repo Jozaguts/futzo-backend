@@ -560,5 +560,14 @@ return [
             'end' => ['hours' => '17', 'minutes' => '00'],
         ],
     ],
-    'logo_path' => env('FUTZO_LOGO_PATH', 'images/text only/logo-17.png')
+    'logo_path' => env('FUTZO_LOGO_PATH', 'images/text only/logo-17.png'),
+    'label_days' => [
+        'monday' => 'Lunes',
+        'tuesday' => 'Martes',
+        'wednesday' => 'Miércoles',
+        'thursday' => 'Jueves',
+        'friday' => 'Viernes',
+        'saturday' => 'Sábado',
+        'sunday' => 'Domingo',
+    ],
 ];

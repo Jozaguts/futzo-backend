@@ -8,5 +8,5 @@ Route::prefix('games')
     ->name('games.')
     ->group(function () {
         Route::get('{game}', [GameController::class, 'show'])->name('show');
-        Route::put('{game}', [GameController::class, 'update'])->name('update');
+        Route::put('{game}/reschedule', [GameController::class, 'update'])->name('reschedule');
     });

@@ -47,8 +47,7 @@ class GameResource extends JsonResource
                 ->availability ?? [];
 
             // 7) Bloqueos en tournament_fields solo para este campo
-            $tournReserved = TournamentField::where('tournament_id', $this->tournament_id)
-                ->where('field_id', $fieldId)
+            $tournReserved = TournamentField::where('field_id', $fieldId)
                 ->value('availability') ?? [];
 
             // 8) Partidos ya agendados en la fase para la fecha y campo

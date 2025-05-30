@@ -83,7 +83,7 @@ class LocationFieldCollection extends ResourceCollection
         foreach ($bookings as $json) {
             foreach ($json as $day => $data) {
                 foreach ($data['intervals'] ?? [] as $int) {
-                    if (!empty($int['selected']) && $int['selected'] === true && is_string($int['value'])) {
+                    if (!empty($int['selected']) && $int['selected'] === true && is_string($int['value']) && !empty($int['in_use'] && $int['is_use'])) {
                         $bookedSlots[$day][] = $int['value'];
                     }
                 }
@@ -118,6 +118,7 @@ class LocationFieldCollection extends ResourceCollection
                     'text' => $fromText,
                     'selected' => false,
                     'disabled' => in_array($fromText, $bookedSlots[$day] ?? [], true),
+                    'in_use' => in_array($fromText, $bookedSlots[$day] ?? [], true),
                 ];
             }
 
@@ -138,7 +139,7 @@ class LocationFieldCollection extends ResourceCollection
                 'enabled' => true,
                 'available_range' => sprintf('%02d:%02d a %02d:%02d', $startH, $startM, $endH, $endM),
                 'intervals' => $intervals,
-                'label' => config('constants.label_days')[$day]
+                'label' => self::dayLabels[$day],
             ];
         }
 

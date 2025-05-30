@@ -154,25 +154,81 @@ class ScheduleGeneratorService
 
     public function persistScheduleToMatchSchedules(array $matches): void
     {
+        // Fase activa del torneo
         $phase = TournamentPhase::where('tournament_id', $matches[0]['tournament_id'])
             ->where('is_active', true)
             ->first();
 
         DB::transaction(function () use ($matches, $phase) {
             foreach ($matches as $match) {
-                Game::updateOrCreate([
-                    'tournament_id' => $match['tournament_id'],
-                    'home_team_id' => $match['home_team_id'],
-                    'away_team_id' => $match['away_team_id'],
-                    'match_date' => $match['match_date'],
-                    'match_time' => $match['match_time'],
-                    'round' => $match['round'],
-                    'field_id' => $match['field_id'],
-                    'league_id' => auth()->user()->league->id
-                ], array_merge($match, [
+                // 1) Crear o actualizar el partido
+                $game = Game::updateOrCreate(
+                    [
+                        'tournament_id' => $match['tournament_id'],
+                        'home_team_id' => $match['home_team_id'],
+                        'away_team_id' => $match['away_team_id'],
+                        'match_date' => $match['match_date'],
+                        'match_time' => $match['match_time'],
+                        'round' => $match['round'],
+                        'field_id' => $match['field_id'],
+                        'league_id' => auth()->user()->league->id,
+                    ],
+                    array_merge($match, [
                         'tournament_phase_id' => $phase?->id,
                     ])
                 );
+
+                // 2) Marcar en_use=true en tournament_fields
+                $tournField = TournamentField::where('tournament_id', $match['tournament_id'])
+                    ->where('field_id', $match['field_id'])
+                    ->first();
+
+                if (!$tournField) {
+                    throw new RuntimeException("El campo {$match['field_id']} no está configurado en el torneo.");
+                }
+
+                $availability = $tournField->availability;
+                // Día de la semana en minúsculas
+                $day = strtolower(Carbon::parse($match['match_date'])->format('l'));
+
+                // Franjas existentes
+                $intervals = $availability[$day]['intervals'] ?? [];
+
+                // Duración total del bloque (game_time + gaps + buffers)
+                $config = $tournField->tournament->configuration;
+                $duration = $config->game_time
+                    + $config->time_between_games
+                    + self::GLOBAL_REST
+                    + self::UNEXPECTED_BUFFER;
+
+                // Horario de inicio y siguiente bloque
+                $startTime = substr($match['match_time'], 0, 5);
+                $nextStart = Carbon::createFromFormat('H:i', $startTime)
+                    ->addMinutes($duration)
+                    ->format('H:i');
+
+                // Marcar todos los slots que caen dentro de la duración del partido
+                $startMins = Carbon::createFromFormat('H:i', $startTime)->hour * 60
+                    + Carbon::createFromFormat('H:i', $startTime)->minute;
+                $endLimitMins = $startMins + $duration;
+
+                foreach ($intervals as &$interval) {
+                    // parsear valor de interval.value a minutos desde medianoche
+                    [$h, $m] = explode(':', $interval['value']);
+                    $tMins = (int)$h * 60 + (int)$m;
+
+                    // si el inicio del slot está dentro del rango [start, start+duración)
+                    if ($tMins >= $startMins && $tMins < $endLimitMins) {
+                        $interval['in_use'] = true;
+                        $interval['selected'] = true;
+                    }
+                }
+                unset($interval);
+
+                // Guardar cambios de availability
+                $availability[$day]['intervals'] = $intervals;
+                $tournField->availability = $availability;
+                $tournField->save();
             }
         });
     }

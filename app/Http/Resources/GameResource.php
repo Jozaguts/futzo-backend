@@ -154,6 +154,7 @@ class GameResource extends JsonResource
                     'name' => optional($this->location)->name ?: 'Ubicación desconocida',
                 ],
                 'referee' => optional($this->referee)->name ?: 'Por asignar',
+                'day_of_week' => $dayOfWeek,
             ],
             'status' => $this->status,
             'result' => $this->result,

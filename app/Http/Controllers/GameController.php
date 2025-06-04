@@ -39,24 +39,20 @@ class GameController extends Controller
         $availability = $tournamentField->availability[$day]['intervals'] ?? [];
         $takenIntervals = $availability;
         foreach ($takenIntervals as &$interval) {
-            // liberar el bloque antiguo (el que estaba en $game->match_time + su siguiente hora)
-            if ($interval['value'] === $currentGameMatchTime) {
+            // Liberar el bloque antiguamente reservado:
+            if ($interval['value'] === $currentGameMatchTime || $interval['value'] === $nextCurrentGameMatchTime) {
                 $interval['selected'] = false;
+                $interval['in_use'] = false;
             }
-            if ($interval['value'] === $nextCurrentGameMatchTime) {
-                $interval['selected'] = false;
-            }
-            // marcar los nuevos bloques seleccionados (start y end)
-            if ($interval['value'] === $startDate) {
+            if ($interval['value'] === $endDate || $interval['value'] === $endDate) {
                 $interval['selected'] = true;
-            }
-            if ($interval['value'] === $endDate) {
-                $interval['selected'] = true;
+                $interval['in_use'] = true;
             }
         }
         unset($interval);
         // vuelves a guardar el array modificado en availability
         $tournamentField->availability[$day]['intervals'] = $takenIntervals;
+        $tournamentField->availability = $availability;
         $tournamentField->save();
         $game->update([
             'match_date' => Carbon::parse($data['date'])->toDateString(),

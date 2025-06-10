@@ -23,43 +23,62 @@ class GameController extends Controller
         $data = $request->validate([
             'date' => 'required|date',
             'selected_time' => 'required|array',
-            'selected_time.*' => 'required|date_format:H:i',
+            'selected_time.start' => 'required|date_format:H:i',
+            'selected_time.end' => 'required|date_format:H:i',
             'field_id' => 'required|exists:fields,id',
             'day' => 'required|in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
         ]);
-        $tournament = $game->tournament;
-        $currentGameMatchTime = $game->match_time;
-        $currentGameFieldId = $game->field_id;
-        $nextCurrentGameMatchTime = Carbon::parse($currentGameMatchTime)->addMinutes(60)->format('H:i');
-        $startDate = $data['selected_time']['start'];
-        $endDate = Carbon::parse($data['selected_time']['end'])->subMinutes(60)->format('H:i');
-        $fieldId = $data['field_id'];
-        $day = $data['day'];
-        $tournamentField = $tournament->tournamentFields()->where('field_id', $currentGameFieldId)->firstOrFail();
-        $availability = $tournamentField->availability[$day]['intervals'] ?? [];
-        $takenIntervals = $availability;
-        foreach ($takenIntervals as &$interval) {
-            // Liberar el bloque antiguamente reservado:
-            if ($interval['value'] === $currentGameMatchTime || $interval['value'] === $nextCurrentGameMatchTime) {
+
+        // 1) Datos iniciales
+        $day = strtolower($data['day']);
+        $oldStart = substr($game->match_time, 0, 5);
+        $stepMins = $game->tournament->configuration->game_time
+            + $game->tournament->configuration->time_between_games
+            + 15 + 15; // total 120 minutos (2 horas) dependiendo de la configuracion del torneo
+        $oldNext = Carbon::parse($oldStart)->addMinutes($stepMins)->format('H:i');
+        $newStart = $data['selected_time']['start'];
+        $newEnd = Carbon::parse($data['selected_time']['end'])->subMinutes($stepMins)->format('H:i');
+
+        // 2) Cargar el pivot completo
+        $tournField = $game->tournament
+            ->tournamentFields()
+            ->where('field_id', $game->field_id)
+            ->firstOrFail();
+
+        // 3) Leer todo el array availability
+        $availability = $tournField->availability;
+
+        // 4) Tomar solo los intervals de ese día
+        $intervals = $availability[$day]['intervals'] ?? [];
+
+        // 5) Recorrer por referencia y liberar/ocupar bloques completos
+        foreach ($intervals as &$interval) {
+            // liberar los antiguos
+            if ($interval['value'] === $oldStart || $interval['value'] === $oldNext) {
                 $interval['selected'] = false;
                 $interval['in_use'] = false;
             }
-            if ($interval['value'] === $endDate || $interval['value'] === $endDate) {
+            // marcar los nuevos
+            if ($interval['value'] === $newStart || $interval['value'] === $newEnd) {
                 $interval['selected'] = true;
                 $interval['in_use'] = true;
             }
         }
         unset($interval);
-        // vuelves a guardar el array modificado en availability
-        $tournamentField->availability[$day]['intervals'] = $takenIntervals;
-        $tournamentField->availability = $availability;
-        $tournamentField->save();
+
+        // 6) Asignar de vuelta el array modificado
+        $availability[$day]['intervals'] = $intervals;
+        $tournField->availability = $availability;
+        $tournField->save();
+
+        // 7) Finalmente actualizar la tabla games
         $game->update([
             'match_date' => Carbon::parse($data['date'])->toDateString(),
-            'match_time' => $data['selected_time']['start'] . ':00',
-            'field_id' => $data['field_id'],
+            'match_time' => $newStart . ':00',
+            'field_id' => (int)$data['field_id'],
         ]);
 
         return new GameResource($game);
     }
+
 }

@@ -320,26 +320,33 @@ class TeamsController extends Controller
         $formRequest = TeamStoreRequest::create('', 'POST', $data);
         $formRequest->setContainer(app())->setRedirector(app('redirect'));
         $formRequest->validateResolved();
-        $president = $this->createOrUpdateUser(
-            $formRequest['president'] ?? null,
-            request(),
-            'president',
-            'dueño de equipo',
-            RegisteredTeamPresident::class,
-            false
-        );
-        $coach = $this->createOrUpdateUser($formRequest['coach'] ?? null,
-            request(),
-            'coach',
-            'entrenador',
-            RegisteredTeamCoach::class,
-            false
-        );
+        $president = null;
+        $coach = null;
+        if ($data['president']['name']) {
+            $president = $this->createOrUpdateUser(
+                $formRequest['president'] ?? null,
+                request(),
+                'president',
+                'dueño de equipo',
+                RegisteredTeamPresident::class,
+                false
+            );
+        }
+        if ($data['coach']['name']) {
+            $coach = $this->createOrUpdateUser(
+                $formRequest['coach'] ?? null,
+                request(),
+                'coach',
+                'entrenador',
+                RegisteredTeamCoach::class,
+                false
+            );
+        }
 
         $team = Team::create([
             'name' => $data['team']['name'],
-            'president_id' => $president?->id ?? null,
-            'coach_id' => $coach?->id ?? null,
+            'president_id' => $president?->id,
+            'coach_id' => $coach?->id,
             'phone' => $data['team']['phone'] ?? null,
             'email' => $data['team']['email'] ?? null,
             'address' => json_decode($data['team']['address'], false, 512, JSON_THROW_ON_ERROR),

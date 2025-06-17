@@ -144,12 +144,12 @@ return [
     'address' => $address,
     'colors' => [
         'home' => [
-            'jersey' => '#222',
-            'short' => '#111',
+            'jersey' => '#fff',
+            'short' => '#fff',
         ],
         'away' => [
-            'jersey' => '#dd2',
-            'short' => '#dd2',
+            'jersey' => '#fff',
+            'short' => '#fff',
         ],
     ],
     'categories' => [

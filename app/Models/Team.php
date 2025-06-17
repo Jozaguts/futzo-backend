@@ -34,6 +34,13 @@ class Team extends Model implements HasMedia
         'colors' => 'array'
     ];
 
+    protected static function booted()
+    {
+        static::creating(static function ($team) {
+            $team->colors = $team->colors ?? config('constants.colors');
+        });
+    }
+
     public function president(): BelongsTo
     {
         return $this->belongsTo(User::class, 'president_id');

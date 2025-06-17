@@ -58,6 +58,18 @@ class TeamsController extends Controller
 
             $president = $this->createOrUpdateUser($data['president'] ?? null, $request, 'president', 'dueño de equipo', RegisteredTeamPresident::class);
             $coach = $this->createOrUpdateUser($data['coach'] ?? null, $request, 'coach', 'entrenador', RegisteredTeamCoach::class);
+            $team = $data['team'];
+            $colors = $team['colors'] ?? [];
+            $address = $team['address'] ?? null;
+            if (is_string($colors)) {
+                $colors = json_decode($colors, true, 512, JSON_THROW_ON_ERROR);
+            }
+            if (is_string($address)) {
+                $address = json_decode($address, true, 512, JSON_THROW_ON_ERROR);
+            }
+            if (empty($colors)) {
+                $colors = config('constants.colors');
+            }
 
             $team = Team::create([
                 'name' => $data['team']['name'],
@@ -65,8 +77,8 @@ class TeamsController extends Controller
                 'coach_id' => $coach?->id ?? null,
                 'phone' => $data['team']['phone'] ?? null,
                 'email' => $data['team']['email'] ?? null,
-                'address' => json_decode($data['team']['address'] ?? null),
-                'colors' => json_decode($data['team']['colors'] ?? '[]'),
+                'address' => $address,
+                'colors' => $colors,
             ]);
             if ($request->hasFile('team.image')) {
                 $media = $team

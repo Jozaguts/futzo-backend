@@ -10,6 +10,7 @@ use App\Http\Requests\TeamStoreRequest;
 use App\Http\Requests\TeamUpdateRequest;
 use App\Http\Resources\TeamCollection;
 use App\Http\Resources\TeamResource;
+use App\Models\Player;
 use App\Models\Team;
 use App\Models\Tournament;
 use App\Models\User;
@@ -407,6 +408,18 @@ class TeamsController extends Controller
             ->paginate(10, ['*'], 'page', $request->get('page', 1));
 
         return response()->json($teams);
+    }
+
+    public function assignPlayer(Request $request, $teamId, $playerId): JsonResponse
+    {
+        $team = Team::findOrFail($teamId);
+        $player = Player::findOrFail($playerId);
+        if ($team->players()->where('user_id', $player->id)->exists()) {
+            return response()->json(['message' => 'El jugador ya está asignado a este equipo.'], 422);
+        }
+        $player->team_id = $team->id;
+        $player->save();
+        return response()->json(['message' => 'Jugador asignado al equipo correctamente.']);
     }
 
 }

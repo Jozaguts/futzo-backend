@@ -22,7 +22,7 @@ class LocationStoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|string|unique:locations,name',
+            'name' => 'required|string',
             'city' => 'required|string',
             'address' => 'required|string',
             'autocomplete_prediction' => [
@@ -42,13 +42,13 @@ class LocationStoreRequest extends FormRequest
             'autocomplete_prediction.place_id' => [
                 'required',
                 'string',
-                function ($attribute, $value, $fail) {
-                    $exists = \App\Models\Location::whereJsonContains('autocomplete_prediction->place_id', $value)->exists();
-                    \App\Models\Location::whereJsonContains('autocomplete_prediction->place_id', $value)->exists();
-                    if ($exists) {
-                        $fail("Esta ubicación ya está registrada.");
-                    }
-                },
+//                function ($attribute, $value, $fail) {
+//                    $exists = \App\Models\Location::whereJsonContains('autocomplete_prediction->place_id', $value)->exists();
+//                    \App\Models\Location::whereJsonContains('autocomplete_prediction->place_id', $value)->exists();
+//                    if ($exists) {
+//                        $fail("Esta ubicación ya está registrada.");
+//                    }
+//                },
             ],
             'availability' => 'array',
         ];

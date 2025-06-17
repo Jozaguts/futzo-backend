@@ -37,15 +37,27 @@ class LocationController extends Controller
         $validated = $request->safe();
         $locationData = $validated->except('availability');
         $availabilityData = $validated->only('availability');
+
+        $placeId = $locationData['autocomplete_prediction']['place_id'] ?? null;
+
         $location = null;
+        $league = auth()->user()->league;
         try {
             DB::beginTransaction();
-            $location = Location::create($locationData);
+            $location = Location::whereJsonContains('autocomplete_prediction->place_id', $placeId)->first();
 
-            $league = auth()->user()->league;
-            if ($league) {
+            if (!$location) {
+                $location = Location::create($locationData);
+
+                if ($request->has('tags')) {
+                    $location->attachTags($locationData['tags']);
+                }
+            }
+            // Asociar la Location con la liga (si no está ya asociada)
+            if ($league && !$league->locations()->where('locations.id', $location->id)->exists()) {
                 $league->locations()->attach($location->id, ['updated_at' => now(), 'created_at' => now()]);
             }
+            // Crear campos de juego asociados a la liga
             if (!empty($availabilityData)) {
                 foreach ($availabilityData['availability'] as $fieldData) {
                     $field = Field::create([

@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\GameResource;
+use App\Http\Resources\GameTeamsPlayersCollection;
 use App\Models\Game;
+use App\Models\Player;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
@@ -79,6 +81,33 @@ class GameController extends Controller
         ]);
 
         return new GameResource($game);
+    }
+
+    public function teamsPlayers(int $gameId)
+    {
+        $game = Game::where('id', $gameId)
+            ->with([
+                'homeTeam' => function ($query) {
+                    $query->select(['id', 'name'])
+                        ->with([
+                            'players' => function ($query) {
+                                $query->select(['id', 'team_id', 'user_id'])
+                                    ->with('user:id,name,last_name');
+                            }
+                        ]);
+                },
+                'awayTeam' => function ($query) {
+                    $query->select(['id', 'name'])
+                        ->with([
+                            'players' => function ($query) {
+                                $query->select(['id', 'team_id', 'user_id'])
+                                    ->with('user:id,name,last_name');
+                            }
+                        ]);
+                }
+            ])
+            ->firstOrFail();
+        return GameTeamsPlayersCollection::make($game);
     }
 
 }

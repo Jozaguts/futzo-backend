@@ -9,4 +9,5 @@ Route::prefix('games')
     ->group(function () {
         Route::get('{game}', [GameController::class, 'show'])->name('show');
         Route::put('{game}/reschedule', [GameController::class, 'update'])->name('reschedule');
+        Route::get('{game}/teams/players', [GameController::class, 'teamsPlayers'])->name('teams-players');
     });

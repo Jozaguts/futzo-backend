@@ -3,10 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\NextGamesCollection;
-use App\Http\Resources\NextGamesResource;
 use App\Models\Game;
 use App\Services\DashboardStatsService;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller

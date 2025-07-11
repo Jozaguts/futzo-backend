@@ -4,5 +4,5 @@ use App\Http\Controllers\ScheduleController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('schedules')->group(function () {
-	Route::post('generate', [ScheduleController::class, 'generate']);
+    Route::post('index', [ScheduleController::class, 'index']);
 });

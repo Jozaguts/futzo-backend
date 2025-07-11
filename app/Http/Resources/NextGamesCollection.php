@@ -10,9 +10,9 @@ class NextGamesCollection extends ResourceCollection
     public function toArray(Request $request): array
     {
         return [
-            'data' => $this->collection->map(function ($item) {
+            'data' => $this->collection->count() ? $this->collection->map(function ($item) {
                 return new NextGamesResource($item);
-            }),
+            }) : []
         ];
     }
 }

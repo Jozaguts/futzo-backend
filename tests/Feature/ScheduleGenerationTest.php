@@ -48,21 +48,21 @@ it('genera un calendario para 16 equipos en liga ida y vuelta', function () {
                 'friday' => [
                     'enabled' => true,
                     'available_range' => '09:00 a 17:00',
-                    'intervals' => array_map(fn($h) => ['value' => $h, 'text' => $h, 'selected' => $i === 0, 'disabled' => false],
+                    'intervals' => array_map(fn($h) => ['value' => $h, 'text' => $h, 'selected' => $i === 0, 'disabled' => false, 'in_use' => $i === 0],
                         ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00']),
                     'label' => 'Viernes',
                 ],
                 'saturday' => [
                     'enabled' => true,
                     'available_range' => '09:00 a 17:00',
-                    'intervals' => array_map(fn($h) => ['value' => $h, 'text' => $h, 'selected' => $i === 0, 'disabled' => false],
+                    'intervals' => array_map(fn($h) => ['value' => $h, 'text' => $h, 'selected' => $i === 0, 'disabled' => false, 'in_use' => $i === 0],
                         ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00']),
                     'label' => 'Sábado',
                 ],
                 'sunday' => [
                     'enabled' => true,
                     'available_range' => '09:00 a 17:00',
-                    'intervals' => array_map(fn($h) => ['value' => $h, 'text' => $h, 'selected' => $i === 0, 'disabled' => false],
+                    'intervals' => array_map(fn($h) => ['value' => $h, 'text' => $h, 'selected' => $i === 0, 'disabled' => false, 'in_use' => $i === 0],
                         ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00']),
                     'label' => 'Domingo',
                 ],
@@ -150,6 +150,7 @@ it('no permite crear un calendario si las horas ya están reservadas', function 
                         'text' => $h,
                         'selected' => true,  // aquí da igual
                         'disabled' => false,
+                        'in_use' => true, // Simulamos que ya están en uso
                     ], ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00']),
                     'label' => 'Viernes',
                 ],

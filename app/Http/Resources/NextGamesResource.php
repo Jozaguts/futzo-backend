@@ -11,28 +11,28 @@ class NextGamesResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
-            'tournament' => $this->tournament,
+            'id' => $this->resource?->id,
+            'tournament' => $this->resource->tournament,
             'home_team' => [
-                'id' => $this->homeTeam->id,
-                'name' => $this->homeTeam->name,
-                'image' => 'https://ui-avatars.com/api/?name=' . $this->homeTeam->name,
+                'id' => $this->resource->homeTeam?->id,
+                'name' => $this->resource->homeTeam?->name,
+                'image' => 'https://ui-avatars.com/api/?name=' . $this->resource->homeTeam?->name,
             ],
             'away_team' => [
-                'id' => $this->awayTeam->id,
-                'name' => $this->awayTeam->name,
-                'image' => 'https://ui-avatars.com/api/?name=' . $this->awayTeam->name,
+                'id' => $this->resource->awayTeam?->id,
+                'name' => $this->resource->awayTeam?->name,
+                'image' => 'https://ui-avatars.com/api/?name=' . $this->resource->awayTeam?->name,
             ],
             'location' => [
-                'id' => $this->location->id,
-                'name' => $this->location->name,
+                'id' => $this->resource->location?->id,
+                'name' => $this->resource->location?->name,
             ],
             'field' => [
-                'id' => $this->field->id,
-                'name' => $this->field->name,
+                'id' => $this->resource->field?->id,
+                'name' => $this->resource->field?->name,
             ],
-            'match_date' => $this->match_date_to_string,
-            'match_time' => $this->match_time
+            'match_date' => $this->resource->match_date_to_string,
+            'match_time' => $this->resource->match_time
         ];
     }
 }

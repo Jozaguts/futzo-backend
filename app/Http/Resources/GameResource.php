@@ -90,7 +90,7 @@ class GameResource extends JsonResource
                 $takenByConfig = [];
                 if (!empty($tournReserved[$day]['intervals'] ?? [])) {
                     $takenByConfig = collect($tournReserved[$day]['intervals'])
-                        ->filter(fn($i) => !empty($i['selected']))
+                        ->filter(fn($i) => !empty($i['in_use']))
                         ->pluck('value')
                         ->toArray();
                 }

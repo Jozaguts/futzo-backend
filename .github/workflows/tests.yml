@@ -57,6 +57,7 @@ jobs:
           AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
           AWS_BUCKET: ${{ secrets.AWS_BUCKET }}
           AWS_USE_PATH_STYLE_ENDPOINT: ${{ secrets.AWS_USE_PATH_STYLE_ENDPOINT }}
+          MAIL_MAILER: log
 
       - name: Run Laravel Tests
         run: php artisan test --env=testing
@@ -71,3 +72,4 @@ jobs:
           AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
           AWS_BUCKET: ${{ secrets.AWS_BUCKET }}
           AWS_USE_PATH_STYLE_ENDPOINT: ${{ secrets.AWS_USE_PATH_STYLE_ENDPOINT }}
+          MAIL_MAILER: log

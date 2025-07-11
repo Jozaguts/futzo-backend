@@ -384,7 +384,7 @@ class ScheduleGeneratorService
         }
         $tournament->start_date = $startDate;
         $tournament->saveQuietly();
-        $tournament->refresh();
+        $this->tournament = $tournament->refresh();
         $locations = collect($generalData['locations'])->pluck('id');
 
         $availableLocations = Location::whereIn('id', $locations)->get();

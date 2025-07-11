@@ -382,7 +382,9 @@ class ScheduleGeneratorService
         if ($startDate->isPast()) {
             throw new RuntimeException('La fecha de inicio no puede ser en el pasado.');
         }
-
+        $tournament->start_date = $startDate;
+        $tournament->saveQuietly();
+        $tournament->refresh();
         $locations = collect($generalData['locations'])->pluck('id');
 
         $availableLocations = Location::whereIn('id', $locations)->get();

@@ -33,6 +33,8 @@ class GameController extends Controller
 
         // 1) Datos iniciales
         $day = strtolower($data['day']);
+        $oldDay = strtolower($game->match_date ? Carbon::parse($game->match_date)->format('l') : $day);
+        $oldDay = strtolower($oldDay);
         $oldStart = substr($game->match_time, 0, 5);
         $stepMins = $game->tournament->configuration->game_time
             + $game->tournament->configuration->time_between_games
@@ -54,16 +56,46 @@ class GameController extends Controller
         $intervals = $availability[$day]['intervals'] ?? [];
 
         // 5) Recorrer por referencia y liberar/ocupar bloques completos
+        if ($oldDay !== $day) {
+            $oldIntervals = $availability[$oldDay]['intervals'] ?? [];
+            foreach ($oldIntervals as &$interval) {
+                if ($interval['value'] === $oldStart || $interval['value'] === $oldNext) {
+                    $interval = [
+                        'value' => $interval['value'],
+                        'in_use' => false,
+                        'selected' => false,
+                    ];
+                }
+            }
+            unset($interval);
+            $availability[$oldDay]['intervals'] = $oldIntervals;
+
+            $tournField->availability = $availability;
+            $tournField->save();
+        }
+
+        $availability[$day]['intervals'] = $intervals;
+        $tournField->availability = $availability;
+        $tournField->save();
+
+
         foreach ($intervals as &$interval) {
             // liberar los antiguos
             if ($interval['value'] === $oldStart || $interval['value'] === $oldNext) {
-                $interval['selected'] = false;
-                $interval['in_use'] = false;
+                $interval = [
+                    'value' => $interval['value'],
+                    'in_use' => false, // liberar el bloque
+                    'selected' => true, // desmarcar el bloque
+                ];
             }
-            // marcar los nuevos
+
             if ($interval['value'] === $newStart || $interval['value'] === $newEnd) {
-                $interval['selected'] = true;
-                $interval['in_use'] = true;
+
+                $interval = [
+                    'value' => $interval['value'],
+                    'in_use' => true, // ocupar el bloque
+                    'selected' => true, // marcar el bloque
+                ];
             }
         }
         unset($interval);

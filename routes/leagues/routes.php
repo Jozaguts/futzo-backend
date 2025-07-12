@@ -11,6 +11,6 @@ Route::prefix('leagues')
         Route::get('locations', [LeaguesController::class, 'leagueLocations']);
         Route::get('{league}/tournaments', [LeaguesController::class, 'getTournaments'])
             ->withoutMiddleware('auth:sanctum')
-            ->name('store');
-        Route::get('football/types', [LeaguesController::class, 'getFootballTypes'])->name('store');
+            ->name('tournaments');
+        Route::get('football/types', [LeaguesController::class, 'getFootballTypes'])->name('football.types');
     });

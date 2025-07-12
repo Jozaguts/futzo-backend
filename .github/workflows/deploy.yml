@@ -23,6 +23,7 @@ jobs:
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
             cd "${{ secrets.DEPLOY_PATH }}"
+            pdw
             git pull origin main
             php artisan migrate --force
             php artisan route:cache

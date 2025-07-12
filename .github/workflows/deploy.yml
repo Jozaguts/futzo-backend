@@ -22,7 +22,7 @@ jobs:
       - name: Deploy App
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
-            cd $DEPLOY_PATH
+            cd "${{ secrets.DEPLOY_PATH }}"
             git pull origin main
             php artisan migrate --force
             php artisan route:cache

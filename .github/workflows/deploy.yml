@@ -25,6 +25,8 @@ jobs:
             cd $DEPLOY_PATH
             git pull origin main
             php artisan migrate --force
+            php artisan route:cache
+            php artisan view:cache
             php artisan config:cache
           EOF
         env:

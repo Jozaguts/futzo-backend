@@ -23,10 +23,12 @@ jobs:
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
             cd "${{ secrets.DEPLOY_PATH }}"
-            pdw
             git pull origin main
             php artisan migrate --force
             php artisan route:cache
             php artisan view:cache
             php artisan config:cache
+          
+          chown -R www-data:www-data storage bootstrap/cache
+          chmod -R ug+rwX storage bootstrap/cache
           EOF

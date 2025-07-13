@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Observers\TournamentObserver;
+use App\Scopes\LeagueScope;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Attributes\ScopedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -19,7 +21,8 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
 
-#[ScopedBy(\App\Scopes\LeagueScope::class)]
+#[ScopedBy(LeagueScope::class)]
+#[ObservedBy([[TournamentObserver::class]])]
 class Tournament extends Model implements HasMedia
 {
     use HasFactory, SoftDeletes, InteractsWithMedia, HasSlug;
@@ -51,17 +54,6 @@ class Tournament extends Model implements HasMedia
             ->generateSlugsFrom('name')
             ->saveSlugsTo('slug');
     }
-    protected function slug(): Attribute
-    {
-        return Attribute::make(
-            get: function($value, $attributes) {
-                if (!$attributes['slug']){
-                    $this->save();
-                }
-                return $attributes['slug'];
-            }
-        );
-    }
     protected function startDateToString(): Attribute
     {
         return Attribute::make(
@@ -74,11 +66,6 @@ class Tournament extends Model implements HasMedia
         return Attribute::make(
             get: fn($value, $attributes) => $attributes['end_date'] ? \Carbon\Carbon::parse($attributes['end_date'])->translatedFormat('D d M y') : null,
         );
-    }
-
-    protected static function booted(): void
-    {
-        self::observe(TournamentObserver::class);
     }
 
     public function tournamentPhases(): HasMany|Tournament

@@ -16,11 +16,13 @@ use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Spatie\Sluggable\SlugOptions;
+use Spatie\Tags\HasSlug;
 
 #[ScopedBy(\App\Scopes\LeagueScope::class)]
 class Tournament extends Model implements HasMedia
 {
-    use HasFactory, SoftDeletes, InteractsWithMedia;
+    use HasFactory, SoftDeletes, InteractsWithMedia, HasSlug;
 
     protected $fillable = [
         'name',
@@ -42,7 +44,12 @@ class Tournament extends Model implements HasMedia
         'end_date' => 'date',
 
     ];
-
+    public function getSlugOptions(): SlugOptions
+    {
+        return SlugOptions::create()
+            ->generateSlugsFrom('name')
+            ->saveSlugsTo('slug');
+    }
     protected function startDateToString(): Attribute
     {
         return Attribute::make(

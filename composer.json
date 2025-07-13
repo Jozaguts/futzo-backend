@@ -20,6 +20,7 @@
     "mailersend/laravel-driver": "^2.6",
     "spatie/laravel-medialibrary": "^11.9.0",
     "spatie/laravel-permission": "^6.9.0",
+    "spatie/laravel-sluggable": "^3.7",
     "spatie/laravel-tags": "^4.7"
   },
   "require-dev": {

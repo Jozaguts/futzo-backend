@@ -9,10 +9,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Sluggable\SlugOptions;
+use Spatie\Tags\HasSlug;
 
 class Player extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, HasSlug;
 
     protected static function newFactory(): PlayerFactory
     {
@@ -37,7 +39,14 @@ class Player extends Model
     protected $casts = [
         'birthdate' => 'datetime',
     ];
-
+    public function getSlugOptions(): SlugOptions
+    {
+        return SlugOptions::create()
+            ->generateSlugsFrom(function (Player $player) {
+                return $player->user->name ?? uniqid('player-', true);
+            })
+            ->saveSlugsTo('slug');
+    }
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

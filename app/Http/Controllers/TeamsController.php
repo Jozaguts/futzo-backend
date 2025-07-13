@@ -46,7 +46,11 @@ class TeamsController extends Controller
 
     public function show($id): TeamResource
     {
-        return new TeamResource(Team::findOrFail($id));
+        $bySlug = request()->get('by_slug', false);
+        $team =  $bySlug
+            ? Team::where('slug', $id)->firstOrFail()
+            : Team::findOrFail($id);
+        return new TeamResource($team);
     }
 
     public function store(TeamStoreRequest $request): TeamResource|JsonResponse

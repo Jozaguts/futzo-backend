@@ -37,7 +37,8 @@ class Tournament extends Model implements HasMedia
         'image',
         'thumbnail',
         'football_type_id',
-        'league_id'
+        'league_id',
+        'slug',
     ];
     protected $casts = [
         'start_date' => 'date',
@@ -49,6 +50,17 @@ class Tournament extends Model implements HasMedia
         return SlugOptions::create()
             ->generateSlugsFrom('name')
             ->saveSlugsTo('slug');
+    }
+    protected function slug(): Attribute
+    {
+        return Attribute::make(
+            get: function($value, $attributes) {
+                if (!$attributes['slug']){
+                    $this->save();
+                }
+                return $attributes['slug'];
+            }
+        );
     }
     protected function startDateToString(): Attribute
     {

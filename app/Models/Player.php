@@ -33,7 +33,8 @@ class Player extends Model
         'nationality',
         'medical_notes',
         'number',
-        'birthdate'
+        'birthdate',
+        'slug',
     ];
     protected $hidden = ['created_at', 'updated_at', 'deleted_at'];
     protected $casts = [

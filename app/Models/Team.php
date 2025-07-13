@@ -30,6 +30,7 @@ class Team extends Model implements HasMedia
         'president_id',
         'coach_id',
         'colors',
+        'slug'
     ];
     protected $casts = [
         'address' => 'array',

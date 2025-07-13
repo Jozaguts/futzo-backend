@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Sluggable\SlugOptions;
 
 class Game extends Model
 {
@@ -34,7 +35,8 @@ class Game extends Model
         'away_goals',
         'match_date',
         'match_time',
-        'tournament_phase_id'
+        'tournament_phase_id',
+        'slug',
     ];
     protected $casts = [
         'created_at' => 'datetime',
@@ -43,7 +45,14 @@ class Game extends Model
         'match_time' => 'datetime:H:i:s',
 
     ];
-
+    public function getSlugOptions(): SlugOptions
+    {
+        return SlugOptions::create()
+            ->generateSlugsFrom(function(Game $game) {
+                return $game->homeTeam->name . ' vs ' . $game->awayTeam->name . ' - ' . $game->match_date->format('Y-m-d');
+            })
+            ->saveSlugsTo('slug');
+    }
     protected function matchTime(): Attribute
     {
         return Attribute::make(

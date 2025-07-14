@@ -99,12 +99,12 @@ class User extends Authenticatable implements MustVerifyEmail, HasMedia
         return $this->hasMany(Player::class);
     }
 
-    public function registerMediaCollections(?Media $media = null): void
+    public function registerMediaCollections(?Media $media= null): void
     {
         $this->addMediaCollection('image')
             ->singleFile()
             ->storeConversionsOnDisk('s3')
-            ->registerMediaConversions(function (Media $media = null) {
+            ->registerMediaConversions(function (Media $media) {
                 $this->addMediaConversion('thumbnail')
                     ->width(150)
                     ->height(150);

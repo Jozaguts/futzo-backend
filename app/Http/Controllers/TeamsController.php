@@ -20,6 +20,8 @@ use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use PhpOffice\PhpSpreadsheet\Exception;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class TeamsController extends Controller
@@ -44,10 +46,13 @@ class TeamsController extends Controller
         return new TeamCollection($teams);
     }
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     public function show($id): TeamResource
     {
-        $bySlug = request()->get('by_slug', false);
-        $team =  $bySlug
+        $team =  request()->get('by_slug', false)
             ? Team::where('slug', $id)->firstOrFail()
             : Team::findOrFail($id);
         return new TeamResource($team);

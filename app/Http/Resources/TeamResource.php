@@ -16,12 +16,15 @@ class TeamResource extends JsonResource
     {
 
         return [
-            'id' => $this->id,
-            'name' => $this->name,
-            'colors' => $this->colors,
-            'president' => $this->president()->select('id', 'name', 'email', 'phone')->first(),
-            'coach' => $this->coach()->select('id', 'name', 'email', 'phone')->first(),
-            'league' => $this->leagues()->where('league_id', auth()?->user()?->league_id)->select('leagues.id', 'leagues.name')->first(),
+            'id' => $this->resource->id,
+            'name' => $this->resource->name,
+            'colors' => $this->resource->colors,
+            'president' => $this->resource->president()->select('id', 'name', 'email', 'phone')->first(),
+            'coach' => $this->resource->coach()->select('id', 'name', 'email', 'phone')->first(),
+            'tournament' => $this->resource->tournaments()
+                ->first(),
+            'category' => $this->resource->category()->select('id', 'name')->first(),
+            'league' => $this->resource->leagues()->where('league_id', auth()?->user()?->league_id)->select('leagues.id', 'leagues.name')->first(),
         ];
     }
 }

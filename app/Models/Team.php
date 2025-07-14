@@ -76,7 +76,7 @@ class Team extends Model implements HasMedia
         return $this->belongsToMany(Tournament::class, 'team_tournament')->using(TeamTournament::class);
     }
 
-    public function categories()
+    public function categories(): BelongsToMany
     {
         return $this->belongsToMany(Category::class)->using(CategoryTeam::class);
     }

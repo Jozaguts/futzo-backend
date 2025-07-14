@@ -32,7 +32,7 @@ class TournamentCollection extends ResourceCollection
                 'end_date' => $tournament->end_date,
                 'status' => $tournament->status,
                 'name' => $tournament->name,
-                'slug' => str($tournament->name)->slug('-'),
+                'slug' => $tournament->slug,
                 'teams' => $tournament->teams_count,
                 'players' => $tournament->players_count,
                 'matches' => $tournament->games_count,

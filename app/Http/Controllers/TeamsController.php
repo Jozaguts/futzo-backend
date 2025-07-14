@@ -125,22 +125,19 @@ class TeamsController extends Controller
             $coach = collect($data['coach']);
             DB::beginTransaction();
             $team = Team::findOrFail($id);
-            if (!empty($president)) {
+            if ($president !== null) {
                 $team->president->update($president->only('name')->toArray());
                 if ($request->hasFile('president.image')) {
 
                     $media = $team->president
                         ->addMedia($request->file('president.image'))
                         ->toMediaCollection('image', 's3');
-                    logger('media', [
-                        ' president url' => $media->getUrl(),
-                    ]);
                     $team->president->update([
                         'image' => $media->getUrl(),
                     ]);
                 }
             }
-            if (!empty($coach)) {
+            if ($coach !== null) {
                 $team->coach->update($coach->only('name')->toArray());
                 if ($request->hasFile('coach.image')) {
 

@@ -30,6 +30,6 @@ jobs:
             php artisan view:cache
             php artisan config:cache
           
-          chown -R develop:www-data storage bootstrap/cache
+          chown -R deploy:www-data storage bootstrap/cache
           chmod -R ug+rwX storage bootstrap/cache
           EOF

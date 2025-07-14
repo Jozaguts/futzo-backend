@@ -151,7 +151,7 @@ class Tournament extends Model implements HasMedia
         $this->addMediaCollection('tournament')
             ->singleFile()
             ->storeConversionsOnDisk('s3')
-            ->registerMediaConversions(function (Media $media = null) {
+            ->registerMediaConversions(function (?Media $media) {
                 $this->addMediaConversion('thumbnail')
                     ->width(150)
                     ->height(150);

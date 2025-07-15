@@ -19,6 +19,7 @@ class TeamResource extends JsonResource
             'id' => $this->resource->id,
             'name' => $this->resource->name,
             'colors' => $this->resource->colors,
+            'image'=> $this->resource->image ?: 'https://ui-avatars.com/api/?name=' . urlencode($this->resource->name) . '&background=' . str_replace('#', '', $this->resource->colors['home']['primary']),
             'president' => $this->resource->president()->select('id', 'name', 'email', 'phone')->first(),
             'coach' => $this->resource->coach()->select('id', 'name', 'email', 'phone')->first(),
             'address' => $this->resource->address,

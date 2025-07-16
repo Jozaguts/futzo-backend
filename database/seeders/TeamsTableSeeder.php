@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Category;
+use App\Models\Formation;
 use App\Models\League;
 use App\Models\Team;
 use App\Models\Tournament;
@@ -20,7 +21,7 @@ class TeamsTableSeeder extends Seeder
             $category = Category::firstOrFail();
             $league = League::firstOrFail();
 
-            Team::factory()
+          Team::factory()
                 ->count(16)
                 // Generamos un presidente y un coach diferentes para cada equipo
                 ->state(function () use ($league) {
@@ -38,6 +39,7 @@ class TeamsTableSeeder extends Seeder
                 ->hasAttached($tournament, [], 'tournaments')
                 ->create();
         })->firstOrFail();
-
+        $formation = Formation::firstOrFail();
+        Team::all()->each(fn ($team) => $team->defaultLineup()->create(['formation_id' => $formation->id]));
     }
 }

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -42,6 +43,11 @@ class Team extends Model implements HasMedia
         static::creating(static function ($team) {
             $team->colors = $team->colors ?? config('constants.colors');
         });
+    }
+
+    public function defaultLineup(): HasOne
+    {
+        return $this->hasOne(DefaultLineup::class);
     }
 
     public function getSlugOptions(): SlugOptions

@@ -33,6 +33,7 @@ class DatabaseSeeder extends Seeder
             LocationsTableSeeder::class,
             FieldsTableSeeder::class,
             TournamentTableSeeder::class,
+            FormationsTableSeeder::class,
             TeamsTableSeeder::class,
         ]);
 //        $this->call(LeagueFieldTableSeeder::class);

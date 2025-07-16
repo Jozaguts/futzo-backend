@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('teams')->group(function () {
     Route::post('{team}/players/{player}/assign', [TeamsController::class, 'assignPlayer']);
+    Route::get('{team}/formation', [TeamsController::class, 'formation']);
     Route::get('list', [TeamsController::class, 'list']);
     Route::get('template', [TeamsController::class, 'downloadTeamsTemplate']);
     Route::get('search', [TeamsController::class, 'search']);

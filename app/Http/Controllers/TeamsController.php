@@ -8,6 +8,7 @@ use App\Exports\TeamsTemplateExport;
 use App\Http\Requests\ImportTeamsRequest;
 use App\Http\Requests\TeamStoreRequest;
 use App\Http\Requests\TeamUpdateRequest;
+use App\Http\Resources\DefaultLineupResource;
 use App\Http\Resources\TeamCollection;
 use App\Http\Resources\TeamResource;
 use App\Models\Player;
@@ -438,6 +439,11 @@ class TeamsController extends Controller
         $player->team_id = $team->id;
         $player->save();
         return response()->json(['message' => 'Jugador asignado al equipo correctamente.']);
+    }
+
+    public function formation(Request $request, Team  $team): DefaultLineupResource
+    {
+        return new DefaultLineupResource($team);
     }
 
 }

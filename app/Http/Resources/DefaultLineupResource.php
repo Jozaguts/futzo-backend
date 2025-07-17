@@ -21,6 +21,7 @@ class DefaultLineupResource extends JsonResource
         $formation = $this->resource->defaultLineup->formation;
 
         return [
+            'team_id' => $this->resource->id,
             'formation' => $formation?->name ?? '',
             'goalkeeper' => $this->fillPlayers(
                 $this->transformPlayers($this->positions['goalkeeper']),

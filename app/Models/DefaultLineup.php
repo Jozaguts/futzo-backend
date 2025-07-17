@@ -29,5 +29,9 @@ class DefaultLineup extends Model
             'player_id'          // Local key on DefaultLineupPlayer
         );
     }
+    public function defaultLineupPlayers()
+    {
+        return $this->hasMany(DefaultLineupPlayer::class, 'default_lineup_id');
+    }
 
 }

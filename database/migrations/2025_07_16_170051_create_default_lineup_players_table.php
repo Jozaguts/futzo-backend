@@ -14,6 +14,7 @@ return new class extends Migration {
             $table->id();
             $table->foreignIdFor(DefaultLineup::class)->constrained('default_lineups');
             $table->foreignIdFor(Player::class)->constrained('players');
+            $table->integer('field_location');
             $table->timestamps();
         });
     }

@@ -446,4 +446,21 @@ class TeamsController extends Controller
         return new DefaultLineupResource($team);
     }
 
+    public function players(Request $request, Team $team): JsonResponse
+    {
+        $players = $team->players()
+            ->with('user')
+            ->orderBy('number', 'asc')
+            ->get()
+            ->map(function ($player) {
+                return [
+                    'id' => $player->id,
+                    'name' => $player->user?->name ?? '',
+                    'number' => $player->number,
+                    'position' => $player->position?->abbr ?? '',
+                ];
+            });
+        return response()->json($players);
+    }
+
 }

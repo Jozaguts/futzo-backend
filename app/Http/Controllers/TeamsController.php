@@ -446,7 +446,7 @@ class TeamsController extends Controller
         return new DefaultLineupResource($team);
     }
 
-    public function players(Request $request, Team $team): JsonResponse
+    public function geDefaultLineupAvailableTeemPlayers(Request $request, Team $team): JsonResponse
     {
         $players = $team->players()
             ->with('user')

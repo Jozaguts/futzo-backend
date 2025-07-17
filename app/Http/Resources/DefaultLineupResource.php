@@ -22,7 +22,7 @@ class DefaultLineupResource extends JsonResource
 
         return [
             'team_id' => $this->resource->id,
-            'formation' => $formation?->name ?? '',
+            'name' => $formation?->name ?? '',
             'goalkeeper' => $this->fillPlayers(
                 $this->transformPlayers($this->positions['goalkeeper']),
                 1

@@ -69,16 +69,6 @@ class PositionsTableSeeder extends Seeder
                 'abbr' => 'MCO',
             ],
             [
-                'type' => 'delantero',
-                'name' => 'Extremo Derecho',
-                'abbr' => 'ED',
-            ],
-            [
-                'type' => 'delantero',
-                'name' => 'Extremo Izquierdo',
-                'abbr' => 'EI',
-            ],
-            [
                 'type' => 'medio',
                 'name' => 'Interior Derecho',
                 'abbr' => 'ID',
@@ -87,6 +77,16 @@ class PositionsTableSeeder extends Seeder
                 'type' => 'medio',
                 'name' => 'Interior Izquierdo',
                 'abbr' => 'II',
+            ],
+            [
+                'type' => 'delantero',
+                'name' => 'Extremo Derecho',
+                'abbr' => 'ED',
+            ],
+            [
+                'type' => 'delantero',
+                'name' => 'Extremo Izquierdo',
+                'abbr' => 'EI',
             ],
             [
                 'type' => 'delantero',

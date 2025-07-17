@@ -12,8 +12,8 @@ class DefaultLineupResource extends JsonResource
     private array $positions = [
         'goalkeeper' => 1,
         'defenses' => [2, 3, 4, 5, 6, 7, 8],
-        'midfielders' => [9, 10, 11, 14, 15],
-        'forwards' => [12, 13, 16, 17, 18]
+        'midfielders' => [9, 10, 11, 12, 13],
+        'forwards' => [14, 15, 16, 17, 18, 19, 20]
     ];
 
     public function toArray(Request $request): array
@@ -50,6 +50,7 @@ class DefaultLineupResource extends JsonResource
         );
 
         return $players->map(fn($player) => [
+            'field_location' => $this->resource->defaultlineup->defaultLineupPlayers()->where('player_id', $player->id)->first()->field_location,
             'abbr' => $player?->position?->abbr ?? '',
             'number' => $player?->number ?? 0,
             'name' => $player?->user?->name ?? '',

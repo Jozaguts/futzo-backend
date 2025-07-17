@@ -8,6 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class Formation extends Model
 {
     use HasFactory;
-    protected $fillable = ['value'];
+    protected $fillable = ['name','defenses', 'midfielders', 'forwards'];
 
 }

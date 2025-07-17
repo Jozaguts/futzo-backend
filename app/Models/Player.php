@@ -84,6 +84,10 @@ class Player extends Model
             ->withPivot('entry_minute', 'exit_minute', 'goals', 'assists')
             ->withTimestamps();
     }
+    public function defaultLineup(): Player|HasMany
+    {
+        return $this->hasMany(DefaultLineupPlayer::class);
+    }
 
 // todo Ejemplo: Registrar que el jugador con ID 1 participó en el juego con ID 2
 //$player = Player::find(1);

@@ -449,8 +449,8 @@ class TeamsController extends Controller
     public function geDefaultLineupAvailableTeemPlayers(Request $request, Team $team): JsonResponse
     {
         $players = $team->players()
+            ->doesntHave('defaultLineup')
             ->with('user')
-            ->orderBy('number', 'asc')
             ->get()
             ->map(function ($player) {
                 return [

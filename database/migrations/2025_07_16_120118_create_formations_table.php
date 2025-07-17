@@ -9,7 +9,11 @@ return new class extends Migration {
     {
         Schema::create('formations', function (Blueprint $table) {
             $table->id();
-            $table->string('value');
+            $table->string('name')->default('4-4-2');
+            $table->integer('goalkeeper')->default(1);
+            $table->integer('defenses')->default(4);
+            $table->integer('midfielders')->default(4);
+            $table->integer('forwards')->default(2);
             $table->timestamps();
         });
     }

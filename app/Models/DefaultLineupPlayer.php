@@ -19,9 +19,4 @@ class DefaultLineupPlayer extends Model
     {
         return $this->belongsTo(Player::class);
     }
-
-    public function position(): BelongsTo
-    {
-        return $this->belongsTo(Position::class);
-    }
 }

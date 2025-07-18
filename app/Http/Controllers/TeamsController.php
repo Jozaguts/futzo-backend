@@ -11,6 +11,7 @@ use App\Http\Requests\TeamUpdateRequest;
 use App\Http\Resources\DefaultLineupResource;
 use App\Http\Resources\TeamCollection;
 use App\Http\Resources\TeamResource;
+use App\Models\DefaultLineupPlayer;
 use App\Models\Player;
 use App\Models\Team;
 use App\Models\Tournament;
@@ -446,7 +447,7 @@ class TeamsController extends Controller
         return new DefaultLineupResource($team);
     }
 
-    public function geDefaultLineupAvailableTeemPlayers(Request $request, Team $team): JsonResponse
+    public function getDefaultLineupAvailableTeemPlayers(Request $request, Team $team): JsonResponse
     {
         $players = $team->players()
             ->doesntHave('defaultLineup')
@@ -454,13 +455,30 @@ class TeamsController extends Controller
             ->get()
             ->map(function ($player) {
                 return [
-                    'id' => $player->id,
+                    'player_id' => $player->id,
+                    'team_id' => $player->team_id,
                     'name' => $player->user?->name ?? '',
                     'number' => $player->number,
                     'position' => $player->position?->abbr ?? '',
                 ];
             });
         return response()->json($players);
+    }
+    public function updateDefaultLineupAvailableTeemPlayers(Request $request, Team $team, DefaultLineupPlayer $defaultLineupPlayer): JsonResponse
+    {
+        $data = $request->validate([
+            'player' => 'required',
+            'player.player_id' => 'required|exists:players,id',
+            'player.team_id' => 'required|exists:teams,id',
+            'field_location' => 'required',
+        ]);
+        $defaultLineupPlayer->update([
+            'player_id' => $data['player']['player_id'],
+            'field_location' => $data['field_location'],
+        ]);
+
+
+        return response()->json([$defaultLineupPlayer, $request->all()]);
     }
 
 }

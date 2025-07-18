@@ -50,7 +50,7 @@ class DefaultLineupResource extends JsonResource
         );
 
         return $players->map(fn($player) => [
-            'field_location' => $this->resource->defaultlineup->defaultLineupPlayers()->where('player_id', $player->id)->first()->field_location,
+            'default_lineup_player_id' => $this->resource->defaultlineup->defaultLineupPlayers()->where('player_id', $player->id)->first()->field_location,
             'abbr' => $player?->position?->abbr ?? '',
             'number' => $player?->number ?? 0,
             'name' => $player?->user?->name ?? '',

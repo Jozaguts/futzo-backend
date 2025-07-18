@@ -12,6 +12,7 @@ use App\Http\Resources\DefaultLineupResource;
 use App\Http\Resources\TeamCollection;
 use App\Http\Resources\TeamResource;
 use App\Models\DefaultLineupPlayer;
+use App\Models\Game;
 use App\Models\Player;
 use App\Models\Team;
 use App\Models\Tournament;
@@ -482,6 +483,17 @@ class TeamsController extends Controller
             'message' => 'Jugador actualizado en la alineación por defecto del equipo.',
             'default_lineup_player' => $defaultLineupPlayer,
         ]);
+    }
+    public function nextGames(Request $request, Team $team): JsonResponse
+    {
+        $limit = $request->get('limit', 3);
+        $nextGames = Game::where('away_team_id',$team->id)
+            ->orWhere('home_team_id', $team->id)
+            ->whereIn('status', ['programado', 'aplazado'])
+            ->orderByDesc('match_date')
+            ->limit($limit)
+            ->get();
+        return response()->json($nextGames);
     }
 
 }

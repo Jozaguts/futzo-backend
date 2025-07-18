@@ -83,7 +83,7 @@ class LocationFieldCollection extends ResourceCollection
         foreach ($bookings as $json) {
             foreach ($json as $day => $data) {
                 foreach ($data['intervals'] ?? [] as $int) {
-                    if (!empty($int['selected']) && $int['selected'] === true && is_string($int['value']) && !empty($int['in_use'] && $int['is_use'])) {
+                    if (!empty($int['selected']) && $int['selected'] === true && is_string($int['value']) && !empty($int['in_use'] && $int['in_use'])) {
                         $bookedSlots[$day][] = $int['value'];
                     }
                 }

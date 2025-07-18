@@ -9,6 +9,7 @@ use App\Http\Requests\ImportTeamsRequest;
 use App\Http\Requests\TeamStoreRequest;
 use App\Http\Requests\TeamUpdateRequest;
 use App\Http\Resources\DefaultLineupResource;
+use App\Http\Resources\NextGamesCollection;
 use App\Http\Resources\TeamCollection;
 use App\Http\Resources\TeamResource;
 use App\Models\DefaultLineupPlayer;
@@ -484,16 +485,17 @@ class TeamsController extends Controller
             'default_lineup_player' => $defaultLineupPlayer,
         ]);
     }
-    public function nextGames(Request $request, Team $team): JsonResponse
+    public function nextGames(Request $request, Team $team): NextGamesCollection
     {
         $limit = $request->get('limit', 3);
         $nextGames = Game::where('away_team_id',$team->id)
+            ->with(['homeTeam', 'homeTeam'])
             ->orWhere('home_team_id', $team->id)
             ->whereIn('status', ['programado', 'aplazado'])
             ->orderByDesc('match_date')
             ->limit($limit)
             ->get();
-        return response()->json($nextGames);
+        return new NextGamesCollection($nextGames);
     }
 
 }

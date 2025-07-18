@@ -15,6 +15,7 @@ Route::prefix('teams')->group(function () {
     Route::get('search', [TeamsController::class, 'search']);
     Route::get('', [TeamsController::class, 'index'])->withoutMiddleware('auth:sanctum');
     Route::get('{id}', [TeamsController::class, 'show'])->withoutMiddleware('auth:sanctum');
+    Route::post('{team}/default-lineup-players', [TeamsController::class, 'addDefaultLineupPlayer']);
     Route::post('import', [TeamsController::class, 'import']);
     Route::post('', [TeamsController::class, 'store'])->withoutMiddleware('auth:sanctum');
     Route::put('{team}/default-lineup-players/{defaultLineupPlayer}', [TeamsController::class, 'updateDefaultLineupAvailableTeemPlayers']);

@@ -90,6 +90,8 @@ class DefaultLineupResource extends JsonResource
     private function emptyPlayer(): array
     {
         return [
+            'default_lineup_player_id' =>  null,
+            'field_location' =>  null,
             'abbr' => '',
             'number' => 0,
             'name' => '',

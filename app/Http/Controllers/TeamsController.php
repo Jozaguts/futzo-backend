@@ -474,11 +474,14 @@ class TeamsController extends Controller
         ]);
         $defaultLineupPlayer->update([
             'player_id' => $data['player']['player_id'],
-            'field_location' => $data['field_location'],
+            'field_location' => $defaultLineupPlayer->field_location,
         ]);
 
 
-        return response()->json([$defaultLineupPlayer, $request->all()]);
+        return response()->json([
+            'message' => 'Jugador actualizado en la alineación por defecto del equipo.',
+            'default_lineup_player' => $defaultLineupPlayer,
+        ]);
     }
 
 }

@@ -12,7 +12,7 @@ class DefaultLineupPlayer extends Model
     protected $fillable = [
         'default_lineup_id',
         'player_id',
-        'field_location_id',
+        'field_location',
     ];
 
     public function defaultLineup(): BelongsTo

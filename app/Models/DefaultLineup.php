@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class DefaultLineup extends Model
@@ -29,7 +30,7 @@ class DefaultLineup extends Model
             'player_id'          // Local key on DefaultLineupPlayer
         );
     }
-    public function defaultLineupPlayers()
+    public function defaultLineupPlayers(): DefaultLineup|HasMany
     {
         return $this->hasMany(DefaultLineupPlayer::class, 'default_lineup_id');
     }

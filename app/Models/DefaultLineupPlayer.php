@@ -9,6 +9,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class DefaultLineupPlayer extends Model
 {
     use HasFactory;
+    protected $fillable = [
+        'default_lineup_id',
+        'player_id',
+        'field_location_id',
+    ];
 
     public function defaultLineup(): BelongsTo
     {

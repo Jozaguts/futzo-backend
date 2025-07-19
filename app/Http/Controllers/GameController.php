@@ -4,8 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\GameResource;
 use App\Http\Resources\GameTeamsPlayersCollection;
+use App\Models\Formation;
 use App\Models\Game;
-use App\Models\Player;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
@@ -115,7 +116,7 @@ class GameController extends Controller
         return new GameResource($game);
     }
 
-    public function teamsPlayers(int $gameId)
+    public function teamsPlayers(int $gameId): GameTeamsPlayersCollection
     {
         $game = Game::where('id', $gameId)
             ->with([
@@ -140,6 +141,12 @@ class GameController extends Controller
             ])
             ->firstOrFail();
         return GameTeamsPlayersCollection::make($game);
+    }
+
+    public function formations(): JsonResponse
+    {
+        $formations = Formation::all();
+        return response()->json($formations);
     }
 
 }

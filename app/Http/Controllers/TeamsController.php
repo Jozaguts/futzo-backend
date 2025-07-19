@@ -12,6 +12,7 @@ use App\Http\Resources\DefaultLineupResource;
 use App\Http\Resources\NextGamesCollection;
 use App\Http\Resources\TeamCollection;
 use App\Http\Resources\TeamResource;
+use App\Models\DefaultLineup;
 use App\Models\DefaultLineupPlayer;
 use App\Models\Game;
 use App\Models\Player;
@@ -517,6 +518,18 @@ class TeamsController extends Controller
             'message' => 'Jugador agregado a la alineación por defecto del equipo.',
             'default_lineup_player' => $defaultLineupPlayer,
         ]);
+    }
+    public function updateFormation(Request $request, Team $team): JsonResponse
+    {
+        $data = $request->validate([
+            'formation_id' => 'required|exists:formations,id',
+        ]);
+        DefaultLineup::where('team_id', $team->id)
+            ->update([
+                'formation_id' => $data['formation_id'
+            ]
+        ]);
+        return response()->json(['message' => 'Formación actualizada correctamente.', 'team' => $team]);
     }
 
 }

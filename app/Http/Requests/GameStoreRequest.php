@@ -23,7 +23,6 @@ class GameStoreRequest extends FormRequest
      */
     public function rules()
     {
-//        TODO  REFORMULAR TABLA GAMES
 //        RESULT score
         return [
             'date' =>'required|date',

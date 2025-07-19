@@ -61,7 +61,7 @@ class TournamentCollection extends ResourceCollection
 
     private function positions()
     {
-        // todo generar la tabla general de posines de los equipos en el torneo
+        // todo generar la tabla general de standing table de los equipos en el torneo
         // 1. obtener los equipos del torneo
         // 2. obtener los partidos del torneo
         // 3. obtener los puntos de cada equipo

@@ -50,7 +50,7 @@ class GameController extends Controller
             ->where('field_id', $game->field_id)
             ->firstOrFail();
 
-        // 3) Leer todo el array availability
+        // 3) Leer el array availability
         $availability = $tournField->availability;
 
         // 4) Tomar solo los intervals de ese día

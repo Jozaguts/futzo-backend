@@ -36,19 +36,23 @@ class DefaultLineupResource extends JsonResource
             'name' => $formation?->name ?? '',
             'goalkeeper' => $this->fillPlayers(
                 $this->transformPlayers($this->positions['goalkeeper']),
-                1
+                1,
+                (array) $this->positions['goalkeeper']
             ),
             'defenses' => $this->fillPlayers(
                 $this->transformPlayers($this->positions['defenses']),
-                $formation?->defenses ?? 0
+                $formation?->defenses ?? 0,
+                $this->positions['defenses']
             ),
             'midfielders' => $this->fillPlayers(
                 $this->transformPlayers($this->positions['midfielders']),
-                $formation?->midfielders ?? 0
+                $formation?->midfielders ?? 0,
+                $this->positions['midfielders']
             ),
             'forwards' => $this->fillPlayers(
                 $this->transformPlayers($this->positions['forwards']),
-                $formation?->forwards ?? 0
+                $formation?->forwards ?? 0,
+                $this->positions['forwards']
             ),
         ];
     }
@@ -78,20 +82,37 @@ class DefaultLineupResource extends JsonResource
         })->values()->all();
     }
 
-    private function fillPlayers(array $players, int $total): array
+    private function fillPlayers(array $players, int $total, array $positionRange): array
     {
-        $empty = $this->emptyPlayer();
-        while (count($players) < $total) {
-            $players[] = $empty;
+        // Get the field_location already used
+        $usedFieldLocations = collect($players)
+            ->pluck('field_location')
+            ->filter()
+            ->values()
+            ->all();
+
+        // Get the available field_locations within the position range
+        $availableFieldLocations = collect($positionRange)
+            ->diff($usedFieldLocations)
+            ->values()
+            ->all();
+
+        // Fill with empty players assigning remaining field_locations
+        foreach ($availableFieldLocations as $fieldLocation) {
+            if (count($players) >= $total) {
+                break;
+            }
+            $players[] = $this->emptyPlayer($fieldLocation);
         }
+
         return array_slice($players, 0, $total);
     }
 
-    private function emptyPlayer(): array
+    private function emptyPlayer(int $fieldLocation = null): array
     {
         return [
             'default_lineup_player_id' =>  null,
-            'field_location' =>  null,
+            'field_location' =>  $fieldLocation, // <-- set dynamically
             'abbr' => '',
             'number' => 0,
             'name' => '',

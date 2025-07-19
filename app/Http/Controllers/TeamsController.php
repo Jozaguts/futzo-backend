@@ -493,7 +493,7 @@ class TeamsController extends Controller
             ->with(['homeTeam', 'homeTeam'])
             ->orWhere('home_team_id', $team->id)
             ->whereIn('status', ['programado', 'aplazado'])
-            ->orderByDesc('match_date')
+            ->orderBy('match_date')
             ->limit($limit)
             ->get();
         return new NextGamesCollection($nextGames);

@@ -34,5 +34,9 @@ class DefaultLineup extends Model
     {
         return $this->hasMany(DefaultLineupPlayer::class, 'default_lineup_id');
     }
+    public function lineups(): HasMany
+    {
+        return $this->hasMany(Lineup::class);
+    }
 
 }

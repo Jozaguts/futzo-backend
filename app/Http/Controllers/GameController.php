@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\GameResource;
 use App\Http\Resources\GameTeamsPlayersCollection;
+use App\Http\Resources\LineupResource;
+use App\Models\DefaultLineup;
 use App\Models\Formation;
 use App\Models\Game;
+use App\Models\Lineup;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -147,6 +150,55 @@ class GameController extends Controller
     {
         $formations = Formation::all();
         return response()->json($formations);
+    }
+    public function initializeReport(Game $game)
+    {
+        $homeLineup = $this->getOrCreateLineup($game, $game->home_team_id);
+        $awayLineup = $this->getOrCreateLineup($game, $game->away_team_id);
+
+        return response()->json([
+            'home' => new LineupResource($homeLineup),
+            'away' => new LineupResource($awayLineup),
+        ]);
+    }
+
+    private function getOrCreateLineup(Game $game, int $teamId): Lineup
+    {
+        $lineup = Lineup::where('game_id', $game->id)->where('team_id', $teamId)->first();
+
+        if ($lineup) {
+            return $lineup;
+        }
+
+        $defaultLineup = DefaultLineup::where('team_id', $teamId)->with('defaultLineupPlayers')->first();
+
+        $formation = $defaultLineup?->formation;
+
+        // Crear la lineup vacía
+        $lineup = Lineup::create([
+            'game_id' => $game->id,
+            'team_id' => $teamId,
+            'formation_id' => $formation?->id,
+            'default_lineup_id' => $defaultLineup?->id,
+            'round' => $game->round,
+        ]);
+
+        // Si hay jugadores en default, clonarlos
+        if ($defaultLineup) {
+            foreach ($defaultLineup->defaultLineupPlayers as $defaultPlayer) {
+                $lineup->players()->create([
+                    'player_id' => $defaultPlayer->player_id,
+                    'field_location' => $defaultPlayer->field_location,
+                    'substituted' => false,
+                    'goals' => 0,
+                    'yellow_card' => false,
+                    'red_card' => false,
+                    'doble_yellow_card' => false,
+                ]);
+            }
+        }
+
+        return $lineup;
     }
 
 }

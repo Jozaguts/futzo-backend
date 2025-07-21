@@ -450,7 +450,7 @@ class TeamsController extends Controller
         return new DefaultLineupResource($team);
     }
 
-    public function getDefaultLineupAvailableTeemPlayers(Request $request, Team $team): JsonResponse
+    public function getDefaultLineupAvailableTeamPlayers(Request $request, Team $team): JsonResponse
     {
         $players = $team->players()
             ->doesntHave('defaultLineup')

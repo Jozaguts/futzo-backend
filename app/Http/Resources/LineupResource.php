@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Team;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -43,6 +44,7 @@ class LineupResource extends JsonResource
 
         return [
             'team_id' => $this->resource->team_id,
+            'team' => new TeamResource(Team::find($this->resource->team_id)),
             'name' => $formation->name ?? '',
             'goalkeeper' => $this->fillPlayers(
                 $this->transformPlayers($this->positions['goalkeeper']),

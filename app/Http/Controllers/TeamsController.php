@@ -57,7 +57,7 @@ class TeamsController extends Controller
      */
     public function show($id): TeamResource
     {
-        $team =  request()->get('by_slug', false)
+        $team = request()->boolean('by_slug')
             ? Team::where('slug', $id)->firstOrFail()
             : Team::findOrFail($id);
         return new TeamResource($team);
@@ -467,7 +467,7 @@ class TeamsController extends Controller
             });
         return response()->json($players);
     }
-    public function updateDefaultLineupAvailableTeemPlayers(Request $request, Team $team, DefaultLineupPlayer $defaultLineupPlayer): JsonResponse
+    public function updateDefaultLineupAvailableTeamPlayers(Request $request, Team $team, DefaultLineupPlayer $defaultLineupPlayer): JsonResponse
     {
         $data = $request->validate([
             'player' => 'required',

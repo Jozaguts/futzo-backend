@@ -75,7 +75,7 @@ class Player extends Model
 
     public function image()
     {
-        return $this->user ? $this->user->image : null;
+        return $this->user->image ?? null;
     }
 
     public function games(): BelongsToMany
@@ -87,6 +87,10 @@ class Player extends Model
     public function defaultLineup(): Player|HasMany
     {
         return $this->hasMany(DefaultLineupPlayer::class);
+    }
+    public function lineupPlayers(): HasMany
+    {
+        return $this->hasMany(LineupPlayer::class);
     }
 
 // todo Ejemplo: Registrar que el jugador con ID 1 participó en el juego con ID 2

@@ -41,10 +41,23 @@ class LineupResource extends JsonResource
             $formation->defenses + $formation->midfielders + 2,
             $formation->defenses + $formation->midfielders + $formation->forwards + 1
         );
-
+        $team = Team::find($this->resource->team_id);
         return [
             'team_id' => $this->resource->team_id,
-            'team' => new TeamResource(Team::find($this->resource->team_id)),
+            'team' => new TeamResource($team),
+            'players' => $team->players()
+                ->doesntHave('lineupPlayers')
+                ->with('user')
+                ->get()
+                ->map(function ($player) {
+                    return [
+                        'player_id' => $player->id,
+                        'team_id' => $player->team_id,
+                        'name' => $player->user?->name ?? '',
+                        'number' => $player->number,
+                        'position' => $player->position?->abbr ?? '',
+                    ];
+                }),
             'name' => $formation->name ?? '',
             'goalkeeper' => $this->fillPlayers(
                 $this->transformPlayers($this->positions['goalkeeper']),

@@ -15,8 +15,8 @@ use Illuminate\Support\Carbon;
 
 class GameController extends Controller
 {
-    public const TWO_HOURS = 120;
-    public const ONE_HOUR = 60;
+    public const int TWO_HOURS = 120;
+    public const int ONE_HOUR = 60;
 
     public function show(int $gameId): GameResource
     {
@@ -151,7 +151,7 @@ class GameController extends Controller
         $formations = Formation::all();
         return response()->json($formations);
     }
-    public function initializeReport(Game $game)
+    public function initializeReport(Game $game): JsonResponse
     {
         $homeLineup = $this->getOrCreateLineup($game, $game->home_team_id);
         $awayLineup = $this->getOrCreateLineup($game, $game->away_team_id);

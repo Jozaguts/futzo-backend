@@ -566,7 +566,7 @@ class TeamsController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'Jugador actualizado en la alineación por defecto del equipo.',
+            'message' => 'Jugador actualizado en la alineación del partido.',
             'lineup_player' => $lineupPlayer,
         ]);
     }

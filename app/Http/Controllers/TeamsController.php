@@ -15,6 +15,7 @@ use App\Http\Resources\TeamResource;
 use App\Models\DefaultLineup;
 use App\Models\DefaultLineupPlayer;
 use App\Models\Game;
+use App\Models\Lineup;
 use App\Models\LineupPlayer;
 use App\Models\Player;
 use App\Models\Team;
@@ -520,7 +521,7 @@ class TeamsController extends Controller
             'default_lineup_player' => $defaultLineupPlayer,
         ]);
     }
-    public function addLineupPlayer(Request $request, Team $team): JsonResponse
+    public function addLineupPlayer(Request $request, Team $team, Game $game): JsonResponse
     {
         $data = $request->validate([
             'player.player_id' => 'required|exists:players,id',
@@ -530,14 +531,19 @@ class TeamsController extends Controller
         if ($player->team_id !== $team->id) {
             return response()->json(['message' => 'El jugador no pertenece a este equipo.'], 422);
         }
-        $defaultLineupPlayer = LineupPlayer::create([
-            'lineup_id' => $team->lineup?->id,
+        $lineup  = Lineup::where('game_id', $game->id)
+            ->where('team_id', $team->id)
+            ->first();
+        $lineupPlayer = LineupPlayer::updateOrCreate([
+            'lineup_id' => $lineup->id,
+            'player_id' => $data['player']['player_id'],
+        ],[
             'player_id' => $data['player']['player_id'],
             'field_location' => $data['field_location'],
         ]);
         return response()->json([
-            'message' => 'Jugador agregado a la alineación por defecto del equipo.',
-            'default_lineup_player' => $defaultLineupPlayer,
+            'message' => 'Jugador agregado a la alineación del partido.',
+            'lineup_player' => $lineupPlayer,
         ]);
     }
     public function updateFormation(Request $request, Team $team): JsonResponse

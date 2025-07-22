@@ -49,6 +49,10 @@ class Team extends Model implements HasMedia
     {
         return $this->hasOne(DefaultLineup::class);
     }
+    public function lineup(): HasOne
+    {
+        return $this->hasOne(Lineup::class);
+    }
 
     public function getSlugOptions(): SlugOptions
     {

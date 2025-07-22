@@ -41,12 +41,14 @@ class LineupResource extends JsonResource
             $formation->defenses + $formation->midfielders + 2,
             $formation->defenses + $formation->midfielders + $formation->forwards + 1
         );
-        $team = Team::find($this->resource->team_id);
+
         return [
             'team_id' => $this->resource->team_id,
-            'team' => new TeamResource($team),
-            'players' => $team->players()
-                ->doesntHave('lineupPlayers')
+            'team' => new TeamResource($this->resource->team),
+            'players' => $this->resource->team->players()
+                ->whereDoesntHave('lineupPlayers', function ($q) {
+                    $q->where('lineup_id', $this->resource->id);
+                })
                 ->with('user')
                 ->get()
                 ->map(function ($player) {
@@ -57,8 +59,8 @@ class LineupResource extends JsonResource
                         'number' => $player->number,
                         'position' => $player->position?->abbr ?? '',
                     ];
-                }),
-            'name' => $formation->name ?? '',
+                })->values(),
+            'name' => $formation->name,
             'goalkeeper' => $this->fillPlayers(
                 $this->transformPlayers($this->positions['goalkeeper']),
                 1,
@@ -96,16 +98,16 @@ class LineupResource extends JsonResource
             $player = $lineupPlayer->player;
 
             return [
-                'default_lineup_player_id' => $lineupPlayer->id,
+                'lineup_player_id' => $lineupPlayer->id,
                 'field_location' => $lineupPlayer->field_location,
                 'abbr' => $player?->position?->abbr ?? '',
                 'number' => $player?->number ?? 0,
                 'name' => $player?->user?->name ?? '',
                 'goals' => $lineupPlayer->goals ?? 0,
                 'cards' => [
-                    'red' => $lineupPlayer->cards['red'] ?? false,
-                    'yellow' => $lineupPlayer->cards['yellow'] ?? false,
-                    'doble_yellow_card' => $lineupPlayer->cards['doble_yellow_card'] ?? false
+                    'red' => (bool) $lineupPlayer->red_card,
+                    'yellow' => (bool) $lineupPlayer->yellow_card,
+                    'doble_yellow_card' => (bool) $lineupPlayer->doble_yellow_card
                 ],
                 'substituted' => $lineupPlayer->substituted ?? false
             ];

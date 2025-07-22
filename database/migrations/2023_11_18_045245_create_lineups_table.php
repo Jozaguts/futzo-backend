@@ -14,7 +14,6 @@ return new class extends Migration {
             $table->id();
             $table->unsignedBigInteger('game_id');
             $table->foreign('game_id')->references('id')->on('games')->onDelete('cascade');
-            $table->foreignId('player_id')->nullable()->constrained()->nullOnDelete();
             $table->boolean('first_team_player')->default(false);
             $table->string('round', 30);
             $table->softDeletes();

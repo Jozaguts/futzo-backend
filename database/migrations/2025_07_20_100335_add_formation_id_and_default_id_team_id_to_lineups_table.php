@@ -8,9 +8,9 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('lineups', function (Blueprint $table) {
-            $table->foreignId('formation_id')->nullable()->constrained();
-            $table->foreignId('default_lineup_id')->nullable()->constrained();
-            $table->foreignId('team_id')->nullable()->constrained();
+            $table->foreignId('formation_id')->after('game_id')->nullable()->constrained();
+            $table->foreignId('default_lineup_id')->after('formation_id')->nullable()->constrained();
+            $table->foreignId('team_id')->after('default_lineup_id')->nullable()->constrained();
         });
     }
 

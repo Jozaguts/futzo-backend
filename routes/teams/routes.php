@@ -17,11 +17,12 @@ Route::prefix('teams')->group(function () {
     Route::get('{id}', [TeamsController::class, 'show'])->withoutMiddleware('auth:sanctum');
     Route::post('{team}/default-lineup-players', [TeamsController::class, 'addDefaultLineupPlayer']);
     Route::post('{team}/games/{game}/lineup-players', [TeamsController::class, 'addLineupPlayer']);
+    Route::put('{team}/games/{game}/formation', [TeamsController::class, 'updateGameTeamFormation']);
     Route::post('import', [TeamsController::class, 'import']);
     Route::post('', [TeamsController::class, 'store'])->withoutMiddleware('auth:sanctum');
     Route::put('{team}/default-lineup-players/{defaultLineupPlayer}', [TeamsController::class, 'updateDefaultLineupAvailableTeamPlayers']);
     Route::put('{team}/lineup-players/{lineupPlayer}', [TeamsController::class, 'updateLineupAvailableTeamPlayers']);
-    Route::put('{team}/formation', [TeamsController::class, 'updateFormation']);
+    Route::put('{team}/formation', [TeamsController::class, 'updateDefaultFormation']);
     Route::put('{id}', [TeamsController::class, 'update']);
     Route::delete('{id}', [TeamsController::class, 'destroy']);
 });

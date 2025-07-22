@@ -546,7 +546,7 @@ class TeamsController extends Controller
             'lineup_player' => $lineupPlayer,
         ]);
     }
-    public function updateFormation(Request $request, Team $team): JsonResponse
+    public function updateDefaultFormation(Request $request, Team $team): JsonResponse
     {
         $data = $request->validate([
             'formation_id' => 'required|exists:formations,id',
@@ -577,4 +577,18 @@ class TeamsController extends Controller
         ]);
     }
 
+    public function updateGameTeamFormation(Request $request, Team $team, Game $game): JsonResponse
+    {
+        $data = $request->validate([
+            'formation_id' => 'required|exists:formations,id',
+        ]);
+        $lineup = Lineup::where('game_id', $game->id)
+            ->where('team_id', $team->id)
+            ->first();
+        if (!$lineup) {
+            return response()->json(['message' => 'No se encontró la alineación para este partido.'], 404);
+        }
+        $lineup->update(['formation_id' => $data['formation_id']]);
+        return response()->json(['message' => 'Formación actualizada correctamente.', 'lineup' => $lineup]);
+    }
 }

@@ -15,6 +15,7 @@ use App\Http\Resources\TeamResource;
 use App\Models\DefaultLineup;
 use App\Models\DefaultLineupPlayer;
 use App\Models\Game;
+use App\Models\LineupPlayer;
 use App\Models\Player;
 use App\Models\Team;
 use App\Models\Tournament;
@@ -519,6 +520,26 @@ class TeamsController extends Controller
             'default_lineup_player' => $defaultLineupPlayer,
         ]);
     }
+    public function addLineupPlayer(Request $request, Team $team): JsonResponse
+    {
+        $data = $request->validate([
+            'player.player_id' => 'required|exists:players,id',
+            'field_location' => 'required',
+        ]);
+        $player = Player::findOrFail($data['player']['player_id']);
+        if ($player->team_id !== $team->id) {
+            return response()->json(['message' => 'El jugador no pertenece a este equipo.'], 422);
+        }
+        $defaultLineupPlayer = LineupPlayer::create([
+            'lineup_id' => $team->lineup?->id,
+            'player_id' => $data['player']['player_id'],
+            'field_location' => $data['field_location'],
+        ]);
+        return response()->json([
+            'message' => 'Jugador agregado a la alineación por defecto del equipo.',
+            'default_lineup_player' => $defaultLineupPlayer,
+        ]);
+    }
     public function updateFormation(Request $request, Team $team): JsonResponse
     {
         $data = $request->validate([
@@ -530,6 +551,24 @@ class TeamsController extends Controller
             ]
         ]);
         return response()->json(['message' => 'Formación actualizada correctamente.', 'team' => $team]);
+    }
+    public function updateLineupAvailableTeamPlayers(Request $request, Team $team, LineupPlayer $lineupPlayer): JsonResponse
+    {
+        $data = $request->validate([
+            'player' => 'required',
+            'player.player_id' => 'required|exists:players,id',
+            'player.team_id' => 'required|exists:teams,id',
+            'field_location' => 'required',
+        ]);
+        $lineupPlayer->update([
+            'player_id' => $data['player']['player_id'],
+            'field_location' => $lineupPlayer->field_location,
+        ]);
+
+        return response()->json([
+            'message' => 'Jugador actualizado en la alineación por defecto del equipo.',
+            'lineup_player' => $lineupPlayer,
+        ]);
     }
 
 }

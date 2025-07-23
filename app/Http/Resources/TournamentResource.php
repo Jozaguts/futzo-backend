@@ -14,7 +14,6 @@ class TournamentResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $location = $this->resource->locations->first();
         return [
             'id' => $this->resource->id,
             'name' => $this->resource->name,
@@ -27,14 +26,14 @@ class TournamentResource extends JsonResource
             'description' => $this->resource->description,
             'category_id' => $this->resource->category_id,
             'category' => $this->resource->category,
-            'location' => [
-                'id' => $location->id,
-                'name' => $location->name,
-                'city' => $location->city,
-                'address' => $location->address,
-                'autocomplete_prediction' => $location->autocomplete_prediction,
+            'format' => [
+                'id' => $this->resource->format->id,
+                'name' => $this->resource->format->name,
             ],
-            'format' => $this->resource->format,
+            'teams' => $this->resource->teams_count,
+            'slug' => $this->resource->slug,
+            'players' => $this->resource->players_count,
+            'matches' => $this->resource->games_count,
             'teams_count' => $this->resource->teams_count,
             'players_count' => $this->resource->players_count,
             'games_count' => $this->resource->games_count,
@@ -42,6 +41,13 @@ class TournamentResource extends JsonResource
             'thumbnail' => $this->resource->thumbnail,
             'status' => $this->resource->status,
             'league' => $this->resource->league,
+            'location' => ($location = $this->resource->locations->first()) ? [
+                'id' => $location->id,
+                'name' => $location->name,
+                'city' => $location->city,
+                'address' => $location->address,
+                'autocomplete_prediction' => $location->autocomplete_prediction,
+            ] : null,
             'max_teams' => optional($this->resource->configuration)->max_teams,
             'substitutions_per_team' => optional($this->resource->configuration)->substitutions_per_team,
         ];

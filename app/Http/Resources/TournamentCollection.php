@@ -17,33 +17,7 @@ class TournamentCollection extends ResourceCollection
     {
 
         return $this->collection
-            ->map(fn($tournament) => [
-                'id' => $tournament->id,
-                'category' => [
-                    'id' => $tournament->category?->id,
-                    'name' => $tournament->category?->name,
-                ],
-                'format' => [
-                    'id' => $tournament->format->id,
-                    'name' => $tournament->format->name,
-                ],
-                'start_date_to_string' => $tournament->start_date_to_string,
-                'start_date' => $tournament->start_date,
-                'end_date' => $tournament->end_date,
-                'status' => $tournament->status,
-                'name' => $tournament->name,
-                'slug' => $tournament->slug,
-                'teams' => $tournament->teams_count,
-                'players' => $tournament->players_count,
-                'matches' => $tournament->games_count,
-                'league' => $tournament->league?->name,
-                'location' => ($location = $tournament->locations->first()) ? [
-                    'name' => $location->name,
-                    'city' => $location->city,
-                    'address' => $location->address,
-                    'autocomplete_prediction' => $location->autocomplete_prediction,
-                ] : null,
-            ])->toArray();
+            ->map(fn($tournament) => new TournamentResource($tournament))->toArray();
 
     }
 

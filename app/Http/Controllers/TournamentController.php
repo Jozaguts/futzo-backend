@@ -178,7 +178,6 @@ class TournamentController extends Controller
         $filterBy = $request->get('filterBy', false);
         $search = $request->get('search', false);
         $page = (int)$request->get('page', 1);
-        $tournament = TournamentResource::make(Tournament::with(['teams:id,name', 'category:id,name'])->findOrFail($tournamentId));
         $perPage = 1;
         $skip = ($page - 1) * $perPage;
         $schedule = Game::where([
@@ -197,7 +196,6 @@ class TournamentController extends Controller
             ->slice($skip, $perPage)
             ->flatten();
         return response()->json([
-            'tournament' => $tournament,
             'rounds' => TournamentScheduleCollection::make($schedule)->toArray($request),
             'pagination' => [
                 'current_page' => $page,
@@ -240,7 +238,7 @@ class TournamentController extends Controller
         return response()->json(['message' => 'Partido actualizado correctamente']);
     }
 
-    public function updateGameStatus(Request $request, int $tournamentId, int $roundId)
+    public function updateGameStatus(Request $request, int $tournamentId, int $roundId): JsonResponse
     {
         $status = $request->input('status');
 

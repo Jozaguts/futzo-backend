@@ -34,6 +34,7 @@ class TournamentStoreRequest extends FormRequest
                     return $query->where('category_id', $this->input('basic.category_id'));
                 })
             ],
+            'basic.substitutions_per_team' => 'required|numeric',
             'basic.football_type_id' => 'required|exists:football_types,id',
             'basic.image' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'basic.tournament_format_id' => 'exists:tournament_formats,id',

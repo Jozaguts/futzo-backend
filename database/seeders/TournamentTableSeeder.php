@@ -46,6 +46,7 @@ class TournamentTableSeeder extends Seeder
                 'tournament_format_id' => $defaultConfig->tournament_format_id,
                 'football_type_id' => $defaultConfig->football_type_id,
                 'game_time' => $defaultConfig->game_time,
+                'substitutions_per_team' => $defaultConfig->substitutions_per_team,
                 'time_between_games' => $defaultConfig->time_between_games,
                 'max_teams' => $defaultConfig->max_teams,
                 'min_teams' => $defaultConfig->min_teams,

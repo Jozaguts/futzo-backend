@@ -79,10 +79,9 @@ class TournamentController extends Controller
         return response()->json($tournament, 201);
     }
 
-    public function show(int $tournament): TournamentResource
+    public function show(Tournament $tournament): TournamentResource
     {
-        $tournament = Tournament::withCount('teams', 'players', 'games')
-            ->findOrFail($tournament);
+        $tournament->loadCount('teams', 'players', 'games');
         return new TournamentResource($tournament);
     }
 

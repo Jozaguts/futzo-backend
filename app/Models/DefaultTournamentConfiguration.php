@@ -14,6 +14,7 @@ class DefaultTournamentConfiguration extends Model
         'football_type_id',
         'max_teams',
         'min_teams',
+        'substitutions_per_team',
         'time_between_games',
         'max_players_per_team',
         'min_players_per_team',

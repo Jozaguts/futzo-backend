@@ -39,6 +39,7 @@ class TournamentDTO
             'name' => $this->basic['name'],
             'minMax' => $this->basic['minMax'] ?? null,
             'tournament_format_id' => $this->basic['tournament_format_id'],
+            'substitutions_per_team' => $this->basic['substitutions_per_team'],
             'category_id' => $this->basic['category_id'],
             'football_type_id' => $this->basic['football_type_id'],
             'start_date' => $this->basic['start_date'] ?? null,

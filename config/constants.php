@@ -230,6 +230,7 @@ return [
             'football_type_id' => 1, // Fútbol 11
             'max_teams' => 20,
             'min_teams' => 8,
+            'substitutions_per_team' => 3,
             'max_players_per_team' => 25,
             'min_players_per_team' => 11,
             'max_teams_per_player' => 1,
@@ -244,6 +245,7 @@ return [
             'football_type_id' => 1, // Fútbol 11
             'max_teams' => 16,
             'min_teams' => 8,
+            'substitutions_per_team' => 3,
             'max_players_per_team' => 18,
             'min_players_per_team' => 11,
             'max_teams_per_player' => 1,
@@ -258,6 +260,7 @@ return [
             'football_type_id' => 1, // Fútbol 11
             'max_teams' => 16,
             'min_teams' => 8,
+            'substitutions_per_team' => 3,
             'max_players_per_team' => 18,
             'min_players_per_team' => 11,
             'max_teams_per_player' => 1,
@@ -271,6 +274,7 @@ return [
             'tournament_format_id' => 4, // Sistema Suizo
             'football_type_id' => 1, // Fútbol 11
             'max_teams' => 20,
+            'substitutions_per_team' => 3,
             'min_teams' => 8,
             'max_players_per_team' => 18,
             'min_players_per_team' => 11,
@@ -287,6 +291,7 @@ return [
             'football_type_id' => 2, // Fútbol 7
             'max_teams' => 16,
             'min_teams' => 8,
+            'substitutions_per_team' => 5,
             'max_players_per_team' => 12,
             'min_players_per_team' => 7,
             'max_teams_per_player' => 1,
@@ -301,6 +306,7 @@ return [
             'football_type_id' => 2, // Fútbol 7
             'max_teams' => 12,
             'min_teams' => 6,
+            'substitutions_per_team' => 5,
             'max_players_per_team' => 12,
             'min_players_per_team' => 7,
             'max_teams_per_player' => 1,
@@ -315,6 +321,7 @@ return [
             'football_type_id' => 2, // Fútbol 7
             'max_teams' => 12,
             'min_teams' => 6,
+            'substitutions_per_team' => 5,
             'max_players_per_team' => 12,
             'min_players_per_team' => 7,
             'max_teams_per_player' => 1,
@@ -329,6 +336,7 @@ return [
             'football_type_id' => 2, // Fútbol 7
             'max_teams' => 10,
             'min_teams' => 4,
+            'substitutions_per_team' => 5,
             'max_players_per_team' => 10,
             'min_players_per_team' => 7,
             'max_teams_per_player' => 1,
@@ -344,6 +352,7 @@ return [
             'football_type_id' => 3, // Fútbol Sala
             'max_teams' => 12,
             'min_teams' => 6,
+            'substitutions_per_team' => -1,
             'max_players_per_team' => 10,
             'min_players_per_team' => 5,
             'max_teams_per_player' => 1,
@@ -358,6 +367,7 @@ return [
             'football_type_id' => 3, // Fútbol Sala
             'max_teams' => 8,
             'min_teams' => 4,
+            'substitutions_per_team' => -1,
             'max_players_per_team' => 10,
             'min_players_per_team' => 5,
             'max_teams_per_player' => 1,
@@ -372,6 +382,7 @@ return [
             'football_type_id' => 3, // Fútbol Sala
             'max_teams' => 8,
             'min_teams' => 4,
+            'substitutions_per_team' => -1,
             'max_players_per_team' => 10,
             'min_players_per_team' => 5,
             'max_teams_per_player' => 1,
@@ -386,6 +397,7 @@ return [
             'football_type_id' => 3, // Fútbol Sala
             'max_teams' => 10,
             'min_teams' => 4,
+            'substitutions_per_team' => -1,
             'max_players_per_team' => 10,
             'min_players_per_team' => 5,
             'max_teams_per_player' => 1,
@@ -401,6 +413,7 @@ return [
             'football_type_id' => 4, // Fútbol Playa
             'max_teams' => 10,
             'min_teams' => 5,
+            'substitutions_per_team' => -1,
             'max_players_per_team' => 12,
             'min_players_per_team' => 7,
             'max_teams_per_player' => 1,
@@ -415,6 +428,7 @@ return [
             'football_type_id' => 4, // Fútbol Playa
             'max_teams' => 8,
             'min_teams' => 4,
+            'substitutions_per_team' => -1,
             'max_players_per_team' => 12,
             'min_players_per_team' => 7,
             'max_teams_per_player' => 1,
@@ -429,6 +443,7 @@ return [
             'football_type_id' => 4, // Fútbol Playa
             'max_teams' => 8,
             'min_teams' => 4,
+            'substitutions_per_team' => -1,
             'max_players_per_team' => 12,
             'min_players_per_team' => 7,
             'max_teams_per_player' => 1,
@@ -443,6 +458,7 @@ return [
             'football_type_id' => 4, // Fútbol Playa
             'max_teams' => 6,
             'min_teams' => 3,
+            'substitutions_per_team' => -1,
             'max_players_per_team' => 10,
             'min_players_per_team' => 7,
             'max_teams_per_player' => 1,

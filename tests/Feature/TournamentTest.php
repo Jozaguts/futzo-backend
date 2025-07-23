@@ -68,7 +68,7 @@ it('get tournaments with pagination', function () {
 /**
  * @throws JsonException
  */
-it('get tournaments with filters', function () {
+it('store tournament', function () {
     Storage::fake('public');
     $image = UploadedFile::fake()->image('logo-test.jpg')->mimeType('image/jpeg');
     $formats = array_map(function (array $format) {
@@ -89,6 +89,7 @@ it('get tournaments with filters', function () {
             'name' => fake()->name,
             'image' => $image,
             'tournament_format_id' => $formats[0]['id'],
+            'substitutions_per_team' => 3,
             'football_type_id' => $footballTypes[0]['id'],
             'category_id' => $category->first()->id,
             'start_date' => fake()->date(),

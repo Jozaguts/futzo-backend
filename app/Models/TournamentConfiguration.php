@@ -12,6 +12,7 @@ class TournamentConfiguration extends Model
         'tournament_id',
         'tournament_format_id',
         'football_type_id',
+        'substitutions_per_team',
         'max_teams',
         'min_teams',
         'time_between_games',

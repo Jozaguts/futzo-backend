@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Sluggable\SlugOptions;
 
@@ -67,7 +68,7 @@ class Game extends Model
         );
     }
 
-    public function winnerTeam()
+    public function winnerTeam(): BelongsTo
     {
         return $this->belongsTo(Team::class, 'winner_team_id');
     }
@@ -112,5 +113,18 @@ class Game extends Model
     public function tournamentPhase(): BelongsTo
     {
         return $this->belongsTo(TournamentPhase::class, 'tournament_phase_id');
+    }
+    public function lineups(): HasMany|Game
+    {
+        return $this->hasMany(Lineup::class);
+    }
+    public function homeLineups()
+    {
+        return $this->hasMany(Lineup::class)->where('team_id', $this->home_team_id);
+    }
+
+    public function awayLineups()
+    {
+        return $this->hasMany(Lineup::class)->where('team_id', $this->away_team_id);
     }
 }

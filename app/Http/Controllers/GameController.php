@@ -186,7 +186,7 @@ class GameController extends Controller
         // Si hay jugadores en default, clonarlos
         if ($defaultLineup) {
             foreach ($defaultLineup->defaultLineupPlayers as $defaultPlayer) {
-                $lineup->players()->create([
+                $lineup->lineupPlayers()->create([
                     'player_id' => $defaultPlayer->player_id,
                     'field_location' => $defaultPlayer->field_location,
                     'substituted' => false,
@@ -201,4 +201,41 @@ class GameController extends Controller
         return $lineup;
     }
 
+    public function getPlayers(Game $game): JsonResponse
+    {
+       $game->load([
+           'homeTeam.players.user:id,name,last_name',
+           'awayTeam.players.user:id,name,last_name',
+           'lineups.lineupPlayers'
+       ]); // una sola consulta para cargar los jugadores de ambos equipos y sus alineaciones
+
+       $homeTeamId = $game->home_team_id;
+       $awayTeamId = $game->away_team_id;
+
+       $homeLineup = $game->lineups->firstWhere('team_id', $homeTeamId);
+       $awayLineup = $game->lineups->firstWhere('team_id', $awayTeamId);
+
+       $homePlayersIds = $homeLineup?->lineupPlayers->pluck('player_id');
+       $awayPlayersIds = $awayLineup?->lineupPlayers->pluck('player_id');
+
+       $homePlayers = $game->homeTeam->players;
+       $awayPlayers = $game->awayTeam->players;
+
+       $homeHeadlines = $homePlayers->whereIn('id', $homePlayersIds);
+       $homeSubstitutes = $homePlayers->whereNotIn('id', $homePlayersIds);
+
+       $awayHeadlines = $awayPlayers->whereIn('id', $awayPlayersIds);
+       $awaySubstitutes = $awayPlayers->whereNotIn('id', $awayPlayersIds);
+
+       return response()->json([
+           'home' =>[
+               'headlines' => $homeHeadlines->values(),
+               'substitutes' => $homeSubstitutes->values(),
+           ],
+           'away' => [
+               'headlines' => $awayHeadlines->values(),
+               'substitutes' => $awaySubstitutes->values(),
+           ]
+       ]);
+    }
 }

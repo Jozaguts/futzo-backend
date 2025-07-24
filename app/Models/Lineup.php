@@ -20,7 +20,7 @@ class Lineup extends Model
         return $this->belongsTo(DefaultLineup::class);
     }
 
-    public function players(): HasMany|Lineup
+    public function lineupPlayers(): HasMany|Lineup
     {
         return $this->hasMany(LineupPlayer::class);
     }

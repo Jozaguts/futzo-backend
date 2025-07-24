@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources;
 
-use App\Models\Team;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -89,7 +88,7 @@ class LineupResource extends JsonResource
      */
     private function transformPlayers($positionIds)
     {
-        $players = $this->resource->players()
+        $players = $this->resource->lineupPlayers()
             ->whereIn('field_location', (array) $positionIds)
             ->with(['player.user', 'player.position']) // eager load to avoid N+1
             ->get();

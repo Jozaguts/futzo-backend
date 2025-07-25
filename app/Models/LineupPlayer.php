@@ -13,6 +13,7 @@ class LineupPlayer extends Model
         'lineup_id',
         'player_id',
         'is_headline',
+        'substituted',
         'field_location',
     ];
     public function lineup(): BelongsTo

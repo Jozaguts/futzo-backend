@@ -9,14 +9,14 @@ class LineupResource extends JsonResource
 {
     private array $positions = [
         'goalkeeper' => 1,
-        'defenses' => [],
-        'midfielders' => [],
-        'forwards' => [],
+        'defenses' => [2,3,4,5],
+        'midfielders' => [6, 7, 8, 9],
+        'forwards' => [10,11],
     ];
 
     public function toArray(Request $request): array
     {
-        $formation = $this->resource->formation;
+        $formation = $this->resource->formation; // resource means Lineup model
 
         // Si no hay formación, devolvemos campos vacíos
         if (!$formation) {
@@ -44,19 +44,18 @@ class LineupResource extends JsonResource
         return [
             'team_id' => $this->resource->team_id,
             'team' => new TeamResource($this->resource->team),
-            'players' => $this->resource->team->players()
-                ->whereDoesntHave('lineupPlayers', function ($q) {
-                    $q->where('lineup_id', $this->resource->id);
-                })
-                ->with('user')
+            'players' => $this->resource
+                ->lineupPlayers()
+                ->where('is_headline', false)
+                ->with('player.user')
                 ->get()
-                ->map(function ($player) {
+                ->map(function ($lnp) {
                     return [
-                        'player_id' => $player->id,
-                        'team_id' => $player->team_id,
-                        'name' => $player->user?->name ?? '',
-                        'number' => $player->number,
-                        'position' => $player->position?->abbr ?? '',
+                        'player_id' => $lnp->player->id,
+                        'team_id' => $lnp->player->team_id,
+                        'name' => $lnp->player->user?->name ?? '',
+                        'number' => $lnp->player->number,
+                        'position' => $lnp->player->position?->abbr ?? '',
                     ];
                 })->values(),
             'name' => $formation->name,
@@ -89,6 +88,7 @@ class LineupResource extends JsonResource
     private function transformPlayers($positionIds)
     {
         $players = $this->resource->lineupPlayers()
+            ->where('is_headline', true)
             ->whereIn('field_location', (array) $positionIds)
             ->with(['player.user', 'player.position']) // eager load to avoid N+1
             ->get();

@@ -20,7 +20,7 @@ class DefaultLineupPlayerFactory extends Factory
             'updated_at' => Carbon::now(),
             'default_lineup_id' => DefaultLineup::factory(),
             'player_id' => Player::factory(),
-            'field_location' => $this->faker->numberBetween(1, 5),
+            'field_location' => $this->faker->numberBetween(1, 11),
         ];
     }
 }

@@ -9,6 +9,8 @@ use App\Models\DefaultLineup;
 use App\Models\Formation;
 use App\Models\Game;
 use App\Models\Lineup;
+use App\Models\LineupPlayer;
+use App\Models\Team;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -182,19 +184,37 @@ class GameController extends Controller
             'default_lineup_id' => $defaultLineup?->id,
             'round' => $game->round,
         ]);
-
-        // Si hay jugadores en default, clonarlos
+        $players = Team::findOrFail($teamId)->players;
+        $players->map(fn($player, $key) => $lineup->lineupPlayers()->save(
+            LineupPlayer::updateOrCreate([
+                'lineup_id' => $lineup->id,
+                'player_id' => $player->id,
+            ], [
+                'is_headline' => false,
+                'field_location' => null,
+                'substituted' => false,
+                'goals' => 0,
+                'yellow_card' => false,
+                'red_card' => false,
+                'doble_yellow_card' => false,
+            ])
+        ));
         if ($defaultLineup) {
-            foreach ($defaultLineup->defaultLineupPlayers as $defaultPlayer) {
-                $lineup->lineupPlayers()->create([
-                    'player_id' => $defaultPlayer->player_id,
-                    'field_location' => $defaultPlayer->field_location,
-                    'substituted' => false,
-                    'goals' => 0,
-                    'yellow_card' => false,
-                    'red_card' => false,
-                    'doble_yellow_card' => false,
-                ]);
+            foreach ($defaultLineup->defaultLineupPlayers as $data) {
+                $lineup->lineupPlayers()->save(
+                    LineupPlayer::updateOrCreate([
+                        'lineup_id' => $lineup->id,
+                        'player_id' => $data->player_id,
+                    ], [
+                        'is_headline' => false,
+                        'field_location' => $data->field_location,
+                        'substituted' => false,
+                        'goals' => 0,
+                        'yellow_card' => false,
+                        'red_card' => false,
+                        'doble_yellow_card' => false,
+                    ])
+                );
             }
         }
 
@@ -203,39 +223,24 @@ class GameController extends Controller
 
     public function getPlayers(Game $game): JsonResponse
     {
-       $game->load([
-           'homeTeam.players.user:id,name,last_name',
-           'awayTeam.players.user:id,name,last_name',
-           'lineups.lineupPlayers'
-       ]); // una sola consulta para cargar los jugadores de ambos equipos y sus alineaciones
+        $game->load([
+            'homeTeam',
+            'awayTeam',
+            'lineups.lineupPlayers.player.user:id,name,last_name',
+        ]);
 
-       $homeTeamId = $game->home_team_id;
-       $awayTeamId = $game->away_team_id;
+        $homeLineup = $game->lineups->firstWhere('team_id', $game->home_team_id);
+        $awayLineup = $game->lineups->firstWhere('team_id', $game->away_team_id);
 
-       $homeLineup = $game->lineups->firstWhere('team_id', $homeTeamId);
-       $awayLineup = $game->lineups->firstWhere('team_id', $awayTeamId);
-
-       $homePlayersIds = $homeLineup?->lineupPlayers->pluck('player_id');
-       $awayPlayersIds = $awayLineup?->lineupPlayers->pluck('player_id');
-
-       $homePlayers = $game->homeTeam->players;
-       $awayPlayers = $game->awayTeam->players;
-
-       $homeHeadlines = $homePlayers->whereIn('id', $homePlayersIds);
-       $homeSubstitutes = $homePlayers->whereNotIn('id', $homePlayersIds);
-
-       $awayHeadlines = $awayPlayers->whereIn('id', $awayPlayersIds);
-       $awaySubstitutes = $awayPlayers->whereNotIn('id', $awayPlayersIds);
-
-       return response()->json([
-           'home' =>[
-               'headlines' => $homeHeadlines->values(),
-               'substitutes' => $homeSubstitutes->values(),
-           ],
-           'away' => [
-               'headlines' => $awayHeadlines->values(),
-               'substitutes' => $awaySubstitutes->values(),
-           ]
-       ]);
+        return response()->json([
+            'home' => [
+                'headlines' => $homeLineup?->lineupPlayers->where('is_headline', true)->pluck('player')->values(),
+                'substitutes' => $homeLineup?->lineupPlayers->where('is_headline', false)->pluck('player')->values(),
+            ],
+            'away' => [
+                'headlines' => $awayLineup?->lineupPlayers->where('is_headline', true)->pluck('player')->values(),
+                'substitutes' => $awayLineup?->lineupPlayers->where('is_headline', false)->pluck('player')->values(),
+            ],
+        ]);
     }
 }

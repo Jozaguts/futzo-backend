@@ -15,6 +15,7 @@ return new class extends Migration {
             $table->foreignIdFor(Player::class)->nullable()->constrained('players');
             $table->unsignedTinyInteger('field_location')->nullable();
             $table->boolean('substituted')->default(false);
+            $table->boolean('is_headline')->default(false);
             $table->unsignedTinyInteger('goals')->default(0);
             $table->boolean('yellow_card')->default(false);
             $table->boolean('red_card')->default(false);

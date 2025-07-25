@@ -15,7 +15,7 @@ class LineupPlayerFactory extends Factory
     public function definition(): array
     {
         return [
-            'field_location' => $this->faker->randomNumber(),
+            'field_location' => $this->faker->numberBetween(1,11),
             'substituted' => $this->faker->boolean(),
             'goals' => $this->faker->randomNumber(),
             'yellow_card' => $this->faker->boolean(),

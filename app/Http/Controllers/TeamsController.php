@@ -526,21 +526,32 @@ class TeamsController extends Controller
         $data = $request->validate([
             'player.player_id' => 'required|exists:players,id',
             'field_location' => 'required',
+            'currentPlayer' => 'required',
         ]);
+
         $player = Player::findOrFail($data['player']['player_id']);
         if ($player->team_id !== $team->id) {
             return response()->json(['message' => 'El jugador no pertenece a este equipo.'], 422);
         }
-        $lineup  = Lineup::where('game_id', $game->id)
+        $lineup = Lineup::where('game_id', $game->id)
             ->where('team_id', $team->id)
             ->first();
-        $lineupPlayer = LineupPlayer::updateOrCreate([
-            'lineup_id' => $lineup->id,
-            'player_id' => $data['player']['player_id'],
-        ],[
-            'player_id' => $data['player']['player_id'],
-            'field_location' => $data['field_location'],
-        ]);
+        $lineupPlayer = LineupPlayer::query()
+            ->where('lineup_id', $lineup->id)
+            ->where('field_location', $data['field_location'])
+            ->first();
+        if ($lineupPlayer) {
+            $lineupPlayer->field_location = null;
+            $lineupPlayer->is_headline = false;
+            $lineupPlayer->save();
+        }
+        $lineupPlayer = LineupPlayer::where('lineup_id', $lineup->id)
+            ->where('player_id', $data['player']['player_id'])
+            ->update([
+                'field_location' => $data['field_location'],
+                'is_headline' => true,
+            ]);
+
         return response()->json([
             'message' => 'Jugador agregado a la alineación del partido.',
             'lineup_player' => $lineupPlayer,
@@ -566,10 +577,21 @@ class TeamsController extends Controller
             'player.team_id' => 'required|exists:teams,id',
             'field_location' => 'required',
         ]);
-        $lineupPlayer->update([
-            'player_id' => $data['player']['player_id'],
-            'field_location' => $lineupPlayer->field_location,
-        ]);
+
+        $olDLineupPlayer = LineupPlayer::where('lineup_id', $lineupPlayer->lineup_id)
+            ->where('player_id', $data['player']['player_id'])
+            ->first();
+
+        if ($olDLineupPlayer) {
+            $olDLineupPlayer->field_location = null;
+            $olDLineupPlayer->is_headline = false;
+            $olDLineupPlayer->player_id = $lineupPlayer->player_id;
+            $olDLineupPlayer->save();
+        }
+        $lineupPlayer->player_id = $data['player']['player_id'];
+        $lineupPlayer->field_location = $data['field_location'];
+        $lineupPlayer->is_headline = true;
+        $lineupPlayer->save();
 
         return response()->json([
             'message' => 'Jugador actualizado en la alineación del partido.',

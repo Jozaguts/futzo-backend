@@ -12,6 +12,7 @@ class LineupPlayer extends Model
     protected $fillable = [
         'lineup_id',
         'player_id',
+        'is_headline',
         'field_location',
         'substituted',
         'goals',

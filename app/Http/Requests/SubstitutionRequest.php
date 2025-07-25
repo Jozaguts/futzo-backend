@@ -9,11 +9,12 @@ class SubstitutionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'game_id' => ['required', 'exists:games'],
-            'team_id' => ['required', 'exists:teams'],
-            'player_in_id' => ['required', 'exists:players'],
-            'player_out_id' => ['required', 'exists:players'],
-            'minute' => ['required', 'integer'],
+            'home.*.player_in_id' => ['exists:players,id'],
+            'home.*.player_out_id' => ['exists:players,id'],
+            'away.*.player_in_id' => ['exists:players,id'],
+            'away.*.player_out_id' => ['exists:players,id'],
+            'home.*.minute' => ['integer'],
+            'away.*.minute' => ['integer'],
         ];
     }
 

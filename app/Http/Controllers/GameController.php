@@ -2,14 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\SubstitutionRequest;
 use App\Http\Resources\GameResource;
 use App\Http\Resources\GameTeamsPlayersCollection;
 use App\Http\Resources\LineupResource;
 use App\Models\DefaultLineup;
 use App\Models\Formation;
 use App\Models\Game;
+use App\Models\GameEvent;
 use App\Models\Lineup;
 use App\Models\LineupPlayer;
+use App\Models\Substitution;
 use App\Models\Team;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -242,5 +245,42 @@ class GameController extends Controller
                 'substitutes' => $awayLineup?->lineupPlayers->where('is_headline', false)->pluck('player')->values(),
             ],
         ]);
+    }
+
+    public function substitutions(SubstitutionRequest $request, Game $game): JsonResponse
+    {
+        $data = $request->validated();
+        foreach( ['home' => $game->home_team_id, 'away' => $game->away_team_id] as $key => $teamId)  {
+            if (!empty($data[$key])) {
+                foreach ($data[$key] as $substitution) {
+                    Substitution::updateOrCreate([
+                        'game_id' => $game->id,
+                        'team_id' => $teamId,
+                        'player_in_id' => $substitution['player_in_id'],
+                        'player_out_id' => $substitution['player_out_id'],
+                    ],[
+                        'minute' => $substitution['minute']
+                    ]);
+
+                    $game->lineups()
+                        ->where('team_id', $teamId)
+                        ->firstOrFail()
+                        ->lineupPlayers()
+                        ->where('player_id', $substitution['player_out_id'])
+                        ->update(['substituted' => true]);
+
+                    GameEvent::create([
+                        'game_id' => $game->id,
+                        'type' => GameEvent::SUBSTITUTION,
+                        'minute' => $substitution['minute'],
+                        'player_id' => $substitution['player_out_id'],
+                        'related_player_id' => $substitution['player_in_id'],
+                        'team_id' => $teamId,
+                    ]);
+                }
+            }
+        }
+        return response()->json([
+            'message' => 'Substitución registrada correctamente.']);
     }
 }

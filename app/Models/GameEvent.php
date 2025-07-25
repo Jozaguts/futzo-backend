@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class GameEvent extends Model
 {
+
+    const string SUBSTITUTION =  'substitution';
     protected $fillable = [
         'game_id',
         'player_id',

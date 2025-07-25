@@ -14,11 +14,6 @@ class LineupPlayer extends Model
         'player_id',
         'is_headline',
         'field_location',
-        'substituted',
-        'goals',
-        'yellow_card',
-        'red_card',
-        'doble_yellow_card',
     ];
     public function lineup(): BelongsTo
     {

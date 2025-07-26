@@ -2,11 +2,11 @@
 
 namespace App\Services;
 
+use App\Exceptions\InvalidPeriodException;
 use App\Models\Game;
 use App\Models\LineupPlayer;
 use App\Models\Player;
 use App\Models\Team;
-use http\Exception\InvalidArgumentException;
 
 class DashboardStatsService
 {
@@ -77,6 +77,9 @@ class DashboardStatsService
         };
     }
 
+    /**
+     * @throws InvalidPeriodException
+     */
     private static function getDailyData($model, $dateColumn, $period, $start, $end, $relation = null, $conditions = []): array
     {
         $query = (new $model);
@@ -138,12 +141,15 @@ class DashboardStatsService
                 break;
 
             default:
-                throw new InvalidArgumentException("Periodo no válido");
+                throw new InvalidPeriodException("Periodo no válido");
         }
 
         return array_values($data);
     }
 
+    /**
+     * @throws InvalidPeriodException
+     */
     private static function getDateRangeForPeriod(string $period): array
     {
         return match ($period) {
@@ -171,7 +177,7 @@ class DashboardStatsService
                 now()->subYear()->startOfYear(),
                 now()->subYear()->endOfYear()
             ],
-            default => throw new InvalidArgumentException("Periodo no válido"),
+            default => throw new InvalidPeriodException("Periodo no válido"),
         };
     }
 

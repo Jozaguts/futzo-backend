@@ -78,12 +78,6 @@ class Player extends Model
         return $this->user->image ?? null;
     }
 
-    public function games(): BelongsToMany
-    {
-        return $this->belongsToMany(Game::class, 'game_player')
-            ->withPivot('entry_minute', 'exit_minute', 'goals', 'assists')
-            ->withTimestamps();
-    }
     public function defaultLineup(): Player|HasMany
     {
         return $this->hasMany(DefaultLineupPlayer::class);

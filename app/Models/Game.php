@@ -88,13 +88,6 @@ class Game extends Model
         return $this->belongsTo(Team::class, 'away_team_id');
     }
 
-    public function players(): BelongsToMany
-    {
-        return $this->belongsToMany(Player::class, 'game_player')
-            ->withPivot('entry_minute', 'exit_minute', 'goals', 'assists')
-            ->withTimestamps();
-    }
-
     public function location(): BelongsTo
     {
         return $this->belongsTo(Location::class);

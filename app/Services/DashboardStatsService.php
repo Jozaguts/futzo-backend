@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Game;
+use App\Models\LineupPlayer;
 use App\Models\Player;
 use App\Models\Team;
 use http\Exception\InvalidArgumentException;
@@ -19,23 +20,30 @@ class DashboardStatsService
         [$startCurrent, $endCurrent, $startPrevious, $endPrevious] = self::getDateRangeForPeriod($period);
 
         // 1. Calcular `registeredTeams`
-        $registeredTeamsCurrent = Team::whereBetween('created_at', [$startCurrent, $endCurrent])->count();
-        $registeredTeamsPrevious = Team::whereBetween('created_at', [$startPrevious, $endPrevious])->count();
+        $registeredTeamsCurrent = Team::whereBetween('created_at', [$startCurrent, $endCurrent])
+            ->whereHas('leagues', fn($q) => $q->where('leagues.id', auth()->user()->league_id))
+            ->count();
+        $registeredTeamsPrevious = Team::whereBetween('created_at', [$startPrevious, $endPrevious])
+            ->whereHas('leagues', fn($q) => $q->where('leagues.id', auth()->user()->league_id))
+            ->count();
         $registeredTeamsStats = self::calculateStatsValues($registeredTeamsCurrent, $registeredTeamsPrevious);
-        $registeredTeamsStats['total'] = Team::count();
+        $registeredTeamsStats['total'] = Team::whereHas('leagues', static fn($q) => $q->where('leagues.id', auth()->user()->league_id))
+            ->count();
         $registeredTeamsStats['dailyData'] = self::getDailyData(Team::class, 'created_at', $period, $startCurrent, $endCurrent);
 
 
         // 2. Calcular `activePlayers`
         // Usamos Game en lugar de Player para calcular los jugadores activos en juegos.
-        $activePlayersCurrent = Player::whereHas('games', function ($query) use ($startCurrent, $endCurrent) {
-            $query->whereBetween('games.created_at', [$startCurrent, $endCurrent]);
-        })->count();
-        $activePlayersPrevious = Player::whereHas('games', function ($query) use ($startPrevious, $endPrevious) {
-            $query->whereBetween('games.created_at', [$startPrevious, $endPrevious]);
-        })->count();
+        $activePlayersCurrent = Player::whereHas('lineupPlayers', static function ($query) use ($startCurrent, $endCurrent) {
+            $query->whereBetween('created_at', [$startCurrent, $endCurrent]);
+        })->whereHas('team.leagues', fn($q) => $q->where('leagues.id', auth()->user()->league_id))
+            ->count();
+        $activePlayersPrevious = Player::whereHas('lineupPlayers', static function ($query) use ($startPrevious, $endPrevious) {
+            $query->whereBetween('created_at', [$startPrevious, $endPrevious]);
+        })->whereHas('team.leagues', fn($q) => $q->where('leagues.id', auth()->user()->league_id))
+            ->count();
         $activePlayersStats = self::calculateStatsValues($activePlayersCurrent, $activePlayersPrevious);
-        $activePlayersStats['dailyData'] = self::getDailyData(Game::class, 'created_at', $period, $startCurrent, $endCurrent, 'players');
+        $activePlayersStats['dailyData'] = self::getDailyData(LineupPlayer::class, 'created_at', $period, $startCurrent, $endCurrent, null);
 
         // 3. Calcular `completedGames`
         $completedGamesCurrent = Game::whereBetween('created_at', [$startCurrent, $endCurrent])

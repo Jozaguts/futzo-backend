@@ -43,7 +43,11 @@ class LineupResource extends JsonResource
 
         return [
             'team_id' => $this->resource->team_id,
-            'team' => new TeamResource($this->resource->team),
+            'team' => [
+                'id' => $this->resource->team_id,
+                'name' => $this->resource->team?->name ?? '',
+                'image' => $this->resource->team?->image ?: 'https://ui-avatars.com/api/?name=' . urlencode($this->resource->team?->name) . '&background=' . str_replace('#', '', $this->resource->team_color),
+            ],
             'players' => $this->resource
                 ->lineupPlayers()
                 ->where('is_headline', false)
@@ -103,6 +107,7 @@ class LineupResource extends JsonResource
                 'number' => $player?->number ?? 0,
                 'name' => $player?->user?->name ?? '',
                 'goals' => $lineupPlayer->goals ?? 0,
+                'color' => $this->resource->team_color,
                 'cards' => [
                     'red' => (bool) $lineupPlayer->red_card,
                     'yellow' => (bool) $lineupPlayer->yellow_card,

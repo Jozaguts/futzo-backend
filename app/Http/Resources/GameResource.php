@@ -21,11 +21,11 @@ class GameResource extends JsonResource
         // 1) Fecha base: selección o fecha de partido
         $selectedDate = $request->has('date')
             ? Carbon::parse($request->input('date'))->startOfDay()
-            : $this->match_date->copy()->startOfDay();
+            : $this->resource->match_date->copy()->startOfDay();
         $dayOfWeek = strtolower($selectedDate->format('l'));
 
         // 2) Campo específico: del request o el original del juego
-        $fieldId = $request->input('field_id', $this->field_id);
+        $fieldId = $request->input('field_id', $this->resource->field_id);
         // 3) Fase activa y sus límites
         $currentPhase = $this->resource->tournamentPhase;
         $tournamentId = $this->resource->tournament_id;
@@ -118,50 +118,50 @@ class GameResource extends JsonResource
             ];
         }
         return [
-            'id' => $this->id,
+            'id' => $this->resource->id,
             'home' => [
-                'id' => $this->homeTeam->id,
-                'name' => $this->homeTeam->name,
+                'id' => $this->resource->homeTeam->id,
+                'name' => $this->resource->homeTeam->name,
                 'image' => sprintf(
-                    'https://ui-avatars.com/api/?name=%s&background=9155FD&color=fff',
-                    urlencode($this->homeTeam->name)
+                    'https://ui-avatars.com/api/?name=%s&background='.  str_replace('#','', $this->resource->homeTeam->colors['home']['primary']) ?: 'AFA'.'&color=fff',
+                    urlencode($this->resource->homeTeam->name)
                 ),
-                'goals' => $this->home_goals,
+                'goals' => $this->resource->home_goals,
             ],
             'away' => [
-                'id' => $this->awayTeam->id,
-                'name' => $this->awayTeam->name,
+                'id' => $this->resource->awayTeam->id,
+                'name' => $this->resource->awayTeam->name,
                 'image' => sprintf(
-                    'https://ui-avatars.com/api/?name=%s&background=8A8D93&color=fff',
-                    urlencode($this->awayTeam->name)
+                    'https://ui-avatars.com/api/?name=%s&background='. str_replace('#','',$this->resource->awayTeam->colors['away']['primary']) ?: 'AFA' .'&color=fff',
+                    urlencode($this->resource->awayTeam->name)
                 ),
-                'goals' => $this->away_goals,
+                'goals' => $this->resource->away_goals,
             ],
             'details' => [
-                'date' => $this->match_date->translatedFormat('D j/n'),
-                'raw_date' => $this->match_date->toDateTimeString(),
-                'raw_time' => $this->match_time,
-                'time' => $this->match_time ? [
-                    'hours' => Carbon::createFromFormat('H:i', $this->match_time)->hour,
-                    'minutes' => Carbon::createFromFormat('H:i', $this->match_time)->minute,
+                'date' => $this->resource->match_date->translatedFormat('D j/n'),
+                'raw_date' => $this->resource->match_date->toDateTimeString(),
+                'raw_time' => $this->resource->match_time,
+                'time' => $this->resource->match_time ? [
+                    'hours' => Carbon::createFromFormat('H:i', $this->resource->match_time)->hour,
+                    'minutes' => Carbon::createFromFormat('H:i', $this->resource->match_time)->minute,
                 ] : null,
                 'field' => [
-                    'id' => $this->field_id,
-                    'name' => optional($this->field)->name ?: 'Campo desconocido',
+                    'id' => $this->resource->field_id,
+                    'name' => optional($this->resource->field)->name ?: 'Campo desconocido',
                 ],
                 'location' => [
-                    'id' => $this->location_id,
-                    'name' => optional($this->location)->name ?: 'Ubicación desconocida',
+                    'id' => $this->resource->location_id,
+                    'name' => optional($this->resource->location)->name ?: 'Ubicación desconocida',
                 ],
-                'referee' => optional($this->referee)->name ?: 'Por asignar',
+                'referee' => optional($this->resource->referee)->name ?: 'Por asignar',
                 'day_of_week' => $dayOfWeek,
                 'tournament' => $this->resource->tournament->name,
             ],
             'round' => $this->resource->round,
-            'status' => $this->status,
-            'result' => $this->result,
-            'start_date' => $this->tournament->start_date,
-            'end_date' => $this->tournament->games()->orderBy('match_date', 'desc')->first()->match_date,
+            'status' => $this->resource->status,
+            'result' => $this->resource->result,
+            'start_date' => $this->resource->tournament->start_date,
+            'end_date' => $this->resource->tournament->games()->orderBy('match_date', 'desc')->first()->match_date,
             'options' => $options,
         ];
     }

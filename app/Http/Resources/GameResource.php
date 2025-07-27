@@ -103,7 +103,7 @@ class GameResource extends JsonResource
                 $freeSlots = [];
                 foreach ($rawFree as $startTime) {
                     $endTime = Carbon::createFromFormat('H:i', $startTime)
-                        ->addMinutes($matchDuration)
+                        ?->addMinutes($matchDuration)
                         ->format('H:i');
                     $freeSlots[] = ['start' => $startTime, 'end' => $endTime];
                 }

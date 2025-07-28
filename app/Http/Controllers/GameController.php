@@ -231,19 +231,24 @@ class GameController extends Controller
             'homeTeam',
             'awayTeam',
             'lineups.lineupPlayers.player.user:id,name,last_name',
+            'substitutions:id,game_id,team_id,player_in_id,player_out_id,minute',
         ]);
 
         $homeLineup = $game->lineups->firstWhere('team_id', $game->home_team_id);
         $awayLineup = $game->lineups->firstWhere('team_id', $game->away_team_id);
+        $homeSubstitutions = $game->substitutions->where('team_id', $game->home_team_id)->values();
+        $awaySubstitutions = $game->substitutions->where('team_id', $game->away_team_id)->values();
 
         return response()->json([
             'home' => [
                 'headlines' => $homeLineup?->lineupPlayers->where('is_headline', true)->pluck('player')->values(),
                 'substitutes' => $homeLineup?->lineupPlayers->where('is_headline', false)->pluck('player')->values(),
+                'substitutions' => $homeSubstitutions,
             ],
             'away' => [
                 'headlines' => $awayLineup?->lineupPlayers->where('is_headline', true)->pluck('player')->values(),
                 'substitutes' => $awayLineup?->lineupPlayers->where('is_headline', false)->pluck('player')->values(),
+                'substitutions' => $awaySubstitutions,
             ],
         ]);
     }
@@ -283,5 +288,24 @@ class GameController extends Controller
         }
         return response()->json([
             'message' => 'Substitución registrada correctamente.']);
+    }
+    public function destroySubstitution(Game $game, Substitution $substitution): JsonResponse
+    {
+        $substitution->delete();
+        $game->lineups()
+            ->where('team_id', $substitution->team_id)
+            ->firstOrFail()
+            ->lineupPlayers()
+            ->where('player_id', $substitution->player_out_id)
+            ->update(['substituted' => false]);
+        GameEvent::where('game_id', $game->id)
+            ->where('type', GameEvent::SUBSTITUTION)
+            ->where('player_id', $substitution->player_out_id)
+            ->where('related_player_id', $substitution->player_in_id)
+            ->delete();
+
+        return response()->json([
+            'message' => 'Substitución eliminada correctamente.'
+        ]);
     }
 }

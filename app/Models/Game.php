@@ -120,4 +120,9 @@ class Game extends Model
     {
         return $this->hasMany(Lineup::class)->where('team_id', $this->away_team_id);
     }
+
+    public function substitutions(): HasMany
+    {
+        return $this->hasMany(Substitution::class);
+    }
 }

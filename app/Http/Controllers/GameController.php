@@ -134,6 +134,12 @@ class GameController extends Controller
                             'players' => function ($query) {
                                 $query->select(['id', 'team_id', 'user_id'])
                                     ->with('user:id,name,last_name');
+                            },
+                            'teamEvents' => function ($query) {
+                                $query->whereIn('type', [
+                                    GameEvent::YELLOW_CARD,
+                                    GameEvent::RED_CARD,
+                                ]);
                             }
                         ]);
                 },
@@ -143,6 +149,12 @@ class GameController extends Controller
                             'players' => function ($query) {
                                 $query->select(['id', 'team_id', 'user_id'])
                                     ->with('user:id,name,last_name');
+                            },
+                            'teamEvents' => function ($query) {
+                                $query->whereIn('type', [
+                                    GameEvent::YELLOW_CARD,
+                                    GameEvent::RED_CARD,
+                                ]);
                             }
                         ]);
                 }
@@ -307,5 +319,36 @@ class GameController extends Controller
         return response()->json([
             'message' => 'Substitución eliminada correctamente.'
         ]);
+    }
+    public function cards(Request $request, Game $game): JsonResponse
+    {
+        $data = $request->validate([
+            'home' => 'array',
+            'away' => 'array',
+        ]);
+
+        foreach (['home' => $game->home_team_id, 'away' => $game->away_team_id] as $key => $teamId) {
+            if (!empty($data[$key])) {
+                foreach ($data[$key] as $card) {
+                   GameEvent::updateOrCreate([
+                        'game_id' => $game->id,
+                        'type' => $card['type'],
+                        'minute' => $card['minute'],
+                        'player_id' => $card['player_id'],
+                        'team_id' => $teamId,
+                    ], [
+                        'related_player_id' => null, // No se usa en tarjetas
+                    ]);
+
+                }
+            }
+        }
+
+        return response()->json(['message' => 'Tarjetas actualizadas correctamente.']);
+    }
+    public function destroyCardGameEvent(Game $game, GameEvent $card): JsonResponse
+    {
+        $card->delete();
+        return response()->json(['message' => 'Tarjeta eliminada correctamente.']);
     }
 }

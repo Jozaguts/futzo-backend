@@ -9,6 +9,10 @@ class GameEvent extends Model
 {
 
     const string SUBSTITUTION =  'substitution';
+    const string YELLOW_CARD = 'yellow_card';
+    const string RED_CARD = 'red_card';
+    const string DOUBLE_YELLOW_CARD = 'double_yellow_card';
+    const string GOAL = 'goal';
     protected $fillable = [
         'game_id',
         'player_id',

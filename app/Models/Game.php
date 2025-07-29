@@ -125,4 +125,8 @@ class Game extends Model
     {
         return $this->hasMany(Substitution::class);
     }
+    public function gameEvent(): HasMany
+    {
+        return $this->hasMany(GameEvent::class);
+    }
 }

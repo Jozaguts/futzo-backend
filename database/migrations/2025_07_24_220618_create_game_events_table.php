@@ -16,7 +16,7 @@ return new class extends Migration {
             $table->unsignedMediumInteger('minute');
             $table->foreignIdFor(Game::class)->constrained('games');
             $table->foreignIdFor(Player::class)->constrained('players');
-            $table->foreignIdFor(Player::class, 'related_player_id')->constrained('players');
+            $table->foreignIdFor(Player::class, 'related_player_id')->nullable()->constrained('players');
             $table->foreignIdFor(Team::class)->constrained('teams');
             $table->timestamps();
         });

@@ -110,4 +110,8 @@ class Team extends Model implements HasMedia
                     ->height(400);
             });
     }
+    public function teamEvents(): HasMany
+    {
+        return $this->hasMany(GameEvent::class);
+    }
 }

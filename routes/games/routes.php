@@ -14,5 +14,7 @@ Route::prefix('games')
         Route::get('formations', [GameController::class, 'formations'])->name('formations');
         Route::put('{game}/reschedule', [GameController::class, 'update'])->name('reschedule');
         Route::post('{game}/substitutions', [GameController::class, 'substitutions'])->name('substitutions');
+        Route::post('{game}/cards', [GameController::class, 'cards'])->name('cards.store');
         Route::delete('{game}/substitutions/{substitution}', [GameController::class, 'destroySubstitution'])->name('substitutions.destroy');
+        Route::delete('{game}/game-event/{gameEvent}/card', [GameController::class, 'destroyCardGameEvent'])->name('cardGameEvent.destroy');
     });

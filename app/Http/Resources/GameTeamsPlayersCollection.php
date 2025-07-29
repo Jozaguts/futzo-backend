@@ -44,6 +44,7 @@ class GameTeamsPlayersCollection extends JsonResource
                         'cards' => $cardType,
                     ];
                 })->toArray(),
+                'cards' => $this->resource->homeTeam->teamEvents->select(['id','type','minute','player_id','team_id','game_id']),
             ],
             'away' => [
                 'team_id' => $this->resource->away_team_id,
@@ -64,6 +65,7 @@ class GameTeamsPlayersCollection extends JsonResource
                             ->get()
                     ];
                 })->toArray(),
+                'cards' => $this->resource->awayTeam->teamEvents->select(['id','type','minute','player_id','team_id','game_id']),
             ],
 
         ];

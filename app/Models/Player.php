@@ -68,9 +68,9 @@ class Player extends Model
         return $this->belongsTo(Category::class);
     }
 
-    public function goals(): HasMany
+    public function gameEvents(): HasMany
     {
-        return $this->hasMany(GoalDetail::class);
+        return $this->hasMany(GameEvent::class);
     }
 
     public function image()

@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\GameActionDetail;
+use App\Models\GameEvent;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Resources\Json\ResourceCollection;
@@ -40,11 +41,19 @@ class GameTeamsPlayersCollection extends JsonResource
                         'name' => $player->user->name . ' ' . $player->user->last_name,
                         'position' => $player->position->abbr ?? 'MD',
                         '#' => $player->number ?? 10,
-                        'goals' => $player->goals()->where('game_id', $this->resource->id)->count() ?? 0,
+                        'goals' => $player->gameEvents()
+                                ->where('player_id', $player->id)
+                                ->whereIn('type',[ GameEvent::GOAL,GameEvent::PENALTY])
+                                ->where('game_id', $this->resource->id)->count() ?? 0,
                         'cards' => $cardType,
                     ];
                 })->toArray(),
                 'cards' => $this->resource->homeTeam->teamEvents->select(['id','type','minute','player_id','team_id','game_id']),
+                'goals' => $this->resource->homeTeam->teamEvents()
+                    ->whereIn('type', [GameEvent::GOAL, GameEvent::PENALTY, GameEvent::OWN_GOAL])
+                    ->where('game_id', $this->resource->id)
+                    ->where('team_id', $this->resource->home_team_id)
+                    ->get(),
             ],
             'away' => [
                 'team_id' => $this->resource->away_team_id,
@@ -55,7 +64,10 @@ class GameTeamsPlayersCollection extends JsonResource
                         'name' => $player->user->name . ' ' . $player->user->last_name,
                         'position' => $player->position,
                         '#' => $player->number,
-                        'goals' => $player->goals()->where('game_id', $this->resource->id)->count() ?? 0,
+                        'goals' => $player->gameEvents()
+                                ->whereIn('type',[ GameEvent::GOAL,GameEvent::PENALTY])
+                                ->where('player_id', $player->id)
+                                ->where('game_id', $this->resource->id)->count() ?? 0,
                         'cards' => GameActionDetail::with('action')
                             ->where('game_id', $this->resource->id)
                             ->where('player_id', $player->id)
@@ -66,6 +78,11 @@ class GameTeamsPlayersCollection extends JsonResource
                     ];
                 })->toArray(),
                 'cards' => $this->resource->awayTeam->teamEvents->select(['id','type','minute','player_id','team_id','game_id']),
+                'goals' => $this->resource->awayTeam->teamEvents()
+                        ->whereIn('type', [GameEvent::GOAL, GameEvent::PENALTY, GameEvent::OWN_GOAL])
+                        ->where('game_id', $this->resource->id)
+                        ->where('team_id', $this->resource->away_team_id)
+                        ->get(),
             ],
 
         ];

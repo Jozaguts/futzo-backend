@@ -351,4 +351,82 @@ class GameController extends Controller
         $card->delete();
         return response()->json(['message' => 'Tarjeta eliminada correctamente.']);
     }
+
+    public function goals (Request $request, Game $game): JsonResponse
+    {
+        $data = $request->validate([
+            'home' => 'array',
+            'away' => 'array',
+        ]);
+
+        foreach (['home' => $game->home_team_id, 'away' => $game->away_team_id] as $key => $teamId) {
+            if (!empty($data[$key])) {
+                foreach ($data[$key] as $goal) {
+                    if ($goal['type'] === GameEvent::OWN_GOAL) {
+                        GameEvent::updateOrCreate([
+                            'game_id' => $game->id,
+                            'type' => GameEvent::OWN_GOAL,
+                            'minute' => $goal['minute'],
+                            'player_id' => $goal['player_id'],
+                            'team_id' => $teamId,
+                        ], [
+                            'related_player_id' => null,
+                        ]);
+                        if ($key === 'home'){
+                            ++$game->away_goals; // Si es un autogol, se suma al equipo contrario
+                        } else {
+                            ++$game->home_goals; // Si es un autogol, se suma al equipo contrario
+                        }
+                    }else if($goal['type'] === GameEvent::GOAL ||  $goal['type'] === GameEvent::PENALTY) {
+                        GameEvent::updateOrCreate([
+                            'game_id' => $game->id,
+                            'type' => $goal['type'],
+                            'minute' => $goal['minute'],
+                            'player_id' => $goal['player_id'],
+                            'team_id' => $teamId,
+                        ], [
+                            'related_player_id' => $goal['related_player_id'],
+                        ]);
+                        if ($key === 'home' ){
+                            ++$game->home_goals;
+                        }else if($key === 'away'){
+                            ++$game->away_goals;
+                        }
+                    }
+
+                    $game->save();
+
+                }
+            }
+        }
+
+        return response()->json(['message' => 'Goles actualizados correctamente.']);
+    }
+    public function destroyGoalGameEvent(Game $game, GameEvent $gameEvent): JsonResponse
+    {
+        logger('Eliminando gol', [
+            'game_id' => $game->id,
+            'goal_id' => $gameEvent->id,
+            'goal_type' => $gameEvent->type,
+            'team_id' => $gameEvent->team_id,
+        ]);
+        if ($gameEvent->type === GameEvent::OWN_GOAL) {
+            if ($gameEvent->team_id === $game->home_team_id) {
+                --$game->away_goals; // Si es un autogol, se resta al equipo contrario
+            } else {
+                --$game->home_goals; // Si es un autogol, se resta al equipo contrario
+            }
+        } else if ($gameEvent->type === GameEvent::GOAL || $gameEvent->type === GameEvent::PENALTY) {
+            if ($gameEvent->team_id === $game->home_team_id) {
+                --$game->home_goals;
+            } else {
+                --$game->away_goals;
+            }
+        }
+
+        $gameEvent->delete();
+        $game->save();
+
+        return response()->json(['message' => 'Gol eliminado correctamente.']);
+    }
 }

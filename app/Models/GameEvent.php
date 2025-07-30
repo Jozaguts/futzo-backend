@@ -12,7 +12,10 @@ class GameEvent extends Model
     const string YELLOW_CARD = 'yellow_card';
     const string RED_CARD = 'red_card';
     const string DOUBLE_YELLOW_CARD = 'double_yellow_card';
+
+    const string PENALTY = 'penalty_kick';
     const string GOAL = 'goal';
+    const string OWN_GOAL = 'own_goal';
     protected $fillable = [
         'game_id',
         'player_id',

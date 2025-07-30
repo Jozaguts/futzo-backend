@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\GameEvent;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -106,7 +107,7 @@ class LineupResource extends JsonResource
                 'abbr' => $player?->position?->abbr ?? '',
                 'number' => $player?->number ?? 0,
                 'name' => $player?->user?->name ?? '',
-                'goals' => $lineupPlayer->goals ?? 0,
+                'goals' => $lineupPlayer->player->gameEvents()->whereIn('type',[GameEvent::GOAL, GameEvent::PENALTY])->count() ?? 0,
                 'color' => $this->resource->team_color,
                 'cards' => [
                     'red' => (bool) $lineupPlayer->red_card,

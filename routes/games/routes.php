@@ -15,6 +15,8 @@ Route::prefix('games')
         Route::put('{game}/reschedule', [GameController::class, 'update'])->name('reschedule');
         Route::post('{game}/substitutions', [GameController::class, 'substitutions'])->name('substitutions');
         Route::post('{game}/cards', [GameController::class, 'cards'])->name('cards.store');
+        Route::post('{game}/goals', [GameController::class, 'goals'])->name('goals.store');
         Route::delete('{game}/substitutions/{substitution}', [GameController::class, 'destroySubstitution'])->name('substitutions.destroy');
         Route::delete('{game}/game-event/{gameEvent}/card', [GameController::class, 'destroyCardGameEvent'])->name('cardGameEvent.destroy');
+        Route::delete('{game}/game-event/{gameEvent}/goal', [GameController::class, 'destroyGoalGameEvent'])->name('goalGameEvent.destroy');
     });

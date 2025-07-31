@@ -17,16 +17,16 @@ class NextGamesResource extends JsonResource
                 'id' => $this->resource->homeTeam?->id,
                 'name' => $this->resource->homeTeam?->name,
                 'image' => sprintf(
-                    'https://ui-avatars.com/api/?name=%s&background='. str_replace('#','',$this->resource->homeTeam->colors['away']['primary']) ?: 'AFA' .'&color=fff',
-                    urlencode($this->resource->homeTeam->name)
+                    'https://ui-avatars.com/api/?name=%s&background='. str_replace('#','',$this->resource->homeTeam?->colors['away']['primary']) ?: 'AFA' .'&color=fff',
+                    urlencode($this->resource->homeTeam?->name)
                 ),
             ],
             'away_team' => [
                 'id' => $this->resource->awayTeam?->id,
                 'name' => $this->resource->awayTeam?->name,
                 'image' => sprintf(
-                    'https://ui-avatars.com/api/?name=%s&background='. str_replace('#','',$this->resource->awayTeam->colors['away']['primary']) ?: 'AFA' .'&color=fff',
-                    urlencode($this->resource->awayTeam->name)
+                    'https://ui-avatars.com/api/?name=%s&background='. str_replace('#','',$this->resource->awayTeam?->colors['away']['primary']) ?: 'AFA' .'&color=fff',
+                    urlencode($this->resource->awayTeam?->name)
                 ),
             ],
             'location' => [

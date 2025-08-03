@@ -437,7 +437,7 @@ class GameController extends Controller
             },
             'gameEvent.player.user:id,name,last_name',
             'gameEvent.player.position:id,name',
-            'gameEvent.player.team:id,name,image',
+            'gameEvent.team:id,name,colors,image',
             'gameEvent.relatedPlayer.user:id,name,last_name',
         ]);
 

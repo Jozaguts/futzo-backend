@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\User;
 use App\Notifications\SendOTPNotification;
+use App\Notifications\SendOTPViaTwilioVerifyNotification;
 use Illuminate\Support\Facades\Notification;
 use Random\RandomException;
 
@@ -17,9 +18,7 @@ class UserObserver
     {
         if (!is_null($user->phone) && is_null($user->email)) {
             $phoneNumber = $user->phone;
-            $otp = $user->verification_token;
-
-            Notification::route('whatsapp', $phoneNumber)->notify(new SendOTPNotification($otp, $otp));
+            $user->notify(new SendOTPViaTwilioVerifyNotification($phoneNumber));
         }
     }
 

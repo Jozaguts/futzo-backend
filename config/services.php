@@ -46,5 +46,10 @@ return [
         'account_id' => env('WHATSAPP_ACCOUNT_ID', 3960924894160168),
         'url' => env('WHATSAPP_URL', 'https://graph.facebook.com/v22.0'),
     ],
-
+    'twilio' => [
+        'token' => env('TWILIO_AUTH_TOKEN'),
+        'sid' => env('TWILIO_SID'),
+        'number' => env('TWILIO_NUMBER'),
+        'verify_sid' =>env('TWILIO_VERIFY_SID'),
+    ],
 ];

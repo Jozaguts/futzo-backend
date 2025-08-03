@@ -42,7 +42,7 @@ class VerifyEmailRequest extends FormRequest
                 }
             })->first();
 
-            if (!$user || $user->verification_token !== $data['code']) {
+            if (!$user || ($user->verification_token !== $data['code'] && !empty($data['email']))) {
                 $validator->errors()->add('code', 'El código es inválido para este usuario.');
                 return;
             }

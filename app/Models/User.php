@@ -88,6 +88,12 @@ class User extends Authenticatable implements MustVerifyEmail, HasMedia
             get: fn() => "$this->name $this->last_name",
         );
     }
+    protected function image(): Attribute
+    {
+        return Attribute::make(
+            get:  fn ($value) => $value ?: 'https://ui-avatars.com/api/?name=' . urlencode($this->name)
+        );
+    }
 
     public function league(): BelongsTo
     {

@@ -37,8 +37,9 @@ class Team extends Model implements HasMedia
         'address' => 'array',
         'colors' => 'array'
     ];
+    protected $appends =['rgba_color'];
 
-    protected static function booted()
+    protected static function booted(): void
     {
         static::creating(static function ($team) {
             $team->colors = $team->colors ?? config('constants.colors');
@@ -50,6 +51,15 @@ class Team extends Model implements HasMedia
             get:  fn ($value) => $value ?: 'https://ui-avatars.com/api/?name=' . urlencode($this->name)
         );
     }
+    protected function rgbaColor() :Attribute
+    {
+
+        $data = hex2rgb($this->colors['home']['primary']);
+        return Attribute::make(
+            get:  static fn ($value) => $data
+        );
+    }
+
 
     public function defaultLineup(): HasOne
     {

@@ -17,7 +17,7 @@ class PlayerCollection extends ResourceCollection
 		return $this->collection
 			->map(fn($player) => [
 				'id' => $player->id,
-				'full_name' => $player->user->full_name,
+				'name' => $player->user->full_name,
 				'birthdate' => [
 					'date' => $player->birthdate->format('d-M-y'),
 					'age' => $player->birthdate->age
@@ -27,7 +27,7 @@ class PlayerCollection extends ResourceCollection
 					'name' => $player->user->roles->first()->name,
 				],
 				'nationality' => $player->nationality,
-				'image' => $player->user->image,
+				'image' => $player->user->hasMedia('image') ?  $player->user->getFirstMediaUrl('image','thumbnail') : $player->user->image,
 				'team' => [
 					'id' => $player->team?->id,
 					'name' => $player->team?->name,

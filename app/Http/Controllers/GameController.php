@@ -429,4 +429,18 @@ class GameController extends Controller
 
         return response()->json(['message' => 'Gol eliminado correctamente.']);
     }
+    public function getEvents(Game $game): JsonResponse
+    {
+        $game->load([
+            'gameEvent' => function ($query) {
+                $query->orderBy('minute', 'desc');
+            },
+            'gameEvent.player.user:id,name,last_name',
+            'gameEvent.player.position:id,name',
+            'gameEvent.player.team:id,name,image',
+            'gameEvent.relatedPlayer.user:id,name,last_name',
+        ]);
+
+        return response()->json($game->gameEvent);
+    }
 }

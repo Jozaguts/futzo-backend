@@ -11,6 +11,10 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 class DefaultLineup extends Model
 {
     use HasFactory;
+    protected $fillable = [
+        'team_id',
+        'formation_id',
+    ];
     public function team(): BelongsTo
     {
         return $this->belongsTo(Team::class);

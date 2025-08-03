@@ -14,6 +14,7 @@ use App\Http\Resources\TeamCollection;
 use App\Http\Resources\TeamResource;
 use App\Models\DefaultLineup;
 use App\Models\DefaultLineupPlayer;
+use App\Models\Formation;
 use App\Models\Game;
 use App\Models\Lineup;
 use App\Models\LineupPlayer;
@@ -65,6 +66,9 @@ class TeamsController extends Controller
         return new TeamResource($team);
     }
 
+    /**
+     * @throws \Throwable
+     */
     public function store(TeamStoreRequest $request): TeamResource|JsonResponse
     {
 
@@ -111,6 +115,10 @@ class TeamsController extends Controller
             $team->leagues()->attach($league_id);
             $team->categories()->attach($data['team']['category_id']);
             $team->tournaments()->attach($data['team']['tournament_id']);
+            $defaultFormation = Formation::first();
+            $team->defaultLineup()->create([
+                'formation_id' =>$defaultFormation->id,
+            ]);
             DB::commit();
             return new TeamResource($team);
         } catch (\Exception $e) {

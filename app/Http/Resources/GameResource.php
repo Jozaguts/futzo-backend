@@ -122,19 +122,13 @@ class GameResource extends JsonResource
             'home' => [
                 'id' => $this->resource->homeTeam->id,
                 'name' => $this->resource->homeTeam->name,
-                'image' => sprintf(
-                    'https://ui-avatars.com/api/?name=%s&background='.  str_replace('#','', $this->resource->homeTeam->colors['home']['primary']) ?: 'AFA'.'&color=fff',
-                    urlencode($this->resource->homeTeam->name)
-                ),
+                'image' => $this->resource->homeTeam->image,
                 'goals' => $this->resource->home_goals,
             ],
             'away' => [
                 'id' => $this->resource->awayTeam->id,
                 'name' => $this->resource->awayTeam->name,
-                'image' => sprintf(
-                    'https://ui-avatars.com/api/?name=%s&background='. str_replace('#','',$this->resource->awayTeam->colors['away']['primary']) ?: 'AFA' .'&color=fff',
-                    urlencode($this->resource->awayTeam->name)
-                ),
+                'image' => $this->resource->awayTeam->image,
                 'goals' => $this->resource->away_goals,
             ],
             'details' => [

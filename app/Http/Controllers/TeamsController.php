@@ -37,14 +37,17 @@ class TeamsController extends Controller
 
     public function index(Request $request): TeamCollection
     {
-        $teams = Team::
-        orderBy('teams.created_at', $request->get('sort', 'asc'))
+        $teams = Team::with(['tournaments' => fn($q) => $q->orderBy('name','desc')])
+//            ->
+//        orderBy('teams.created_at', $request->get('sort', 'asc'))
+
             ->paginate(
                 $request->get('per_page', 10),
                 ['*'],
                 'page',
                 $request->get('page', 1)
             );
+
         return new TeamCollection($teams);
     }
 

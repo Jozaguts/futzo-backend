@@ -182,9 +182,8 @@ class GameController extends Controller
     private function getOrCreateLineup(Game $game, int $teamId): Lineup
     {
         $lineup = Lineup::where('game_id', $game->id)->where('team_id', $teamId)->first();
-        $IS_HOME = $game->home_team_id === $teamId;
         if ($lineup) {
-            $lineup->setAttribute('team_color', $lineup->team->colors[$IS_HOME ? 'home':'away']['primary']);
+            $lineup->setAttribute('team_color', $lineup->team->colors['home']['primary']);
             return $lineup;
         }
 
@@ -233,7 +232,7 @@ class GameController extends Controller
                 );
             }
         }
-        $lineup->setAttribute('team_color', $lineup->team->colors[$IS_HOME ? 'home':'away']['primary']);
+        $lineup->setAttribute('team_color', $lineup->team->colors['home']['primary']);
         return $lineup;
     }
 

@@ -47,16 +47,15 @@ class Team extends Model implements HasMedia
     }
     protected function image(): Attribute
     {
+        $color = $this->colors['home']['primary'] === '#fff' ? '000' : 'fff';
         return Attribute::make(
-            get:  fn ($value) => $value ?: 'https://ui-avatars.com/api/?name=' . urlencode($this->name)
+            get:  fn ($value) => $value ?: 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&color='.$color.'&background=' . str_replace('#', '', $this->colors['home']['primary']),
         );
     }
     protected function rgbaColor() :Attribute
     {
-
-        $data = hex2rgb($this->colors['home']['primary']);
         return Attribute::make(
-            get:  static fn ($value) => $data
+            get:   fn ($value) => hex2rgb($this->colors['home']['primary'])
         );
     }
 

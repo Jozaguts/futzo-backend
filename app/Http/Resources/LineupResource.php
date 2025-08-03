@@ -47,7 +47,7 @@ class LineupResource extends JsonResource
             'team' => [
                 'id' => $this->resource->team_id,
                 'name' => $this->resource->team?->name ?? '',
-                'image' => $this->resource->team?->image ?: 'https://ui-avatars.com/api/?name=' . urlencode($this->resource->team?->name) . '&background=' . str_replace('#', '', $this->resource->team_color),
+                'image' => $this->resource->team?->image,
             ],
             'players' => $this->resource
                 ->lineupPlayers()

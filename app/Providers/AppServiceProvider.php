@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Broadcasting\WhatsAppChannel;
 use App\Models\User;
+use App\Notifications\Channels\TwilioVerifyChannel;
 use Carbon\Carbon;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -39,6 +40,9 @@ class AppServiceProvider extends ServiceProvider
 
         Notification::extend('whatsapp', function ($app) {
             return new WhatsAppChannel;
+        });
+        Notification::extend('twilio_verify', function ($app) {
+            return new TwilioVerifyChannel;
         });
     }
 }

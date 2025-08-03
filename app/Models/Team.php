@@ -15,7 +15,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
-
+use Illuminate\Database\Eloquent\Casts\Attribute;
 #[ScopedBy(\App\Scopes\LeagueScope::class)]
 class Team extends Model implements HasMedia
 {
@@ -43,6 +43,12 @@ class Team extends Model implements HasMedia
         static::creating(static function ($team) {
             $team->colors = $team->colors ?? config('constants.colors');
         });
+    }
+    protected function image(): Attribute
+    {
+        return Attribute::make(
+            get:  fn ($value) => $value ?: 'https://ui-avatars.com/api/?name=' . urlencode($this->name)
+        );
     }
 
     public function defaultLineup(): HasOne

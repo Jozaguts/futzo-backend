@@ -33,3 +33,18 @@ if (!function_exists('checkFolderPermissions')) {
         return true;
     }
 }
+if(!function_exists('hex2rgb')){
+    function hex2rgb ( $hex_color ): false|array
+    {
+        $values = str_replace( '#', '', $hex_color );
+        switch ( strlen( $values ) ) {
+            case 3;
+                [$r, $g, $b] = sscanf($values, "%1s%1s%1s");
+                return [ hexdec( "$r$r" ), hexdec( "$g$g" ), hexdec( "$b$b" ) ];
+            case 6;
+                return array_map( 'hexdec', sscanf( $values, "%2s%2s%2s" ) );
+            default:
+                return false;
+        }
+    }
+}

@@ -438,6 +438,7 @@ class GameController extends Controller
             'gameEvent.player.position:id,name',
             'gameEvent.team:id,name,colors,image',
             'gameEvent.relatedPlayer.user:id,name,last_name',
+            'gameEvent.relatedPlayer.position:id,name',
         ]);
 
         return response()->json($game->gameEvent);

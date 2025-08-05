@@ -594,7 +594,6 @@ class TeamsController extends Controller
             ->first();
 
         if ($olDLineupPlayer) {
-            $olDLineupPlayer->field_location = null;
             $olDLineupPlayer->is_headline = false;
             $olDLineupPlayer->player_id = $lineupPlayer->player_id;
             $olDLineupPlayer->save();

@@ -11,9 +11,8 @@ use App\Models\Formation;
 use App\Models\Game;
 use App\Models\GameEvent;
 use App\Models\Lineup;
-use App\Models\LineupPlayer;
 use App\Models\Substitution;
-use App\Models\Team;
+use App\Traits\LineupTrait;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -22,6 +21,7 @@ class GameController extends Controller
 {
     public const int TWO_HOURS = 120;
     public const int ONE_HOUR = 60;
+    use LineupTrait;
 
     public function show(int $gameId): GameResource
     {
@@ -182,57 +182,31 @@ class GameController extends Controller
     private function getOrCreateLineup(Game $game, int $teamId): Lineup
     {
         $lineup = Lineup::where('game_id', $game->id)->where('team_id', $teamId)->first();
-        if ($lineup) {
+
+        if (!is_null($lineup)) {
             $lineup->setAttribute('team_color', $lineup->team->colors['home']['primary']);
+            if ($lineup->lineupPlayers->isEmpty()) {
+                $this->initDefaultLineupPlayers($lineup);
+            }
             return $lineup;
         }
 
-        $defaultLineup = DefaultLineup::where('team_id', $teamId)->with('defaultLineupPlayers')->first();
-
-        $formation = $defaultLineup?->formation;
-
-        // Crear la lineup vacía
-        $lineup = Lineup::create([
-            'game_id' => $game->id,
-            'team_id' => $teamId,
-            'formation_id' => $formation?->id,
-            'default_lineup_id' => $defaultLineup?->id,
-            'round' => $game->round,
-        ]);
-        $players = Team::findOrFail($teamId)->players;
-        $players->map(fn($player, $key) => $lineup->lineupPlayers()->save(
-            LineupPlayer::updateOrCreate([
-                'lineup_id' => $lineup->id,
-                'player_id' => $player->id,
-            ], [
-                'is_headline' => false,
-                'field_location' => null,
-                'substituted' => false,
-                'goals' => 0,
-                'yellow_card' => false,
-                'red_card' => false,
-                'doble_yellow_card' => false,
-            ])
-        ));
-        if ($defaultLineup) {
-            foreach ($defaultLineup->defaultLineupPlayers as $data) {
-                $lineup->lineupPlayers()->save(
-                    LineupPlayer::updateOrCreate([
-                        'lineup_id' => $lineup->id,
-                        'player_id' => $data->player_id,
-                    ], [
-                        'is_headline' => false,
-                        'field_location' => $data->field_location,
-                        'substituted' => false,
-                        'goals' => 0,
-                        'yellow_card' => false,
-                        'red_card' => false,
-                        'doble_yellow_card' => false,
-                    ])
-                );
-            }
+        $defaultLineup = DefaultLineup::where('team_id', $teamId)
+            ->with(['defaultLineupPlayers','formation'])
+            ->first();
+        if (!is_null($defaultLineup)) {
+            // create or update the lineup for the specific team in the specific game
+            $lineup = Lineup::updateOrCreate([
+                'game_id' => $game->id,
+                'team_id' => $teamId,
+            ],[
+                'formation_id' => $defaultLineup->formation->id,
+                'default_lineup_id' => $defaultLineup->id,
+                'round' => $game->round,
+            ]);
+            $lineup->setAttribute('team_color', $lineup->team->colors['home']['primary']);
+            $this->initDefaultLineupPlayers($lineup);
         }
-        $lineup->setAttribute('team_color', $lineup->team->colors['home']['primary']);
         return $lineup;
     }
 

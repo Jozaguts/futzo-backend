@@ -8,6 +8,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class LineupResource extends JsonResource
 {
+
     private array $positions = [
         'goalkeeper' => 1,
         'defenses' => [2,3,4,5],
@@ -17,7 +18,8 @@ class LineupResource extends JsonResource
 
     public function toArray(Request $request): array
     {
-        $formation = $this->resource->formation; // resource means Lineup model
+        // resource means Lineup model
+        $formation = $this->resource->formation;
 
         // Si no hay formación, devolvemos campos vacíos
         if (!$formation) {
@@ -31,16 +33,27 @@ class LineupResource extends JsonResource
             ];
         }
 
-        // Asignamos rangos de posición en base a la formación
-        $this->positions['defenses'] = range(2, $formation->defenses + 1);
+         /**  according to the formation value indicates, we assign the ranges of locations for each type of position
+          * * |1|  the first location has to be for the goalkeeper
+          * * |2| |3| |4| |5|  defenses
+          * * |6| |7| |8| |9| midfielders
+          * * |10| |11|  forwards
+          * * so, the goalkeeper is position 1, we need to start in the position 2 and ranged the amount of spaces that the formation indicates E.G.
+          * if teh formation is 4 - 4 - 2 the defenses need 4 spaces starting in the 2 and move $formation->defenses plus 1
+          * the result of that is 'defenses' => [2,3,4,5], the same is for midfielders and forwards
+          * for the 4-4-2 formation the result of range each position its go to be
+          * $positions = [ 'goalkeeper' => 1, 'defenses' => [2,3,4,5], 'midfielders' => [6, 7, 8, 9], 'forwards' => [10,11] ];
+        * */
+
+        $this->positions['defenses'] = range(2, $formation->defenses + 1); // for 4-4-4 the result is: [2,3,4,5]
         $this->positions['midfielders'] = range(
             $formation->defenses + 2,
             $formation->defenses + $formation->midfielders + 1
-        );
+        );  // for 4-4-4 the result is: [6, 7, 8, 9]
         $this->positions['forwards'] = range(
             $formation->defenses + $formation->midfielders + 2,
             $formation->defenses + $formation->midfielders + $formation->forwards + 1
-        );
+        ); // for 4-4-2 the result is:  [10,11]
 
         return [
             'team_id' => $this->resource->team_id,
@@ -62,7 +75,8 @@ class LineupResource extends JsonResource
                         'number' => $lnp->player->number,
                         'position' => $lnp->player->position?->abbr ?? '',
                     ];
-                })->values(),
+                })
+                ->values(),
             'name' => $formation->name,
             'goalkeeper' => $this->fillPlayers(
                 $this->transformPlayers($this->positions['goalkeeper']),

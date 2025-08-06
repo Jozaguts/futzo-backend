@@ -16,6 +16,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Builder;
 #[ScopedBy(\App\Scopes\LeagueScope::class)]
 class Team extends Model implements HasMedia
 {
@@ -37,7 +38,7 @@ class Team extends Model implements HasMedia
         'address' => 'array',
         'colors' => 'array'
     ];
-    protected $appends =['rgba_color'];
+    protected $appends = ['rgba_color'];
 
     protected static function booted(): void
     {
@@ -45,23 +46,27 @@ class Team extends Model implements HasMedia
             $team->colors = $team->colors ?? config('constants.colors');
         });
     }
+
     protected function image(): Attribute
     {
         $color = '000';
         $background = 'fff';
-        if (isset($this->colors['home']['primary'])){
+        if (isset($this->colors['home']['primary'])) {
             $color = $this->colors['home']['primary'] === '#fff' ? '000' : 'fff';
             $background = str_replace('#', '', $this->colors['home']['primary']);
         }
 
         return Attribute::make(
-            get:  fn ($value) => $value ?: 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&color='.$color.'&background='.$background
+            get: fn($value
+            ) => $value ?: 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&color=' . $color . '&background=' . $background
         );
     }
-    protected function rgbaColor() :Attribute
+
+    protected function rgbaColor(): Attribute
     {
+        $color = $this->colos['home']['primary'] ?? '#fff';
         return Attribute::make(
-            get:   fn ($value) => hex2rgb($this->colors['home']['primary'])
+            get: static fn($value) => hex2rgb($color)
         );
     }
 
@@ -70,6 +75,7 @@ class Team extends Model implements HasMedia
     {
         return $this->hasOne(DefaultLineup::class);
     }
+
     public function lineup(): HasOne
     {
         return $this->hasOne(Lineup::class);
@@ -112,7 +118,7 @@ class Team extends Model implements HasMedia
         return $this->belongsToMany(Category::class)->using(CategoryTeam::class);
     }
 
-    public function category()
+    public function category(): Model|Category|null
     {
         return $this->categories()->first();
     }
@@ -131,8 +137,27 @@ class Team extends Model implements HasMedia
                     ->height(400);
             });
     }
+
     public function teamEvents(): HasMany
     {
         return $this->hasMany(GameEvent::class);
+    }
+
+    public function homeGames(): HasMany
+    {
+        return $this->hasMany(Game::class, 'home_team_id');
+    }
+
+    public function awayGames(): HasMany
+    {
+        return $this->hasMany(Game::class, 'away_team_id');
+    }
+
+    public function games(): Builder
+    {
+        return Game::query()->where(function ($query) {
+            $query->where('home_team_id', $this->id)
+                ->orWhere('away_team_id', $this->id);
+        });
     }
 }

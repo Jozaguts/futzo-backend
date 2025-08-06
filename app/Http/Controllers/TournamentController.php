@@ -246,7 +246,7 @@ class TournamentController extends Controller
             ->where('round', $roundId)
             ->update(['status' => $status]);
 
-        return response()->json(['message', 'Estado de partido actulizado correctamente']);
+        return response()->json(['message', 'Estado de partido actualizado correctamente']);
     }
 
     public function fields(Tournament $tournament): AnonymousResourceCollection

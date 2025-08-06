@@ -9,6 +9,7 @@ use App\Http\Requests\ImportTeamsRequest;
 use App\Http\Requests\TeamStoreRequest;
 use App\Http\Requests\TeamUpdateRequest;
 use App\Http\Resources\DefaultLineupResource;
+use App\Http\Resources\LastGamesCollection;
 use App\Http\Resources\NextGamesCollection;
 use App\Http\Resources\TeamCollection;
 use App\Http\Resources\TeamResource;
@@ -25,12 +26,14 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use JsonException;
 use Maatwebsite\Excel\Facades\Excel;
 use PhpOffice\PhpSpreadsheet\Exception;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Throwable;
 
 class TeamsController extends Controller
 {
@@ -38,9 +41,6 @@ class TeamsController extends Controller
     public function index(Request $request): TeamCollection
     {
         $teams = Team::with(['tournaments' => fn($q) => $q->orderBy('name','desc')])
-//            ->
-//        orderBy('teams.created_at', $request->get('sort', 'asc'))
-
             ->paginate(
                 $request->get('per_page', 10),
                 ['*'],
@@ -57,10 +57,6 @@ class TeamsController extends Controller
         return new TeamCollection($teams);
     }
 
-    /**
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
-     */
     public function show($id): TeamResource
     {
         $team = request()->boolean('by_slug')
@@ -70,7 +66,7 @@ class TeamsController extends Controller
     }
 
     /**
-     * @throws \Throwable
+     * @throws Throwable
      */
     public function store(TeamStoreRequest $request): TeamResource|JsonResponse
     {
@@ -241,7 +237,7 @@ class TeamsController extends Controller
     }
 
     /**
-     * @throws \Throwable
+     * @throws Throwable
      */
     public function import(ImportTeamsRequest $request): ?JsonResponse
     {
@@ -319,7 +315,7 @@ class TeamsController extends Controller
     }
 
     /**
-     * @throws \JsonException
+     * @throws JsonException
      */
     private function storeTeamFromRow($row, $tournament): void
     {
@@ -395,7 +391,7 @@ class TeamsController extends Controller
     }
 
     /**
-     * @throws \JsonException
+     * @throws JsonException
      */
     private function normalizeAddress($value)
     {
@@ -503,13 +499,25 @@ class TeamsController extends Controller
     {
         $limit = $request->get('limit', 3);
         $nextGames = Game::where('away_team_id',$team->id)
-            ->with(['homeTeam', 'homeTeam'])
             ->orWhere('home_team_id', $team->id)
             ->whereIn('status', ['programado', 'aplazado'])
-            ->orderBy('match_date')
+            ->with(['homeTeam', 'homeTeam'])
+            ->orderBy('match_date','asc')
             ->limit($limit)
             ->get();
         return new NextGamesCollection($nextGames);
+    }
+    public function lastGames(Request $request, Team $team): LastGamesCollection
+    {
+        $limit = $request->input('limit', 3);
+        $orderBy = $request->input('order','asc');
+        $nextGames = $team->games()
+            ->with(['homeTeam:id,name,image', 'awayTeam:id,name,image','location:id,name','field:id,name'])
+            ->whereIn('status', [Game::STATUS_COMPLETED, Game::STATUS_CANCELED, Game::STATUS_POSTPONED])
+            ->orderBy('match_date',$orderBy)
+            ->limit($limit)
+            ->get();
+        return new LastGamesCollection($nextGames);
     }
     public function addDefaultLineupPlayer(Request $request, Team $team): JsonResponse
     {

@@ -16,12 +16,14 @@ class NextGamesResource extends JsonResource
             'home_team' => [
                 'id' => $this->resource->homeTeam?->id,
                 'name' => $this->resource->homeTeam?->name,
-                'image' => $this->resource->homeTeam?->image
+                'image' => $this->resource->homeTeam?->image,
+                'goals' => $this->resource->home_goals,
             ],
             'away_team' => [
                 'id' => $this->resource->awayTeam?->id,
                 'name' => $this->resource->awayTeam?->name,
-                'image' => $this->resource->awayTeam?->image
+                'image' => $this->resource->awayTeam?->image,
+                'goals' => $this->resource->away_goals,
             ],
             'location' => [
                 'id' => $this->resource->location?->id,

@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('teams')->group(function () {
     Route::post('{team}/players/{player}/assign', [TeamsController::class, 'assignPlayer']);
     Route::get('{team}/next-games', [TeamsController::class, 'nextGames']);
+    Route::get('{team}/last-games', [TeamsController::class, 'lastGames']);
     Route::get('{team}/formation', [TeamsController::class, 'formation']);
     Route::get('{team}/available-players', [TeamsController::class, 'getDefaultLineupAvailableTeamPlayers']);
     Route::get('list', [TeamsController::class, 'list']);

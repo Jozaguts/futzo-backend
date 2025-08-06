@@ -226,14 +226,16 @@ class TournamentController extends Controller
         $data = $request->validated();
         $matches = $data['matches'];
         foreach ($matches as $match) {
-            $tournament->schedules()
+            $game = $tournament->games()
                 ->where('round', $roundId)
                 ->where('id', $match['id'])
-                ->update([
-                    'home_goals' => $match['home']['goals'],
-                    'away_goals' => $match['away']['goals'],
-                    'status' => Game::STATUS_COMPLETED
-                ]);
+                ->first();
+            if ($game){
+                $game->home_goals = $match['home']['goals'];
+                $game->away_goals = $match['away']['goals'];
+                $game->status = Game::STATUS_COMPLETED;
+                $game->save(); // ← this will trigger GameObserver::updating / updated / saving / saved
+            }
         }
         return response()->json(['message' => 'Partido actualizado correctamente']);
     }

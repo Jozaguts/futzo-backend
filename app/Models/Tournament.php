@@ -131,11 +131,6 @@ class Tournament extends Model implements HasMedia
             ->whereNull('location_tournament.deleted_at');
     }
 
-    public function schedules(): HasMany
-    {
-        return $this->hasMany(Game::class);
-    }
-
     public function tournamentFields(): HasMany
     {
         return $this->hasMany(TournamentField::class);

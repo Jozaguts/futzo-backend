@@ -16,6 +16,7 @@ use App\Traits\LineupTrait;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class GameController extends Controller
 {
@@ -404,6 +405,44 @@ class GameController extends Controller
     }
     public function getEvents(Game $game): JsonResponse
     {
+        $goalEvents = $game->gameEvent()
+            ->whereIn('type', [GameEvent::GOAL, GameEvent::PENALTY, GameEvent::OWN_GOAL])
+            ->orderBy('minute')
+            ->get();
+        $homeTeamId = $game->home_team_id;
+        $awayTeam = $game->awayTeam->only(['id','name']);
+
+        $goalCountByMinute = [];
+
+        $homeGoals = 0;
+        $awayGoals = 0;
+
+        foreach ($goalEvents as $event) {
+            $minute = $event->minute;
+            $type = $event->type;
+            $teamId = $event->team_id;
+
+            $isOwnGoal = $type === GameEvent::OWN_GOAL;
+
+            // Increment goal for the correct team
+            if ($isOwnGoal) {
+                if ($teamId === $homeTeamId) {
+                    $awayGoals++;
+                } else {
+                    $homeGoals++;
+                }
+            } elseif ($teamId === $homeTeamId) {
+                $homeGoals++;
+            } else {
+                $awayGoals++;
+            }
+
+            // Save the score snapshot at this minute
+            $goalCountByMinute[$minute] = [
+                'home' => $homeGoals,
+                'away' => $awayGoals,
+            ];
+        }
         $game->load([
             'gameEvent' => function ($query) {
                 $query->orderBy('minute', 'desc');
@@ -414,6 +453,27 @@ class GameController extends Controller
             'gameEvent.relatedPlayer.user:id,name,last_name',
             'gameEvent.relatedPlayer.position:id,name',
         ]);
+        $game->gameEvent->each(function ($event) use ($goalCountByMinute, $awayTeam) {
+            if (in_array($event->type, [GameEvent::GOAL, GameEvent::PENALTY, GameEvent::OWN_GOAL])) {
+                $event->setAttribute('away_team', $awayTeam);
+                $minute = $event->minute;
+                // Find the most recent minute ≤ current event
+                $availableMinutes = array_filter(array_keys($goalCountByMinute), fn($m) => $m <= $minute);
+                $closestMinute = !empty($availableMinutes) ? max($availableMinutes) : null;
+
+                if ($closestMinute !== null) {
+                    $snapshot = $goalCountByMinute[$closestMinute];
+                    // Assign both home and away goals to the event
+                    $event->setAttribute('home_goals_at', $snapshot['home']);
+                    $event->setAttribute('away_goals_at', $snapshot['away']);
+                } else {
+                    $event->setAttribute('home_goals_at', 0);
+                    $event->setAttribute('away_goals_at', 0);
+                }
+            }
+        });
+
+
 
         return response()->json($game->gameEvent);
     }

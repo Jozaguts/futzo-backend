@@ -477,4 +477,10 @@ class GameController extends Controller
 
         return response()->json($game->gameEvent);
     }
+    public function markAsComplete(Game $game): JsonResponse
+    {
+        $game->update(['status' => Game::STATUS_COMPLETED]);
+
+        return response()->json(['message' => 'Partido actualizado correctamente.']);
+    }
 }

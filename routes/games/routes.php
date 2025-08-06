@@ -20,4 +20,5 @@ Route::prefix('games')
         Route::delete('{game}/substitutions/{substitution}', [GameController::class, 'destroySubstitution'])->name('substitutions.destroy');
         Route::delete('{game}/game-event/{gameEvent}/card', [GameController::class, 'destroyCardGameEvent'])->name('cardGameEvent.destroy');
         Route::delete('{game}/game-event/{gameEvent}/goal', [GameController::class, 'destroyGoalGameEvent'])->name('goalGameEvent.destroy');
+        Route::patch('{game}/complete', [GameController::class, 'markAsComplete'])->name('markAsComplete');
     });

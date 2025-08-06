@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Observers\GameObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Sluggable\SlugOptions;
 
+#[ObservedBy([GameObserver::class])]
 class Game extends Model
 {
     use HasFactory, SoftDeletes;
@@ -46,14 +49,16 @@ class Game extends Model
         'match_time' => 'datetime:H:i:s',
 
     ];
+
     public function getSlugOptions(): SlugOptions
     {
         return SlugOptions::create()
-            ->generateSlugsFrom(function(Game $game) {
+            ->generateSlugsFrom(function (Game $game) {
                 return $game->homeTeam->name . ' vs ' . $game->awayTeam->name . ' - ' . $game->match_date->format('Y-m-d');
             })
             ->saveSlugsTo('slug');
     }
+
     protected function matchTime(): Attribute
     {
         return Attribute::make(
@@ -64,7 +69,10 @@ class Game extends Model
     protected function matchDateToString(): Attribute
     {
         return Attribute::make(
-            get: fn($value, $attributes) => $attributes['match_date'] ? \Carbon\Carbon::parse($attributes['match_date'])->translatedFormat('D d M y') : null,
+            get: fn(
+                $value,
+                $attributes
+            ) => $attributes['match_date'] ? \Carbon\Carbon::parse($attributes['match_date'])->translatedFormat('D d M y') : null,
         );
     }
 
@@ -107,10 +115,12 @@ class Game extends Model
     {
         return $this->belongsTo(TournamentPhase::class, 'tournament_phase_id');
     }
+
     public function lineups(): HasMany|Game
     {
         return $this->hasMany(Lineup::class);
     }
+
     public function homeLineups()
     {
         return $this->hasMany(Lineup::class)->where('team_id', $this->home_team_id);
@@ -125,6 +135,7 @@ class Game extends Model
     {
         return $this->hasMany(Substitution::class);
     }
+
     public function gameEvent(): HasMany
     {
         return $this->hasMany(GameEvent::class);

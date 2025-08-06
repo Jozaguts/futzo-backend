@@ -22,6 +22,7 @@ class LastGamesCollection extends ResourceCollection
            'location' => $game->location,
            'field' => $game->field,
            'winner_team_id' =>  $game->winner_team_id,
+           'round' => $game->round,
        ])->toArray();
     }
 }

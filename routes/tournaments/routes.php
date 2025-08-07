@@ -2,13 +2,14 @@
 
 use App\Http\Controllers\TournamentController;
 use Illuminate\Support\Facades\Route;
+use function Pest\Laravel\get;
 
 
 Route::prefix('tournaments')->group(function () {
     Route::get('', [TournamentController::class, 'index']);
     Route::post('', [TournamentController::class, 'store'])->withoutMiddleware('auth:sanctum');
-
     Route::get('{tournament}/schedule/settings', [TournamentController::class, 'scheduleSettings']);
+    Route::get('{tournament}/schedule/rounds/{round}/export', [TournamentController::class, 'exportTournamentRoundScheduleAs']);
     Route::get('{tournament}/schedule', [TournamentController::class, 'getTournamentSchedule']);
     Route::post('{tournament}/schedule', [TournamentController::class, 'schedule']);
     Route::get('{tournament}/locations', [TournamentController::class, 'getTournamentLocations']);
@@ -21,4 +22,5 @@ Route::prefix('tournaments')->group(function () {
     Route::put('{tournament}', [TournamentController::class, 'update']);
     Route::post('{tournament}/rounds/{roundId}', [TournamentController::class, 'updateTournamentRound']);
     Route::put('{tournament}/schedule/rounds/{roundId}', [TournamentController::class, 'updateGameStatus']);
+
 });

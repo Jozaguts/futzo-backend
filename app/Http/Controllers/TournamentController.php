@@ -261,4 +261,12 @@ class TournamentController extends Controller
                 ]
             ]);
     }
+    public function exportTournamentRoundScheduleAs(Request $request, int $tournamentId, int $roundId)
+    {
+      return Game::where('tournament_id', $tournamentId)
+          ->where('round', $roundId)
+          ->get();
+
+
+    }
 }

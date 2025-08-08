@@ -18,5 +18,13 @@ Route::get('/', function () {
     'message' => 'Welcome to '. env('APP_NAME').' API'
   ]);
 });
+Route::get('template', static function () {
+$games = \App\Models\Game::with(['homeTeam', 'awayTeam'])
+    ->limit(10)
+    ->get();
+    return view('exports.pdf.default',[
+        'matches' => $games
+    ]);
+});
 require __DIR__.'/auth.php';
 require __DIR__.'/auth/routes.php';

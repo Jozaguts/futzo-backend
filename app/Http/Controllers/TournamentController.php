@@ -82,9 +82,12 @@ class TournamentController extends Controller
         return response()->json($tournament, 201);
     }
 
-    public function show(Tournament $tournament): TournamentResource
+    public function show($tournament): TournamentResource
     {
-        $tournament->loadCount('teams', 'players', 'games');
+        $tournament = Tournament::where('id', $tournament)
+            ->orWhere('slug', $tournament)
+            ->with(['teams', 'players', 'games'])
+            ->firstOrFail();
         return new TournamentResource($tournament);
     }
 
@@ -311,12 +314,14 @@ class TournamentController extends Controller
         }
         return $exportable;
     }
-    public function getStandingTableData(Tournament $tournament)
+    public function getStandings(Tournament $tournament)
     {
-       return $tournament->teams->each(function($team){
-           return [
-             'position'
-           ];
-        })->toArray();
+       return $tournament
+           ->standings()
+           ->where('tournament_phase_id', $tournament->activePhase()->id)
+           ->with('team')
+           ->orderBy('rank')
+           ->get()
+           ->toArray();
     }
 }

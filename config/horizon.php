@@ -199,6 +199,7 @@ return [
         'production' => [
             'supervisor-1' => [
                 'maxProcesses' => 10,
+                'queue' => ['default', 'standings'],
                 'balanceMaxShift' => 1,
                 'balanceCooldown' => 3,
             ],
@@ -207,6 +208,11 @@ return [
         'local' => [
             'supervisor-1' => [
                 'maxProcesses' => 3,
+                'connection' => 'redis',
+                'queue' => ['default', 'standings'],  // <-- agrega 'standings' aquí
+                'balance' => 'simple',
+                'processes' => 1,
+                'tries' => 3,
             ],
         ],
     ],

@@ -160,4 +160,8 @@ class Team extends Model implements HasMedia
                 ->orWhere('away_team_id', $this->id);
         });
     }
+    public function standings(): HasMany
+    {
+        return $this->hasMany(Standing::class);
+    }
 }

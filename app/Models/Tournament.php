@@ -84,6 +84,10 @@ class Tournament extends Model implements HasMedia
             'phase_id'       // FK en tournament_phases
         );
     }
+    public function activePhase(): TournamentPhase|Tournament|null
+    {
+        return $this->tournamentPhases()->where('is_active', 1)->first();
+    }
 
     public function configuration(): HasOne
     {
@@ -154,5 +158,9 @@ class Tournament extends Model implements HasMedia
                     ->width(400)
                     ->height(400);
             });
+    }
+    public function standings(): HasMany
+    {
+        return $this->hasMany(Standing::class);
     }
 }

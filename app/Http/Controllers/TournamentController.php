@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\DTO\TournamentDTO;
 use App\Events\TournamentCreatedEvent;
+use App\Exports\RoundExport;
 use App\Http\Requests\CreateTournamentScheduleRequest;
 use App\Http\Requests\TournamentStoreRequest;
 use App\Http\Requests\TournamentUpdateRequest;
@@ -24,13 +25,14 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 use Spatie\MediaLibrary\MediaCollections\Exceptions\FileDoesNotExist;
 use Spatie\MediaLibrary\MediaCollections\Exceptions\FileIsTooBig;
 
 class TournamentController extends Controller
 {
-
-
+    const string IMG_EXPORT_TYPE = 'img';
+    const string XSL_EXPORT_TYPE = 'excel';
     public function index(Request $request): TournamentCollection
     {
 
@@ -268,7 +270,8 @@ class TournamentController extends Controller
      */
     public function exportTournamentRoundScheduleAs(Request $request, Tournament $tournament, int $round)
     {
-       $games = Game::where('tournament_id', $tournament->id)
+        $type = $request->query('type');
+        $games = Game::where('tournament_id', $tournament->id)
            ->with([
                'homeTeam:id,name,image',
                'awayTeam:id,name,image',
@@ -277,20 +280,35 @@ class TournamentController extends Controller
            ->where('round', $round)
            ->get();
         $league = $tournament?->league;
-        $html = view('exports.image.default',[
-            'games' => $games,
-            'tournament' => $tournament,
-            'round' => $round,
-            'league' => $league
-        ])->render();
+        $exportable = null;
+       if ($type === self::IMG_EXPORT_TYPE){
 
-        return SnappyImage::loadHTML($html)
-            ->setOption('width', 794)
-            ->setOption('height', 1123)
-            ->setOption('format', 'jpg')
-            ->setOption('quality', 100)
-            ->setOption('encoding', 'UTF-8')
-            ->setOption('enable-local-file-access', true)
-            ->download("jornada-$round-torneo-$tournament->slug.jpg");
+           $html = view('exports.image.default',[
+               'games' => $games,
+               'tournament' => $tournament,
+               'round' => $round,
+               'league' => $league
+           ])->render();
+
+           $exportable =  SnappyImage::loadHTML($html)
+               ->setOption('width', 794)
+               ->setOption('height', 1123)
+               ->setOption('format', 'jpg')
+               ->setOption('quality', 100)
+               ->setOption('encoding', 'UTF-8')
+               ->setOption('enable-local-file-access', true)
+               ->download("jornada-$round-torneo-$tournament->slug.jpg");
+       }
+        if ($type === self::XSL_EXPORT_TYPE){
+            sleep(2);
+            $games = $games->map(function($game){
+                return [
+                    $game->homeTeam->name, $game->match_time, $game->awayTeam->name,
+                ];
+            })->toArray();
+            $export = new RoundExport($games, $round, $league->name,$tournament->name);
+            $exportable =  Excel::download($export,"jornada-$round-torneo-$tournament->slug.xlsx");
+        }
+        return $exportable;
     }
 }

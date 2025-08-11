@@ -7,6 +7,9 @@ use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithStyles;
+use PhpOffice\PhpSpreadsheet\Exception;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class PlayersInstructionsSheet implements FromCollection, WithTitle, WithColumnWidths, WithStyles
@@ -52,19 +55,22 @@ class PlayersInstructionsSheet implements FromCollection, WithTitle, WithColumnW
         ];
     }
 
-    public function styles(Worksheet $sheet): array
+    /**
+     * @throws Exception
+     */
+    public function styles(Worksheet $sheet): void
     {
         $sheet->mergeCells('A1:D1');
 
         $sheet->getStyle('A1')->applyFromArray([
             'font' => ['bold' => true],
             'alignment' => [
-                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
-                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
                 'wrapText' => true,
             ],
             'fill' => [
-                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'fillType' => Fill::FILL_SOLID,
                 'startColor' => ['rgb' => 'FFFACD'],
             ],
         ]);
@@ -72,12 +78,12 @@ class PlayersInstructionsSheet implements FromCollection, WithTitle, WithColumnW
         $sheet->getStyle('A3:D4')->applyFromArray([
             'font' => ['bold' => true],
             'alignment' => [
-                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
-                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
                 'wrapText' => true,
             ],
             'fill' => [
-                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'fillType' => Fill::FILL_SOLID,
                 'startColor' => ['rgb' => 'FFFACD'],
             ],
         ]);
@@ -85,18 +91,17 @@ class PlayersInstructionsSheet implements FromCollection, WithTitle, WithColumnW
         $sheet->getStyle('A6:D6')->applyFromArray([
             'font' => ['bold' => true],
             'alignment' => [
-                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
-                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
                 'wrapText' => true,
             ],
             'fill' => [
-                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'fillType' => Fill::FILL_SOLID,
                 'startColor' => ['rgb' => 'FFFACD'],
             ],
         ]);
         $sheet->getRowDimension(1)->setRowHeight(60);
         $sheet->getStyle('A8:D8')->getFont()->setBold(true);
 
-        return [];
     }
 }

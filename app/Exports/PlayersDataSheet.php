@@ -21,7 +21,7 @@ class PlayersDataSheet implements FromCollection, WithTitle, WithColumnWidths, W
                 'teléfono',
                 'fecha_nacimiento',
                 'nacionalidad',
-                'posicion',
+                'posición',
                 'numero',
                 'altura',
                 'peso',

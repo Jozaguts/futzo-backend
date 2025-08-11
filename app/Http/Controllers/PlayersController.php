@@ -2,25 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Events\RegisteredTeamCoach;
-use App\Events\RegisteredTeamPresident;
 use App\Exports\PlayersTemplateExport;
 use App\Http\Requests\PlayerStoreRequest;
 use App\Http\Requests\PlayerUpdateRequest;
-use App\Http\Requests\StoreUserRequest;
-use App\Http\Requests\TeamStoreRequest;
 use App\Http\Resources\PlayerCollection;
-use App\Imports\PlayersImport;
 use App\Models\Player;
 use App\Models\Position;
 use App\Models\Team;
-use App\Models\Tournament;
-use App\Models\User;
 use App\Services\Builders\PlayerBuilder;
 use App\Services\PlayerService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use PhpOffice\PhpSpreadsheet\Exception;
 use PhpOffice\PhpSpreadsheet\IOFactory;

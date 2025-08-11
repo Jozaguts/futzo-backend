@@ -166,6 +166,24 @@ class StandingsService
      */
     protected function recalculateRanks(int $tournamentId, ?int $tournamentPhaseId = null): void
     {
+        $tiebreakers = DB::table('tournament_tiebreakers')
+            ->join('tournament_configurations', 'tournament_configurations.id', '=', 'tournament_tiebreakers.tournament_configuration_id')
+            ->where('tournament_configurations.tournament_id', $tournamentId)
+            ->where('tournament_tiebreakers.is_active', 1)
+            ->orderBy('tournament_tiebreakers.priority')
+            ->pluck('tournament_tiebreakers.rule')
+            ->toArray();
+
+        $orderMap = [
+            'Puntos'                  => ['points', 'desc'],
+            'Diferencia de goles'     => ['goal_difference', 'desc'],
+            'Goles a favor'           => ['goals_for', 'desc'],
+            'Goles en contra'         => ['goals_against', 'asc'],
+            'Resultado entre equipos' => 'head_to_head',
+            'Sorteo'                  => null,
+        ];
+
+        // Query base
         $query = Standing::where('tournament_id', $tournamentId);
         if (is_null($tournamentPhaseId)) {
             $query->whereNull('tournament_phase_id');
@@ -173,34 +191,120 @@ class StandingsService
             $query->where('tournament_phase_id', $tournamentPhaseId);
         }
 
-        $rows = $query
-            ->orderByDesc('points')
-            ->orderByDesc('goal_difference')
-            ->orderByDesc('goals_for')
-            ->orderBy('fair_play_points') // lower is better
-            ->get();
+        // Aplicar solo reglas directas (antes de head-to-head)
+        foreach ($tiebreakers as $rule) {
+            if (!isset($orderMap[$rule])) continue;
+            if ($orderMap[$rule] === null || $orderMap[$rule] === 'head_to_head') continue;
+            [$col, $dir] = $orderMap[$rule];
+            $query->orderBy($col, $dir);
+        }
 
-        $position = 0;
-        $prevKey = null;
-        $currentRank = 0;
+        $rows = $query->get();
 
-        foreach ($rows as $row) {
-            $position++;
+        // Detectar bloques empatados
+        $rank = 1;
+        $i = 0;
+        while ($i < $rows->count()) {
+            $current = $rows[$i];
 
-            $key = "{$row->points}|{$row->goal_difference}|{$row->goals_for}|{$row->fair_play_points}";
+            // Construir key según reglas antes de head_to_head
+            $key = [];
+            foreach ($tiebreakers as $rule) {
+                if (!isset($orderMap[$rule])) continue;
+                if ($orderMap[$rule] === null || $orderMap[$rule] === 'head_to_head') continue;
+                $col = $orderMap[$rule][0];
+                $key[] = $current->{$col};
+            }
+            $key = implode('|', $key);
 
-            if ($key === $prevKey) {
-                // empate perfecto según los criterios usados => mismo rank
-                $row->rank = $currentRank;
-            } else {
-                // nuevo bloque => el rank es la posición (esto implementa "competition ranking" 1,2,2,4)
-                $currentRank = $position;
-                $row->rank = $currentRank;
-                $prevKey = $key;
+            // Agrupar empatados
+            $block = [$current];
+            $j = $i + 1;
+            while ($j < $rows->count()) {
+                $next = $rows[$j];
+                $nextKey = [];
+                foreach ($tiebreakers as $rule) {
+                    if (!isset($orderMap[$rule])) continue;
+                    if ($orderMap[$rule] === null || $orderMap[$rule] === 'head_to_head') continue;
+                    $col = $orderMap[$rule][0];
+                    $nextKey[] = $next->{$col};
+                }
+                $nextKey = implode('|', $nextKey);
+                if ($nextKey === $key) {
+                    $block[] = $next;
+                    $j++;
+                } else {
+                    break;
+                }
             }
 
-            $row->saveQuietly();
+            // Si hay empate y "Resultado entre equipos" está activo
+            if (count($block) > 1 && in_array('Resultado entre equipos', $tiebreakers)) {
+                $block = $this->applyHeadToHead($block, $tournamentId, $tournamentPhaseId);
+            }
+
+            // Asignar rank secuencial (sin repeticiones)
+            foreach ($block as $b) {
+                $b->rank = $rank++;
+                $b->saveQuietly();
+            }
+
+            $i = $j;
         }
+    }
+    protected function applyHeadToHead(array $block, int $tournamentId, ?int $tournamentPhaseId): array
+    {
+        $teamIds = array_map(fn($s) => $s->team_id, $block);
+
+        // Obtener partidos solo entre estos equipos
+        $games = DB::table('games')
+            ->where('tournament_id', $tournamentId)
+            ->when($tournamentPhaseId, fn($q) => $q->where('tournament_phase_id', $tournamentPhaseId))
+            ->where('status', 'completado')
+            ->whereIn('home_team_id', $teamIds)
+            ->whereIn('away_team_id', $teamIds)
+            ->get();
+
+        // Construir mini tabla
+        $mini = [];
+        foreach ($teamIds as $id) {
+            $mini[$id] = ['points' => 0, 'goal_difference' => 0, 'goals_for' => 0, 'goals_against' => 0];
+        }
+
+        foreach ($games as $g) {
+            $hg = (int)$g->home_goals;
+            $ag = (int)$g->away_goals;
+
+            // Stats para local
+            $mini[$g->home_team_id]['goals_for'] += $hg;
+            $mini[$g->home_team_id]['goals_against'] += $ag;
+            $mini[$g->home_team_id]['goal_difference'] = $mini[$g->home_team_id]['goals_for'] - $mini[$g->home_team_id]['goals_against'];
+
+            // Stats para visitante
+            $mini[$g->away_team_id]['goals_for'] += $ag;
+            $mini[$g->away_team_id]['goals_against'] += $hg;
+            $mini[$g->away_team_id]['goal_difference'] = $mini[$g->away_team_id]['goals_for'] - $mini[$g->away_team_id]['goals_against'];
+
+            // Asignar puntos
+            if ($hg > $ag) {
+                $mini[$g->home_team_id]['points'] += 3;
+            } elseif ($hg < $ag) {
+                $mini[$g->away_team_id]['points'] += 3;
+            } else {
+                ++$mini[$g->home_team_id]['points'];
+                ++$mini[$g->away_team_id]['points'];
+            }
+        }
+
+        // Ordenar bloque usando mini tabla
+        usort($block, function ($a, $b) use ($mini) {
+            return
+                ($mini[$b->team_id]['points'] <=> $mini[$a->team_id]['points']) ?:
+                    ($mini[$b->team_id]['goal_difference'] <=> $mini[$a->team_id]['goal_difference']) ?:
+                        ($mini[$b->team_id]['goals_for'] <=> $mini[$a->team_id]['goals_for']);
+        });
+
+        return $block;
     }
 
     /**
@@ -219,4 +323,5 @@ class StandingsService
         $stats[$home]['results'][] = 'L';
         return $stats;
     }
+
 }

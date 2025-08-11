@@ -2,15 +2,16 @@
 
 namespace App\Observers;
 
+use App\Jobs\RecalculateStandingsJob;
 use App\Models\Game;
+use App\Services\StandingsService;
+use Throwable;
 
 class GameObserver
 {
-    public function created(Game $game): void
-    {
-
-    }
-
+    /**
+     * @throws Throwable
+     */
     public function updated(Game $game): void
     {
         if ($game->status === Game::STATUS_COMPLETED) {
@@ -26,14 +27,20 @@ class GameObserver
                     break;
             }
             $game->saveQuietly();
+
+            if(app()->runningInConsole()){
+                app(StandingsService::class)->recalculateStandingsForPhase(
+                    $game->tournament_id,
+                    $game->tournament_phase_id,
+                    $game->id,
+                );
+            }else {
+                RecalculateStandingsJob::dispatch(
+                    $game->tournament_id,
+                    $game->tournament_phase_id,
+                    $game->id,
+                )->onQueue('standings');
             }
-    }
-
-    public function deleted(Game $game): void
-    {
-    }
-
-    public function restored(Game $game): void
-    {
+        }
     }
 }

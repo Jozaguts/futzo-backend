@@ -14,6 +14,7 @@ Route::prefix('tournaments')->group(function () {
     Route::post('{tournament}/schedule', [TournamentController::class, 'schedule']);
     Route::get('{tournament}/locations', [TournamentController::class, 'getTournamentLocations']);
     Route::get('{tournament}/fields', [TournamentController::class, 'fields']);
+    Route::get('{tournament}/standing-table', [TournamentController::class, 'getStandingTableData']);
     Route::post('{tournament}/locations', [TournamentController::class, 'storeTournamentLocations']);
     Route::put('{tournament}/status', [TournamentController::class, 'updateStatus']);
     Route::get('types', [TournamentController::class, 'getTournamentTypes']);

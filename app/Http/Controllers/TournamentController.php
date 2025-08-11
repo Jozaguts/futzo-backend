@@ -311,4 +311,12 @@ class TournamentController extends Controller
         }
         return $exportable;
     }
+    public function getStandingTableData(Tournament $tournament)
+    {
+       return $tournament->teams->each(function($team){
+           return [
+             'position'
+           ];
+        })->toArray();
+    }
 }

@@ -162,7 +162,7 @@ class ScheduleGeneratorService
         DB::transaction(function () use ($matches, $phase) {
             foreach ($matches as $match) {
                 // 1) Crear o actualizar el partido
-                $game = Game::updateOrCreate(
+                Game::updateOrCreate(
                     [
                         'tournament_id' => $match['tournament_id'],
                         'home_team_id' => $match['home_team_id'],

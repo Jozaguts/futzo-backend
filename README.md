@@ -1,57 +1,207 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+# 📌 Laravel Eloquent Relationships – Hoja Resumen
+## 1️⃣ One To One (hasOne / belongsTo)
+Si hay un *_id en una de las tablas → esa tabla usa belongsTo. 
 
-## About Laravel
+La otra usa hasOne. 
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+1 registro en A ↔ 1 registro en B.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Ejemplo: users ↔ profiles
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+users.id → profiles.user_id
 
-## Learning Laravel
+``` 
+Profile.php     
+    public function user() {
+        return $this->belongsTo(User::class); 
+    }
+User.php
+    public function profile() { 
+        return $this->hasOne(Profile::class); 
+    }
+`````
+`User 1 ─── 1 Profile`
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## 2️⃣ One To Many (hasMany / belongsTo)
+La tabla “hija” tiene un *_id apuntando a la “padre” → belongsTo.
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+La “padre” usa hasMany.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 2000 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+1 registro en A ↔ muchos en B.
 
-## Laravel Sponsors
+Ejemplo: teams ↔ players
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+`teams.id → players.team_id`
+````
+Player.php
+    public function team() {
+        return $this->belongsTo(Team::class); 
+    }
 
-### Premium Partners
+Team.php
+    public function players() { 
+        return $this->hasMany(Player::class); 
+    }
+````
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[OP.GG](https://op.gg)**
-- **[WebReinvent](https://webreinvent.com/?utm_source=laravel&utm_medium=github&utm_campaign=patreon-sponsors)**
-- **[Lendio](https://lendio.com)**
+`Team 1 ─── * Player`
+## 3️⃣ Many To Many (belongsToMany)
 
-## Contributing
+No hay FK directa; hay tabla pivote con dos FKs.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Ambos lados usan belongsToMany.
 
-## Code of Conduct
+Muchos ↔ muchos.
 
+Ejemplo: players ↔ teams con player_team
+
+`player_team: player_id, team_id`
+
+````
+Player.php
+    public function teams() {
+        return $this->belongsToMany(Team::class, 'player_team'); 
+    }
+
+Team.php
+    public function players() {
+        return $this->belongsToMany(Player::class, 'player_team');
+     }
+````
+
+`Player * ─── * Team`
+
+## 4️⃣ Has One Through
+Saltar tabla intermedia para obtener un único registro.
+
+“A tiene uno de C a través de B”.
+
+Ejemplo: Country → User → Profile
+
+````
+public function profile(){
+    return $this->hasOneThrough(Profile::class, User::class);
+}
+````
+### Diagrama:
+    Country 1 ─── 1 Profile (via User)
+
+## 5️⃣ Has Many Through
+
+Igual que hasOneThrough, pero el salto intermedio devuelve varios.
+
+“A tiene muchos C a través de B”.
+
+Ejemplo: Country → User → Post
+
+````
+public function posts(){
+    return $this->hasManyThrough(Post::class, User::class);
+}
+````
+
+### Diagrama:
+    Country 1 ─── * Post (via User)
+
+## 6️⃣ One To One (Polymorphic)
+
+Igual que hasOne, pero con columnas *_id y *_type.
+
+Un único registro puede pertenecer a distintos modelos.
+
+Ejemplo: Image para User o Team
+
+````
+Image.php
+    public function imageable() {
+     return $this->morphTo(); 
+    }
+
+ User.php / Team.php
+    public function image() {
+        return $this->morphOne(Image::class, 'imageable'); 
+    }
+````
+## Diagrama
+    User 1 ──┐
+             ├── 1 Image
+    Team 1 ──┘
+
+## 7️⃣ One To Many (Polymorphic)
+
+Igual que hasMany pero con *_id y *_type.
+
+Varios registros pueden pertenecer a distintos modelos.
+
+Ejemplo: Comment para Post o Video
+````
+Comment.php
+    public function commentable() { 
+        return $this->morphTo(); 
+    }
+
+Post.php / Video.php
+    public function comments() {
+        return $this->morphMany(Comment::class, 'commentable'); 
+    }
+````
+## Diagrama
+    Post 1 ──┐
+         ├── * Comment
+    Video 1 ─┘
+
+## 8️⃣ Many To Many (Polymorphic)
+
+Como belongsToMany pero la tabla pivote tiene *_type.
+
+Permite N a N entre múltiples modelos.
+
+Ejemplo: Tag para Post o Video
+
+````
+ Tag.php
+    public function posts() { 
+        return $this->morphedByMany(Post::class, 'taggable'); 
+    }
+    public function videos() { 
+        return $this->morphedByMany(Video::class, 'taggable'); 
+    }
+
+Post.php / Video.php
+    public function tags() { 
+        return $this->morphToMany(Tag::class, 'taggable'); 
+    }
+````
+## Diagrama
+    Post * ──┐
+             ├── * Tag
+    Video * ─┘
+
+## Team  | Standing | Tournament
+````
+┌───────────────────┐        ┌───────────────────┐
+│      Team         │ 1     *│     Standing      │
+│───────────────────│--------│───────────────────│
+│ id (PK)           │        │ id (PK)           │
+│ name              │        │ team_id (FK)      │
+│ ...               │        │ tournament_id (FK)│
+└───────────────────┘        │ matches_played    │
+│ wins              │        └───────────────────┘
+│ draws             │
+│ losses            │
+│ points            │
+│ ...               │
+└───────────────────┘
+        *
+        │
+        │
+        1
+┌───────────────────┐
+│   Tournament       │
+│───────────────────│
+│ id (PK)           │
+│ name              │
+│ league_id (FK)    │
+│ ...               │
+└───────────────────┘

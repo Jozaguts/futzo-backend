@@ -19,6 +19,7 @@ use App\Models\Location;
 use App\Models\Tournament;
 use App\Models\TournamentFormat;
 use App\Services\ScheduleGeneratorService;
+use Barryvdh\Snappy\Facades\SnappyImage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -261,12 +262,35 @@ class TournamentController extends Controller
                 ]
             ]);
     }
-    public function exportTournamentRoundScheduleAs(Request $request, int $tournamentId, int $roundId)
+
+    /**
+     * @throws \Throwable
+     */
+    public function exportTournamentRoundScheduleAs(Request $request, Tournament $tournament, int $round)
     {
-      return Game::where('tournament_id', $tournamentId)
-          ->where('round', $roundId)
-          ->get();
+       $games = Game::where('tournament_id', $tournament->id)
+           ->with([
+               'homeTeam:id,name,image',
+               'awayTeam:id,name,image',
+               'location:id,name'
+           ])
+           ->where('round', $round)
+           ->get();
+        $league = $tournament?->league;
+        $html = view('exports.image.default',[
+            'games' => $games,
+            'tournament' => $tournament,
+            'round' => $round,
+            'league' => $league
+        ])->render();
 
-
+        return SnappyImage::loadHTML($html)
+            ->setOption('width', 794)
+            ->setOption('height', 1123)
+            ->setOption('format', 'jpg')
+            ->setOption('quality', 100)
+            ->setOption('encoding', 'UTF-8')
+            ->setOption('enable-local-file-access', true)
+            ->download("jornada-$round-torneo-$tournament->slug.jpg");
     }
 }

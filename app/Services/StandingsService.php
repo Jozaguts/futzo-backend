@@ -103,27 +103,17 @@ class StandingsService
 
                 // Resultados y puntos
                 if ($hg > $ag) {
-                    $stats[$home]['wins']++;
-                    $stats[$home]['points'] += 3;
-                    $stats[$home]['results'][] = 'W';
-
-                    $stats[$away]['losses']++;
-                    $stats[$away]['results'][] = 'L';
+                    $stats = $this->updateStats($stats, $home, $away);
                 } elseif ($hg === $ag) {
                     $stats[$home]['draws']++;
-                    $stats[$home]['points'] += 1;
+                    ++$stats[$home]['points'];
                     $stats[$home]['results'][] = 'D';
 
                     $stats[$away]['draws']++;
-                    $stats[$away]['points'] += 1;
+                    ++$stats[$away]['points'];
                     $stats[$away]['results'][] = 'D';
                 } else {
-                    $stats[$away]['wins']++;
-                    $stats[$away]['points'] += 3;
-                    $stats[$away]['results'][] = 'W';
-
-                    $stats[$home]['losses']++;
-                    $stats[$home]['results'][] = 'L';
+                    $stats = $this->updateStats($stats, $away, $home);
                 }
             }
 
@@ -153,10 +143,10 @@ class StandingsService
                         'wins' => $s['wins'],
                         'draws' => $s['draws'],
                         'losses' => $s['losses'],
-                        'gf' => $s['goals_for'],
-                        'ga' => $s['goals_against'],
-                        'gd' => $gd,
-                        'pts' => $s['points'],
+                        'goals_for' => $s['goals_for'],
+                        'goals_against' => $s['goals_against'],
+                        'goal_difference' => $gd,
+                        'points' => $s['points'],
                         'last_5' => $last5Str,
                         'tournament_id' => $tournamentId,
                         'league_id' => $leagueId,
@@ -184,9 +174,9 @@ class StandingsService
         }
 
         $rows = $query
-            ->orderByDesc('pts')
-            ->orderByDesc('gd')
-            ->orderByDesc('gf')
+            ->orderByDesc('points')
+            ->orderByDesc('goal_difference')
+            ->orderByDesc('goals_for')
             ->orderBy('fair_play_points') // lower is better
             ->get();
 
@@ -197,7 +187,7 @@ class StandingsService
         foreach ($rows as $row) {
             $position++;
 
-            $key = "{$row->pts}|{$row->gd}|{$row->gf}|{$row->fair_play_points}";
+            $key = "{$row->points}|{$row->goal_difference}|{$row->goals_for}|{$row->fair_play_points}";
 
             if ($key === $prevKey) {
                 // empate perfecto según los criterios usados => mismo rank
@@ -211,5 +201,22 @@ class StandingsService
 
             $row->saveQuietly();
         }
+    }
+
+    /**
+     * @param array $stats
+     * @param int $away
+     * @param int $home
+     * @return array
+     */
+    public function updateStats(array $stats, int $away, int $home): array
+    {
+        $stats[$away]['wins']++;
+        $stats[$away]['points'] += 3;
+        $stats[$away]['results'][] = 'W';
+
+        $stats[$home]['losses']++;
+        $stats[$home]['results'][] = 'L';
+        return $stats;
     }
 }

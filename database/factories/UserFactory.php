@@ -21,11 +21,12 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->firstName(),
+            'name' => $name = fake()->firstName(),
             'last_name' => fake()->lastName(),
             'email' => fake()->unique()->safeEmail(),
             'phone' => '+52 ' . fake()->numerify('322 ### ## ##'),
             'verified_at' => now(),
+            'image' => 'https://ui-avatars.com/api/?name=' . $name,
             'verification_token' => random_int(1000, 9999),
             'password' => '$2y$10$RENqDsgT5rr0sjujwq1v4uoTXC9K9f7KMa1ilMFOdG2DMf7Xwm2TS', // password.
             'remember_token' => Str::random(10),

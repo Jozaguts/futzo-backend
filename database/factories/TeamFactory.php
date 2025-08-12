@@ -20,12 +20,12 @@ class TeamFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => $this->faker->unique()->company . ' FC',
+            'name' => $name = $this->faker->unique()->domainWord . ' FC',
             'address' => config('constants.address'),
             'email' => $this->faker->unique()->safeEmail,
             'phone' => $this->faker->phoneNumber(),
             'description' => $this->faker->sentence(10),
-            'image' => '',
+            'image' => 'https://ui-avatars.com/api/?name=' . $name,
             'colors' => config('constants.colors'),
             'created_at' => $this->faker->randomElement([now()->startOfMonth(), now()->endOfMonth()]),
         ];

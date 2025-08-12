@@ -16,6 +16,7 @@ Route::prefix('tournaments')->group(function () {
     Route::get('{tournament}/locations', [TournamentController::class, 'getTournamentLocations']);
     Route::get('{tournament}/fields', [TournamentController::class, 'fields']);
     Route::get('{tournament}/standings', [TournamentController::class, 'getStandings']);
+    Route::get('{tournament}/stats', [TournamentController::class, 'getStats']);
 
     Route::get('{tournament}', [TournamentController::class, 'show'])->withoutMiddleware('auth:sanctum');
 

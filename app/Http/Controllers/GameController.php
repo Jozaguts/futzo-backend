@@ -332,7 +332,8 @@ class GameController extends Controller
             'home' => 'array',
             'away' => 'array',
         ]);
-
+        $homeGoals = 0;
+        $awayGoals = 0;
         foreach (['home' => $game->home_team_id, 'away' => $game->away_team_id] as $key => $teamId) {
             if (!empty($data[$key])) {
                 foreach ($data[$key] as $goal) {
@@ -347,9 +348,9 @@ class GameController extends Controller
                             'related_player_id' => null,
                         ]);
                         if ($key === 'home'){
-                            ++$game->away_goals; // Si es un autogol, se suma al equipo contrario
+                            ++$awayGoals; // Si es un autogol, se suma al equipo contrario
                         } else {
-                            ++$game->home_goals; // Si es un autogol, se suma al equipo contrario
+                            ++$homeGoals; // Si es un autogol, se suma al equipo contrario
                         }
                     }else if($goal['type'] === GameEvent::GOAL ||  $goal['type'] === GameEvent::PENALTY) {
                         GameEvent::updateOrCreate([
@@ -362,12 +363,13 @@ class GameController extends Controller
                             'related_player_id' => $goal['related_player_id'],
                         ]);
                         if ($key === 'home' ){
-                            ++$game->home_goals;
+                            ++$homeGoals;
                         }else if($key === 'away'){
-                            ++$game->away_goals;
+                            ++$awayGoals;
                         }
                     }
-
+                    $game->home_goals = $homeGoals;
+                    $game->away_goals = $awayGoals;
                     $game->save();
 
                 }

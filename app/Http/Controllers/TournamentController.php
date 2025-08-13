@@ -12,6 +12,7 @@ use App\Http\Requests\UpdateTournamentRoundRequest;
 use App\Http\Requests\UpdateTournamentStatusRequest;
 use App\Http\Resources\FieldResource;
 use App\Http\Resources\LastGamesCollection;
+use App\Http\Resources\NextGamesCollection;
 use App\Http\Resources\ScheduleSettingsResource;
 use App\Http\Resources\TournamentCollection;
 use App\Http\Resources\TournamentResource;
@@ -421,11 +422,11 @@ class TournamentController extends Controller
             'yellow_cards' => $yellowCards
         ];
     }
-    public function getLastResults(Request $request, Tournament $tournament)
+    public function getLastResults(Request $request, Tournament $tournament): LastGamesCollection
     {
         $limit = $request->query('limit',3);
 
-        $nextGames = $tournament->games()
+        $lastGames = $tournament->games()
             ->with(['homeTeam:id,name,image', 'awayTeam:id,name,image','location:id,name','field:id,name'])
             ->whereIn('status', [Game::STATUS_COMPLETED, Game::STATUS_CANCELED, Game::STATUS_POSTPONED])
             ->orderBy('match_date', 'desc')
@@ -433,6 +434,20 @@ class TournamentController extends Controller
             ->limit($limit)
             ->get();
 
-        return new LastGamesCollection($nextGames);
+        return new LastGamesCollection($lastGames);
+    }
+    public function getNextGames(Request $request, Tournament $tournament): NextGamesCollection
+    {
+        $limit = $request->query('limit',3);
+
+        $nextGames = $tournament->games()
+            ->with(['homeTeam:id,name,image', 'awayTeam:id,name,image','location:id,name','field:id,name'])
+            ->where('status', Game::STATUS_SCHEDULED)
+            ->orderBy('match_date', 'desc')
+            ->orderBy('match_time', 'desc')
+            ->limit($limit)
+            ->get();
+
+        return new NextGamesCollection($nextGames);
     }
 }

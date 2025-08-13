@@ -38,7 +38,7 @@ class DashboardController extends Controller
             })
             ->orderBy('match_date')
             ->orderBy('match_time')
-            ->take(3)
+            ->limit(3)
             ->get();
 
         return new NextGamesCollection($nextGames);

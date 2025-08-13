@@ -23,8 +23,9 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 class PlayersController extends Controller
 {
 
-    public function index(Request $request)
+    public function index(Request $request): PlayerCollection
     {
+        $search = $request->query('search', false);
         $players = Player::select([
             'id',
             'user_id',
@@ -38,16 +39,22 @@ class PlayersController extends Controller
             'weight'
         ])
             ->with(['team:teams.id,teams.name', 'position', 'category:id,name'])
+            ->when($search, function ($query, $search) {
+                $query->whereHas('user', function($query) use ($search) {
+                    $query->where('name', 'LIKE', "%{$search}%");
+                });
+            })
             ->paginate($request->get('per_page', 10), ['*'], 'page', $request->get('page', 1));
         return new PlayerCollection($players);
     }
 
-    public function show($id)
+    public function show($id): void
     {
 
     }
 
-    public function store(PlayerStoreRequest $request, PlayerService $service)
+
+    public function store(PlayerStoreRequest $request, PlayerService $service): ?\Illuminate\Http\JsonResponse
     {
         try {
             $service->store($request);
@@ -57,12 +64,12 @@ class PlayersController extends Controller
         }
     }
 
-    public function update(PlayerUpdateRequest $request, $id)
+    public function update(PlayerUpdateRequest $request, $id): void
     {
         $request->except('_method');
     }
 
-    public function destroy($id)
+    public function destroy($id): void
     {
 
     }

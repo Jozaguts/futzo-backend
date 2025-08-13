@@ -399,7 +399,7 @@ class TournamentController extends Controller
             ->join('games','games.id','game_events.game_id')
             ->join('players','players.id','game_events.player_id')
             ->join('teams','teams.id','game_events.team_id')
-            ->join('users','users.id','players.id')
+            ->join('users','users.id','players.user_id')
             ->where('games.tournament_id', $tournament->id)
             ->whereIn('game_events.type',[GameEvent::RED_CARD])
             ->whereNotNull('game_events.player_id')

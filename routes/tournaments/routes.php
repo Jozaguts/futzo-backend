@@ -12,6 +12,7 @@ Route::prefix('tournaments')->group(function () {
 
     Route::get('{tournament}/schedule/settings', [TournamentController::class, 'scheduleSettings']);
     Route::get('{tournament}/schedule/rounds/{round}/export', [TournamentController::class, 'exportTournamentRoundScheduleAs']);
+    Route::get('{tournament}/standing/export', [TournamentController::class, 'exportStanding']);
     Route::get('{tournament}/schedule', [TournamentController::class, 'getTournamentSchedule']);
     Route::get('{tournament}/locations', [TournamentController::class, 'getTournamentLocations']);
     Route::get('{tournament}/fields', [TournamentController::class, 'fields']);

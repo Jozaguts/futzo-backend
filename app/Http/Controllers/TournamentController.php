@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\DTO\TournamentDTO;
 use App\Events\TournamentCreatedEvent;
 use App\Exports\RoundExport;
+use App\Exports\TournamentStandingExport;
 use App\Http\Requests\CreateTournamentScheduleRequest;
 use App\Http\Requests\TournamentStoreRequest;
 use App\Http\Requests\TournamentUpdateRequest;
@@ -29,6 +30,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
+use PhpOffice\PhpSpreadsheet\Exception;
 use Spatie\MediaLibrary\MediaCollections\Exceptions\FileDoesNotExist;
 use Spatie\MediaLibrary\MediaCollections\Exceptions\FileIsTooBig;
 
@@ -449,5 +451,40 @@ class TournamentController extends Controller
             ->get();
 
         return new NextGamesCollection($nextGames);
+    }
+
+    /**
+     * @throws Exception
+     * @throws \Throwable
+     * @throws \PhpOffice\PhpSpreadsheet\Writer\Exception
+     */
+    public function exportStanding(Request $request, Tournament $tournament)
+    {
+        $type = $request->query('type');
+        $standing = $this->getStandings($tournament);
+        $league = $tournament?->league;
+        $exportable = null;
+        if ($type === self::IMG_EXPORT_TYPE){
+            $html = view('exports.tournament.standing',[
+                'standing' => $standing,
+                'tournament' => $tournament,
+                'league' => $league
+            ])->render();
+
+            $exportable = SnappyImage::loadHTML($html)
+                ->setOption('width', 794)
+                ->setOption('height', 1123)
+                ->setOption('format', 'jpg')
+                ->setOption('quality', 100)
+                ->setOption('encoding', 'UTF-8')
+                ->setOption('enable-local-file-access', true)
+                ->download($tournament->slug."-tabla-de-posiciones.jpg");
+        }
+        if ($type === self::XSL_EXPORT_TYPE){
+            $export = new TournamentStandingExport($standing, $league->name, $tournament->name, $tournament->currentRound());
+            $exportable =  Excel::download($export,$tournament->slug."-tabla-de-posiciones.xlsx", \Maatwebsite\Excel\Excel::XLSX);
+        }
+        return $exportable;
+
     }
 }

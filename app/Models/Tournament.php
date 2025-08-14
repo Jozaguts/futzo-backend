@@ -163,4 +163,14 @@ class Tournament extends Model implements HasMedia
     {
         return $this->hasMany(Standing::class);
     }
+    public function currentRound()
+    {
+       return Game::select('round')
+            ->where('tournament_id', $this->id)
+            ->groupBy('round')
+           ->havingRaw("SUM(CASE WHEN status != 'completado' THEN 1 ELSE 0 END) > 0")
+            ->orderBy('round')
+            ->limit(1)
+           ->first();
+    }
 }

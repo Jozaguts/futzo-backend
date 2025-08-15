@@ -11,7 +11,7 @@ Route::prefix('teams')->group(function () {
     Route::get('{team}/last-games', [TeamsController::class, 'lastGames']);
     Route::get('{team}/formation', [TeamsController::class, 'formation']);
     Route::get('{team}/available-players', [TeamsController::class, 'getDefaultLineupAvailableTeamPlayers']);
-    Route::get('list', [TeamsController::class, 'list']);
+    Route::get('list', [TeamsController::class, 'list'])->withoutMiddleware('auth:sanctum');
     Route::get('template', [TeamsController::class, 'downloadTeamsTemplate']);
     Route::get('search', [TeamsController::class, 'search']);
     Route::get('', [TeamsController::class, 'index'])->withoutMiddleware('auth:sanctum');

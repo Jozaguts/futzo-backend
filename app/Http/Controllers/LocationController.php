@@ -16,9 +16,9 @@ use Illuminate\Support\Facades\DB;
 
 class LocationController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): LocationCollection
     {
-        $data = Location::with('tags', 'fields.leaguesFields', 'fields.tournamentsFields')
+        $data = Location::with(['tags', 'fields.leaguesFields', 'fields.tournamentsFields'])
             ->whereHas('leagues', function ($query) {
                 $query->where('league_id', auth()->user()->league->id);
             })

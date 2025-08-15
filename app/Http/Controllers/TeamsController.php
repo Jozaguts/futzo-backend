@@ -41,6 +41,7 @@ class TeamsController extends Controller
     public function index(Request $request): TeamCollection
     {
         $teams = Team::with(['tournaments' => fn($q) => $q->orderBy('name','desc')])
+             ->orderBy('id','desc')
             ->paginate(
                 $request->get('per_page', 10),
                 ['*'],

@@ -3,95 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
     <title>Tabla de pociones</title>
+    <style>
+        *{
+            font-family: "Inter", sans-serif;
+        }
+        html, body {
+            width: 794px;
+            height: 1123px;
+            margin: 0;
+            padding: 0.5rem;
+            overflow-x: hidden;
+            font-family: "Inter", sans-serif;
+            color: #28243D;
+
+        }
+        table > tbody > tr > td, table > tbody > tr > th, table > thead > tr > th {
+            border: none !important;
+        }
+        table > tbody > tr > td{
+            padding: 1rem 0;
+        }
+         table {
+             width: 100%;
+             border-collapse: separate;
+             border-spacing: 0 .5rem; /* 0 horizontal, 10px vertical */
+             border: 1px solid #EAECF0 !important;
+             border-bottom-left-radius: 12px;
+             border-bottom-right-radius: 12px;
+        }
+         table > thead >tr >th{
+             padding: 1rem 0;
+         }
+         table > tbody > tr > td{
+            border-bottom: 1px solid #EAECF0 !important;
+         }
+        header{
+            padding: 0 1rem 1rem 1rem;
+            display: flex;
+            align-items: center;
+            border: 1px solid #EAECF0;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+            background: #F9FAFB;
+        }
+
+        .header-image-container{
+            padding: 0 1rem;
+            flex: 0 1 auto;
+        }
+        .header-details-container{
+            display: flex;
+            flex-direction: column;
+            flex: 1 0 auto;
+        }
+        p{
+            margin: 0;
+        }
+        p.league-title{
+            color: #101828;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: .5rem;
+        }
+        p.league-subtitle{
+            color: #475467;
+            font-size: 1rem;
+            margin-bottom: 4px;
+        }
+    </style>
 </head>
+
 <body>
-    <table style="border: 1px solid black; border-collapse: collapse;">
-        <thead>
-        <tr>
-            <th colspan="2" style="text-align: center; border-bottom: 1px solid black; border-collapse: collapse; border-right: 1px solid black; ">Liga</th>
-            <th colspan="11" style="font-weight: bold; text-align: right; border-bottom: 1px solid black; border-collapse: collapse; border-right: 1px solid black;">{{$leagueName}}</th>
-        </tr>
-        <tr>
-            <th colspan="2" style="text-align: center; border-bottom: 1px solid black; border-collapse: collapse; border-right: 1px solid black;">Torneo </th>
-            <th colspan="11" style="font-weight: bold; text-align: right; border-bottom: 1px solid black; border-collapse: collapse; border-right: 1px solid black;">{{$tournamentName}} </th>
-        </tr>
-        <tr>
-            <th colspan="2" style="text-align: center; border-bottom: 1px solid black; border-collapse: collapse; border-right: 1px solid black; ">Fecha</th>
-            <th colspan="11" style="font-weight: bold; text-align: right; border-bottom: 1px solid black; border-collapse: collapse; border-right: 1px solid black;">{{$currentDate}}</th>
-        </tr>
-        <tr>
-            <th colspan="2" style="text-align: center; border-bottom: 1px solid black; border-collapse: collapse; border-right: 1px solid black; ">Jornada</th>
-            <th colspan="11" style="font-weight: bold; text-align: right; border-bottom: 1px solid black; border-collapse: collapse; border-right: 1px solid black;">{{$currentRound}}</th>
-        </tr>
-        <tr></tr>
-        <tr>
-            <th colspan="13" style="text-align: center; font-weight: bold; border: 1px solid black; border-collapse: collapse;">
-                Tabla de Posiciones
-            </th>
-        </tr>
-        <tr>
-            <th colspan="2"  style="text-align: center; border: 1px solid black; border-collapse: collapse; font-weight: bold;">Posición</th>
-            <th colspan="2" style="text-align: center; border: 1px solid black; border-collapse: collapse; font-weight: bold;">Equipo</th>
-            <th style="text-align: center; border: 1px solid black; border-collapse: collapse; font-weight: bold;">PJ</th>
-            <th style="text-align: center; border: 1px solid black; border-collapse: collapse; font-weight: bold;">PG</th>
-            <th style="text-align: center; border: 1px solid black; border-collapse: collapse; font-weight: bold;">PE</th>
-            <th style="text-align: center; border: 1px solid black; border-collapse: collapse; font-weight: bold;">PP</th>
-            <th style="text-align: center; border: 1px solid black; border-collapse: collapse; font-weight: bold;">GF</th>
-            <th style="text-align: center; border: 1px solid black; border-collapse: collapse; font-weight: bold;">GC</th>
-            <th style="text-align: center; border: 1px solid black; border-collapse: collapse; font-weight: bold;">DG</th>
-            <th style="text-align: center; border: 1px solid black; border-collapse: collapse; font-weight: bold;">Pts.</th>
-            <th style="text-align: center; border: 1px solid black; border-collapse: collapse; font-weight: bold;">Últimos 5</th>
-        </tr>
-        </thead>
-        <tbody>
-        @foreach($standing as $stat)
-            <tr>
-                <td colspan="2" style="text-align: center; border: 1px solid black; border-collapse: collapse;">
-                    {{$stat['rank']}}
-                </td>
-                <td colspan="2" style="text-align: center; border: 1px solid black; border-collapse: collapse;">
-                    {{$stat['team']['name']}}
-                </td>
-                <td style="text-align: center; border: 1px solid black; border-collapse: collapse;">{{$stat['matches_played']}}</td>
-                <td style="text-align: center; border: 1px solid black; border-collapse: collapse;">{{$stat['wins']}}</td>
-                <td style="text-align: center; border: 1px solid black; border-collapse: collapse;">{{$stat['draws']}}</td>
-                <td style="text-align: center; border: 1px solid black; border-collapse: collapse;">{{$stat['losses']}}</td>
-                <td style="text-align: center; border: 1px solid black; border-collapse: collapse;">{{$stat['goals_for']}}</td>
-                <td style="text-align: center; border: 1px solid black; border-collapse: collapse;">{{$stat['goals_against']}}</td>
-                <td style="text-align: center; border: 1px solid black; border-collapse: collapse;">{{$stat['goal_difference']}}</td>
-                <td style="text-align: center; border: 1px solid black; border-collapse: collapse;">{{$stat['points']}}</td>
-                <td style="text-align: center; border: 1px solid black; border-collapse: collapse;">{{$stat['last_5']}}</td>
-            </tr>
-        @endforeach
-        </tbody>
-        <tfoot >
-        <tr></tr>
-            <tr style=" border-top: 1px solid black; border-collapse: collapse;">
-                <td colspan="11"></td>
-                <th colspan="2"   style="text-align: center; font-weight: bold; border-collapse: collapse; border: 1px solid black;" >Últimos 5</th>
-            </tr>
-            <tr style=" border-left: 1px solid black; border-collapse: collapse;">
-                <td colspan="11"></td>
-                <th colspan="1" style="text-align: center; border-left: 1px solid black;  border-bottom: 1px solid black; border-collapse: collapse; " >W</th>
-                <th colspan="1" style="text-align: left;  border-right: 1px solid black; border-bottom: 1px solid black; border-collapse: collapse;" >Ganó</th>
-            </tr>
-            <tr>
-                <td colspan="11"></td>
-                <th colspan="1" style="text-align: center;  border-left: 1px solid black; border-collapse: collapse; border-bottom: 1px solid black;" >D</th>
-                <th colspan="1" style="text-align: left;  border-right: 1px solid black; border-collapse: collapse; border-bottom: 1px solid black;" >Empató</th>
-            </tr>
-            <tr>
-                <td colspan="11"></td>
-                <th colspan="1" style="text-align: center;  border-left: 1px solid black; border-collapse: collapse; border-bottom: 1px solid black;" >L</th>
-                <th colspan="1" style="text-align: left;  border-right: 1px solid black; border-collapse: collapse; border-bottom: 1px solid black;" >Perdió</th>
-            </tr>
-            <tr>
-                <td colspan="11"></td>
-                <th colspan="1" style="text-align: center;  border-left: 1px solid black; border-bottom: 1px solid black;  border-collapse: collapse;" >-</th>
-                <th colspan="1" style="text-align: left;  border-right: 1px solid black; border-bottom: 1px solid black; border-right: 1px solid black; border-collapse: collapse;" >No jugó</th>
-            </tr>
-        </tfoot>
-    </table>
+    <header>
+       <div class="header-image-container">
+           <img src="{{asset('images/circular/logo-23.png')}}" alt="futzo-logo" width="200" height="auto">
+       </div>
+        <div class="header-details-container">
+            <p class="league-title">{{$leagueName}}</p>
+            <p class="league-subtitle">{{$tournamentName}}</p>
+            <p class="league-subtitle">Jornada  {{$currentRound}}</p>
+            <p class="league-subtitle"> {{$currentDate}}</p>
+        </div>
+    </header>
+   @include('components.standing.table')
 </body>
 </html>

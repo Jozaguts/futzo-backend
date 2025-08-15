@@ -12,7 +12,21 @@ use Illuminate\Support\Facades\Route;
 | be assigned to the "web" middleware group. Make something great!
 |
 */
-
+Route::get('template', function () {
+    $tournament = \App\Models\Tournament::find(1);
+    $controller =new  \App\Http\Controllers\TournamentController;
+    $standing = $controller->getStandings($tournament);
+    $league = $tournament?->league;
+    $exportable = null;
+   return view('exports.tournament.standing',[
+       'standing' => $standing,
+       'leagueName' => $league->name,
+       'tournamentName' => $tournament->name,
+       'currentRound' => $tournament->currentRound()['round'],
+       'currentDate' => today()->translatedFormat('l d M Y'),
+       'showDetails' => false,
+   ]);
+});
 Route::get('/', function () {
   return response()->json([
     'message' => 'Welcome to '. env('APP_NAME').' API'

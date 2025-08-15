@@ -12,12 +12,13 @@ class TournamentStandingExport implements FromView
     }
     public function view(): View
     {
-        return view('exports.tournament.standing', [
+        return view('components.standing.table', [
             'standing' => $this->standing,
             'leagueName' => $this->leagueName,
             'tournamentName' => $this->tournamentName,
             'currentRound' => $this->currentRound['round'],
             'currentDate' => today()->translatedFormat('l d M Y'),
+            'showDetails' => true,
         ]);
     }
 

@@ -38,7 +38,7 @@ class Team extends Model implements HasMedia
         'address' => 'array',
         'colors' => 'array'
     ];
-    protected $appends = ['rgba_color'];
+    protected $appends = ['rgba_color', 'register_link'];
 
     protected static function booted(): void
     {
@@ -68,6 +68,14 @@ class Team extends Model implements HasMedia
         return Attribute::make(
             get: static fn($value) => hex2rgb($color)
         );
+    }
+    protected function registerLink(): Attribute
+    {
+        $slug = $this->slug;
+        return Attribute::make(
+            get: static fn($value) => config('app.frontend_url','https://futzo.io') ."/equipos/$slug/jugadores/inscripcion"
+        );
+
     }
 
 

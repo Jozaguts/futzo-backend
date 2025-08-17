@@ -34,6 +34,7 @@ class TeamCollection extends ResourceCollection
 				'category' => $team->categories()->where('team_id', $team->id)->first(),
 				'tournament' => $team->tournaments()->where('team_id', $team->id)->first(),
 				'colors' => $team->colors,
+                'register_link' => $team->registerLink,
 			];
 		})->toArray();
 	}

@@ -12,6 +12,7 @@ use App\Models\Team;
 use App\Services\Builders\PlayerBuilder;
 use App\Services\PlayerService;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use PhpOffice\PhpSpreadsheet\Exception;
@@ -54,13 +55,19 @@ class PlayersController extends Controller
     }
 
 
-    public function store(PlayerStoreRequest $request, PlayerService $service): ?\Illuminate\Http\JsonResponse
+    /**
+     * @throws \Throwable
+     * @throws FileDoesNotExist
+     * @throws FileIsTooBig
+     */
+    public function store(PlayerStoreRequest $request, PlayerService $service): ?JsonResponse
     {
         try {
             $service->store($request);
             return response()->json(['message' => 'Player registered successfully'], 201);
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+        } catch (Exception $e) {
+            logger($e->getMessage());
+            return response()->json(['error' => 'Error al procesar el registro del jugador, por favor comuníquese con el administrador'], 500);
         }
     }
 
@@ -79,7 +86,7 @@ class PlayersController extends Controller
      * @throws FileDoesNotExist
      * @throws FileIsTooBig
      */
-    public function import(Request $request): \Illuminate\Http\JsonResponse
+    public function import(Request $request): JsonResponse
     {
         try {
             $spreadsheet = IOFactory::load($request->file('file'));

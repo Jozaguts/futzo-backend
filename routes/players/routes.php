@@ -8,7 +8,10 @@ Route::prefix('players')->group(function () {
     Route::get('{player}', [PlayersController::class, 'show'])->name('players.show');
     Route::get('', [PlayersController::class, 'index'])->name('players.index');
     Route::post('import', [PlayersController::class, 'import'])->name('players.import');
-    Route::put('{player}', [PlayersController::class, 'update'])->name('players.update');
     Route::post('', [PlayersController::class, 'store'])->name('players.store');
     Route::delete('{player}', [PlayersController::class, 'destroy'])->name('players.destroy');
+    Route::put('{player}', [PlayersController::class, 'update'])->name('players.update');
+    Route::post('pre-register', [PlayersController::class, 'store'])
+        ->name('players.preRegister')
+        ->middleware(['throttle:5,1','team.can_register_player']);
 });

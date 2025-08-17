@@ -13,6 +13,7 @@ use App\Http\Resources\LastGamesCollection;
 use App\Http\Resources\NextGamesCollection;
 use App\Http\Resources\TeamCollection;
 use App\Http\Resources\TeamResource;
+use App\Models\Category;
 use App\Models\DefaultLineup;
 use App\Models\DefaultLineupPlayer;
 use App\Models\Formation;
@@ -20,6 +21,7 @@ use App\Models\Game;
 use App\Models\Lineup;
 use App\Models\LineupPlayer;
 use App\Models\Player;
+use App\Models\Position;
 use App\Models\Team;
 use App\Models\Tournament;
 use App\Models\User;
@@ -30,8 +32,6 @@ use JsonException;
 use Maatwebsite\Excel\Facades\Excel;
 use PhpOffice\PhpSpreadsheet\Exception;
 use PhpOffice\PhpSpreadsheet\IOFactory;
-use Psr\Container\ContainerExceptionInterface;
-use Psr\Container\NotFoundExceptionInterface;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Throwable;
 
@@ -632,4 +632,20 @@ class TeamsController extends Controller
         $lineup->update(['formation_id' => $data['formation_id']]);
         return response()->json(['message' => 'Formación actualizada correctamente.', 'lineup' => $lineup]);
     }
+    public function catalogs(Team $team): array
+    {
+        $tournaments = $team->load(['tournaments:id,name','categories'])->tournaments;
+        return [
+            'team' => $team->only('id','name','slug','categories'),
+            'tournaments' => $tournaments,
+            'categories' => Category::select('id','name')->get(),
+            'positions' => Position::select('id','name','abbr','type')->get()
+        ];
+    }
+    public function canRegister(Team $team): JsonResponse
+    {
+        $conRegister = $team->players->count() < $team->tournaments()->first()->configuration->max_players_per_team;
+        return response()->json(['canRegister' => $conRegister]);
+    }
+
 }

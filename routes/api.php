@@ -58,6 +58,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     });
 });
 
+Route::prefix('public')->group(function () {
+   require __DIR__ . '/teams/public.php';
+});
+
 Route::post('/pre-register', [PreRegisterController::class, 'preRegister'])
     ->middleware(['throttle:3,1'])
     ->name('pre-register');

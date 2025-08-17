@@ -71,5 +71,6 @@ class Kernel extends HttpKernel
         'hasRole' => \App\Http\Middleware\CheckUserHasRole::class,
         'ensureUserOwnsProfile' => \App\Http\Middleware\EnsureUserOwnsProfile::class,
         'hasNotLeague' => \App\Http\Middleware\HasNotLeagueMiddleware::class,
+        'team.can_register_player' => \App\Http\Middleware\CheckTeamCanRegisterMiddleware::class,
     ];
 }

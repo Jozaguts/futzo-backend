@@ -49,18 +49,12 @@ class PlayersController extends Controller
         return new PlayerCollection($players);
     }
 
-    public function show($id): void
-    {
-
-    }
-
-
     /**
      * @throws \Throwable
      * @throws FileDoesNotExist
      * @throws FileIsTooBig
      */
-    public function store(PlayerStoreRequest $request, PlayerService $service): ?JsonResponse
+    public function store(PlayerStoreRequest $request, Team $team, PlayerService $service): ?JsonResponse
     {
         try {
             $service->store($request);
@@ -74,11 +68,6 @@ class PlayersController extends Controller
     public function update(PlayerUpdateRequest $request, $id): void
     {
         $request->except('_method');
-    }
-
-    public function destroy($id): void
-    {
-
     }
 
     /**

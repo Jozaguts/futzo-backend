@@ -504,11 +504,16 @@ class TournamentController extends Controller
         $exportable = null;
         if ($type === self::IMG_EXPORT_TYPE){
             $html = view('exports.tournament.stats',[
-                'stats' => $stats,
+                'goals' => $stats['goals'],
+                'assistance' => $stats['assistance'],
+                'redCards' => $stats['red_cards'],
+                'yellowCards' =>$stats['yellow_cards'],
                 'leagueName' => $league->name,
                 'tournamentName' => $tournament->name,
-                'currentRound' => $tournament->currentRound()['round'],
+                'currentRound' => 2,
                 'currentDate' => today()->translatedFormat('l d M Y'),
+                'showDetails' => false,
+                'showImages' => true,
             ]);
             $exportable = SnappyImage::loadHTML($html)
                 ->setOption('width', 794)

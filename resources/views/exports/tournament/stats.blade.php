@@ -89,6 +89,6 @@
         <p class="league-subtitle"> {{$currentDate}}</p>
     </div>
 </header>
-@include('components.standing.table')
+@include('components.stats.table')
 </body>
 </html>

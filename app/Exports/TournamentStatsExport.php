@@ -25,6 +25,7 @@ class TournamentStatsExport implements  FromView
         'currentRound' => $this->currentRound['round'],
         'currentDate' => today()->translatedFormat('l d M Y'),
         'showDetails' => true,
+        'showImages' => false,
     ]);
 }
 

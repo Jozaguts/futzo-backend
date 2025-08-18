@@ -20,7 +20,7 @@
         <tr></tr>
         <tr></tr>
         <tr>
-            <th colspan="13" style="text-align: center; font-weight: bold;  border-collapse: collapse;">
+            <th colspan="8" style="text-align: center; font-weight: bold;  border-collapse: collapse;">
                 Líderes de estadísticas
             </th>
         </tr>
@@ -28,11 +28,8 @@
     @endif
     </thead>
     <tbody>
-        <tr>
-            <th colspan="8" style="text-align: center; font-weight: bold; border: 1px solid black; border-collapse: collapse;">
-                Goles
-            </th>
-        </tr>
+
+
         <tr>
             <th colspan="2"  style="text-align: center; border: 1px solid black; border-collapse: collapse; font-weight: bold;">Goles</th>
             <th colspan="3" style="text-align: center; border: 1px solid black; border-collapse: collapse; font-weight: bold;">Jugador</th>
@@ -44,19 +41,28 @@
                     {{$stat->total}}
                 </td>
                 <td colspan="3" style="text-align: center; border: 1px solid black; border-collapse: collapse;">
-                    {{$stat->player_name}}
+                    @if($showImages)
+                        <div style="display: flex; justify-content: center; align-items: center;  width: 100%;">
+                            <img src="{{$stat->user_image}}" alt="{{$stat->player_name}} image" style="border-radius: 50%; flex: 0 0 30px; margin-right: 8px;" width="30px">
+                            <span style="display: inline-block; white-space: nowrap;overflow: hidden; text-overflow: ellipsis; max-width: 120px; flex: 0 0 100%;">  {{$stat->player_name}}</span>
+                        </div>
+                    @else
+                        <span style="display: inline-block; white-space: nowrap;overflow: hidden; text-overflow: ellipsis; max-width: 120px; flex: 0 0 100%;">  {{$stat->player_name}}</span>
+                    @endif
                 </td>
                 <td colspan="3" style="text-align: center; border: 1px solid black; border-collapse: collapse;">
-                    {{$stat->team_name}}
+                    @if($showImages)
+                        <div style="display: flex; justify-content: center; align-items: center; width: 100%;">
+                            <img src="{{$stat->team_image}}" alt="{{$stat->team_name}} image"  style="border-radius: 50%; flex: 0 0 30px; margin-right: 8px;" width="30px">
+                            <span style="display: inline-block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px; flex: 0 0 100%;">{{$stat->team_name}}</span>
+                        </div>
+                    @else
+                        <span style="display: inline-block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px; flex: 0 0 100%;">{{$stat->team_name}}</span>
+                    @endif
                 </td>
             </tr>
         @endforeach
         <tr></tr>
-        <tr>
-            <th colspan="8" style="text-align: center; font-weight: bold; border: 1px solid black; border-collapse: collapse;">
-                Asistencias
-            </th>
-        </tr>
         <tr>
             <th colspan="2"  style="text-align: center; border: 1px solid black; border-collapse: collapse; font-weight: bold;">Asistencias</th>
             <th colspan="3" style="text-align: center; border: 1px solid black; border-collapse: collapse; font-weight: bold;">Jugador</th>
@@ -68,21 +74,29 @@
                     {{$stat->total}}
                 </td>
                 <td colspan="3" style="text-align: center; border: 1px solid black; border-collapse: collapse;">
-                    {{$stat->player_name}}
+                    @if($showImages)
+                        <div style="display: flex; justify-content: center; align-items: center;  width: 100%;">
+                            <img src="{{$stat->user_image}}" alt="{{$stat->player_name}} image" style="border-radius: 50%; flex: 0 0 30px; margin-right: 8px;" width="30px">
+                            <span style="display: inline-block; white-space: nowrap;overflow: hidden; text-overflow: ellipsis; max-width: 120px; flex: 0 0 100%;">  {{$stat->player_name}}</span>
+                        </div>
+                    @else
+                        <span style="display: inline-block; white-space: nowrap;overflow: hidden; text-overflow: ellipsis; max-width: 120px; flex: 0 0 100%;">  {{$stat->player_name}}</span>
+                    @endif
                 </td>
                 <td colspan="3" style="text-align: center; border: 1px solid black; border-collapse: collapse;">
-                    {{$stat->team_name}}
+                    @if($showImages)
+                        <div style="display: flex; justify-content: center; align-items: center; width: 100%;">
+                            <img src="{{$stat->team_image}}" alt="{{$stat->team_name}} image"  style="border-radius: 50%; flex: 0 0 30px; margin-right: 8px;" width="30px">
+                            <span style="display: inline-block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px; flex: 0 0 100%;">{{$stat->team_name}}</span>
+                        </div>
+                    @else
+                        <span style="display: inline-block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px; flex: 0 0 100%;">{{$stat->team_name}}</span>
+                    @endif
                 </td>
             </tr>
         @endforeach
-        <tr></tr>
         <tr>
-            <th colspan="8" style="text-align: center; font-weight: bold; border: 1px solid black; border-collapse: collapse;">
-                Tarjetas Amarillas
-            </th>
-        </tr>
-        <tr>
-            <th colspan="2"  style="text-align: center; border: 1px solid black; border-collapse: collapse; font-weight: bold;">Tarjetas</th>
+            <th colspan="2"  style="text-align: center; border: 1px solid black; border-collapse: collapse; font-weight: bold;"> Tarjetas Amarillas</th>
             <th colspan="3" style="text-align: center; border: 1px solid black; border-collapse: collapse; font-weight: bold;">Jugador</th>
             <th colspan="3" style="text-align: center; border: 1px solid black; border-collapse: collapse; font-weight: bold;">Equipo</th>
         </tr>
@@ -92,21 +106,30 @@
                     {{$stat->total}}
                 </td>
                 <td colspan="3" style="text-align: center; border: 1px solid black; border-collapse: collapse;">
-                    {{$stat->player_name}}
+                    @if($showImages)
+                        <div style="display: flex; justify-content: center; align-items: center;  width: 100%;">
+                            <img src="{{$stat->user_image}}" alt="{{$stat->player_name}} image" style="border-radius: 50%; flex: 0 0 30px; margin-right: 8px;" width="30px">
+                            <span style="display: inline-block; white-space: nowrap;overflow: hidden; text-overflow: ellipsis; max-width: 120px; flex: 0 0 100%;">  {{$stat->player_name}}</span>
+                        </div>
+                    @else
+                        <span style="display: inline-block; white-space: nowrap;overflow: hidden; text-overflow: ellipsis; max-width: 120px; flex: 0 0 100%;">  {{$stat->player_name}}</span>
+                    @endif
                 </td>
                 <td colspan="3" style="text-align: center; border: 1px solid black; border-collapse: collapse;">
-                    {{$stat->team_name}}
+                    @if($showImages)
+                        <div style="display: flex; justify-content: center; align-items: center; width: 100%;">
+                            <img src="{{$stat->team_image}}" alt="{{$stat->team_name}} image"  style="border-radius: 50%; flex: 0 0 30px; margin-right: 8px;" width="30px">
+                            <span style="display: inline-block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px; flex: 0 0 100%;">{{$stat->team_name}}</span>
+                        </div>
+                    @else
+                        <span style="display: inline-block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px; flex: 0 0 100%;">{{$stat->team_name}}</span>
+                    @endif
                 </td>
             </tr>
         @endforeach
         <tr></tr>
         <tr>
-            <th colspan="8" style="text-align: center; font-weight: bold; border: 1px solid black; border-collapse: collapse;">
-                Tarjetas Rojas
-            </th>
-        </tr>
-        <tr>
-            <th colspan="2"  style="text-align: center; border: 1px solid black; border-collapse: collapse; font-weight: bold;">Tarjetas</th>
+            <th colspan="2"  style="text-align: center; border: 1px solid black; border-collapse: collapse; font-weight: bold;">Tarjetas Rojas</th>
             <th colspan="3" style="text-align: center; border: 1px solid black; border-collapse: collapse; font-weight: bold;">Jugador</th>
             <th colspan="3" style="text-align: center; border: 1px solid black; border-collapse: collapse; font-weight: bold;">Equipo</th>
         </tr>
@@ -116,10 +139,24 @@
                     {{$stat->total}}
                 </td>
                 <td colspan="3" style="text-align: center; border: 1px solid black; border-collapse: collapse;">
-                    {{$stat->player_name}}
+                    @if($showImages)
+                        <div style="display: flex; justify-content: center; align-items: center;  width: 100%;">
+                            <img src="{{$stat->user_image}}" alt="{{$stat->player_name}} image" style="border-radius: 50%; flex: 0 0 30px; margin-right: 8px;" width="30px">
+                            <span style="display: inline-block; white-space: nowrap;overflow: hidden; text-overflow: ellipsis; max-width: 120px; flex: 0 0 100%;">  {{$stat->player_name}}</span>
+                        </div>
+                    @else
+                        <span style="display: inline-block; white-space: nowrap;overflow: hidden; text-overflow: ellipsis; max-width: 120px; flex: 0 0 100%;">  {{$stat->player_name}}</span>
+                    @endif
                 </td>
                 <td colspan="3" style="text-align: center; border: 1px solid black; border-collapse: collapse;">
-                    {{$stat->team_name}}
+                    @if($showImages)
+                        <div style="display: flex; justify-content: center; align-items: center; width: 100%;">
+                            <img src="{{$stat->team_image}}" alt="{{$stat->team_name}} image"  style="border-radius: 50%; flex: 0 0 30px; margin-right: 8px;" width="30px">
+                            <span style="display: inline-block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px; flex: 0 0 100%;">{{$stat->team_name}}</span>
+                        </div>
+                    @else
+                        <span style="display: inline-block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px; flex: 0 0 100%;">{{$stat->team_name}}</span>
+                    @endif
                 </td>
             </tr>
         @endforeach

@@ -6,6 +6,7 @@ use App\DTO\TournamentDTO;
 use App\Events\TournamentCreatedEvent;
 use App\Exports\RoundExport;
 use App\Exports\TournamentStandingExport;
+use App\Exports\TournamentStatsExport;
 use App\Http\Requests\CreateTournamentScheduleRequest;
 use App\Http\Requests\TournamentStoreRequest;
 use App\Http\Requests\TournamentUpdateRequest;
@@ -489,5 +490,39 @@ class TournamentController extends Controller
         }
         return $exportable;
 
+    }
+
+    /**
+     * @throws Exception
+     * @throws \PhpOffice\PhpSpreadsheet\Writer\Exception
+     */
+    public function exportStats(Request $request, Tournament $tournament)
+    {
+        $type = $request->query('type');
+        $stats = $this->getStats($tournament);
+        $league = $tournament?->league;
+        $exportable = null;
+        if ($type === self::IMG_EXPORT_TYPE){
+            $html = view('exports.tournament.stats',[
+                'stats' => $stats,
+                'leagueName' => $league->name,
+                'tournamentName' => $tournament->name,
+                'currentRound' => $tournament->currentRound()['round'],
+                'currentDate' => today()->translatedFormat('l d M Y'),
+            ]);
+            $exportable = SnappyImage::loadHTML($html)
+                ->setOption('width', 794)
+                ->setOption('height', 1123)
+                ->setOption('format', 'jpg')
+                ->setOption('quality', 100)
+                ->setOption('encoding', 'UTF-8')
+                ->setOption('enable-local-file-access', true)
+                ->download($tournament->slug."-estadísticas.jpg");
+        }
+        if ($type === self::XSL_EXPORT_TYPE){
+            $export = new TournamentStatsExport($stats, $league->name, $tournament->name, $tournament->currentRound());
+            $exportable =  Excel::download($export,$tournament->slug."-tabla-de-posiciones.xlsx", \Maatwebsite\Excel\Excel::XLSX);
+        }
+        return $exportable;
     }
 }

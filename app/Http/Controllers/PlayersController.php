@@ -57,7 +57,7 @@ class PlayersController extends Controller
     public function store(PlayerStoreRequest $request, Team $team, PlayerService $service): ?JsonResponse
     {
         try {
-            $service->store($request);
+            $service->store($request->userFormData(), $request->playerFormData());
             return response()->json(['message' => 'Player registered successfully'], 201);
         } catch (Exception $e) {
             logger($e->getMessage());
@@ -132,19 +132,14 @@ class PlayersController extends Controller
             'D' => 'teléfono',
             'E' => 'fecha_nacimiento',
             'F' => 'nacionalidad',
-            'G' => 'posicion',
+            'G' => 'posición',
             'H' => 'numero',
             'I' => 'altura',
             'J' => 'peso',
             'K' => 'pie_dominante',
             'L' => 'notas_medicas'
         ];
-        foreach ($expected as $column => $expectedValue) {
-            if (trim($header[$column]) !== $expectedValue) {
-                return false;
-            }
-        }
-        return true;
+        return array_all($expected, static fn($expectedValue, $column) => trim($header[$column]) === $expectedValue);
     }
 
     /**
@@ -178,13 +173,27 @@ class PlayersController extends Controller
                 'notes' => $row['L'],
             ]
         ];
-
-        $formRequest = PlayerStoreRequest::create('', 'POST', $data);
-        $formRequest->setContainer(app())->setRedirector(app('redirect'));
-        $formRequest->validateResolved();
-        $builder = new PlayerBuilder;
-        $service = new PlayerService($builder);
-        $service->store($formRequest);
+        $userData = [
+            'name' => $data['basic']['name'],
+            'last_name' => $data['basic']['last_name'],
+            'email' => $data['contact']['email'],
+            'phone' => $data['contact']['phone'],
+            'image' => $data['basic']['image'],
+        ];
+        $playerData = [
+            'birthdate' => $data['basic']['birthdate'],
+            'team_id' => $data['basic']['team_id'],
+            'category_id' => $data['basic']['category_id'],
+            'nationality' => $data['basic']['nationality'],
+            'position_id' => $data['details']['position_id'],
+            'number' => $data['details']['number'],
+            'height' => $data['details']['height'],
+            'weight' => $data['details']['weight'],
+            'dominant_foot' => $data['details']['dominant_foot'],
+            'medical_notes' => $data['details']['medical_notes'],
+        ];
+        $service = new PlayerService(new PlayerBuilder);
+        $service->store($userData, $playerData);
 
     }
 }

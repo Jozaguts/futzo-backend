@@ -37,8 +37,8 @@ class PlayerStoreRequest extends FormRequest
             'details.weight' => 'nullable|numeric',
             'details.dominant_foot' => 'nullable|string',
             'details.medical_notes' => 'nullable|string',
-            'contact.email' => 'required|email|unique:users,email',
-            'contact.phone' => 'nullable|string|unique:users,phone',
+            'contact.email' => 'nullable|email|unique:users,email',
+            'contact.phone' => 'nullable|unique:users,phone',
             'contact.notes' => 'nullable|string',
         ];
     }

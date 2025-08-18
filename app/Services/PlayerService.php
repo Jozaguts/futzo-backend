@@ -21,11 +21,11 @@ class PlayerService
      * @throws FileIsTooBig
      * @throws \Throwable
      */
-    public function store(PlayerStoreRequest $request): void
+    public function store($userData, $playerData): void
     {
         $this->builder
-            ->setUserData($request->userFormData())
-            ->setPlayerData($request->playerFormData())
+            ->setUserData($userData)
+            ->setPlayerData($playerData)
             ->build();
     }
 

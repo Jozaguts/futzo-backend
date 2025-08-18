@@ -5,6 +5,7 @@ namespace App\Services\Builders;
 use App\Contracts\IPlayerBuilder;
 use App\Events\RegisteredPlayer;
 use App\Models\Category;
+use App\Models\League;
 use App\Models\Player;
 use App\Models\Position;
 use App\Models\Team;
@@ -44,10 +45,12 @@ class PlayerBuilder implements IPlayerBuilder
 
     public function createUser(): static
     {
-        $this->user = User::create($this->userData);
+        $this->user = User::createQuietly($this->userData);
         $this->user->assignRole('jugador');
-        $this->user->league()->associate(Auth()->user()->league);
-        $this->user->save();
+        $league_id = request()->header('X-League-Id');
+        $this->user->league()->associate( League::find($league_id));
+        $this->user->saveQuietly();
+
         return $this;
     }
 
@@ -69,7 +72,7 @@ class PlayerBuilder implements IPlayerBuilder
             $this->player->category()->associate($category);
 
         }
-        $this->player->save();
+        $this->player->saveQuietly();
         return $this;
     }
 
@@ -100,19 +103,13 @@ class PlayerBuilder implements IPlayerBuilder
      */
     public function build(): static
     {
-        DB::beginTransaction();
-        try {
-            $result = $this->setTemporaryPassword()
+        return DB::transaction(function () {
+            return $this->setTemporaryPassword()
                 ->createUser()
                 ->createPlayer()
                 ->attachImageIfPresent()
                 ->dispatchEvent();
-            DB::commit();
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error($e->getMessage());
-            throw  new \RuntimeException('Error creating player: ' . $e->getMessage());
-        }
-        return $result;
+        });
+
     }
 }

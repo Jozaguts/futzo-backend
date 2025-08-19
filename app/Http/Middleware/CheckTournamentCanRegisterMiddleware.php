@@ -14,7 +14,6 @@ class CheckTournamentCanRegisterMiddleware
         if (!$tournament instanceof Tournament) {
             $tournament = Tournament::find((int) $tournament);
         }
-        logger('tournament: ' . $tournament);
         if (! ($tournament->teams->count() < $tournament->configuration->max_teams)) {
             return response()->json([
                 'message' => "El torneo  {$tournament->name} ha alcanzado el numero maximo de equipos permitidos."

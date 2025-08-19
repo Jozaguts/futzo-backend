@@ -31,7 +31,6 @@ class AppendLeagueHeaderMiddleware
         if ($leagueId) {
             $response->headers->set('X-League-Id', $leagueId);
         }
-        logger('league_id '. $leagueId);
         return $response;
     }
 }

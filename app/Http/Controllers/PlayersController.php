@@ -105,7 +105,12 @@ class PlayersController extends Controller
                 ], 422);
             }
             foreach ($playersData as $row) {
-                $this->storePlayerFromRow($row, $team);
+                $nameIsEmpty = empty($row['A']);
+                $lastNameIsEmpty = empty($row['B']);
+
+                if (!$nameIsEmpty && !$lastNameIsEmpty){
+                    $this->storePlayerFromRow($row, $team);
+                }
             }
             return response()->json('File imported successfully');
         } catch (Exception $e) {
@@ -178,8 +183,10 @@ class PlayersController extends Controller
             'last_name' => $data['basic']['last_name'],
             'email' => $data['contact']['email'],
             'phone' => $data['contact']['phone'],
-            'image' => $data['basic']['image'],
         ];
+        if(isset($data['basic']['image'])){
+            $userData['image'] = $data['basic']['image'];
+        }
         $playerData = [
             'birthdate' => $data['basic']['birthdate'],
             'team_id' => $data['basic']['team_id'],

@@ -60,6 +60,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 Route::prefix('public')->group(function () {
    require __DIR__ . '/teams/public.php';
+   require __DIR__ . '/tournaments/public.php';
 });
 
 Route::post('/pre-register', [PreRegisterController::class, 'preRegister'])

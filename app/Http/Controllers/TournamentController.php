@@ -530,4 +530,17 @@ class TournamentController extends Controller
         }
         return $exportable;
     }
+    public function canRegister(Tournament $tournament): JsonResponse
+    {
+        $canRegister = $tournament->teams->count() < $tournament->configuration->max_teams;
+        return response()->json(['canRegister' => $canRegister]);
+    }
+    public function catalogs(Tournament $tournament): array
+    {
+        $tournament->load(['category','league']);
+        return [
+            'tournament' => $tournament,
+            'category' => $tournament->category,
+        ];
+    }
 }

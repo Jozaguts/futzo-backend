@@ -18,6 +18,7 @@ use App\Models\DefaultLineup;
 use App\Models\DefaultLineupPlayer;
 use App\Models\Formation;
 use App\Models\Game;
+use App\Models\League;
 use App\Models\Lineup;
 use App\Models\LineupPlayer;
 use App\Models\Player;
@@ -108,9 +109,9 @@ class TeamsController extends Controller
                     'image' => $media->getUrl('default'),
                 ]);
             }
-            $league_id = auth()?->user()?->league_id;
+            $league_id = $request->headers->get('X-League-Id');
             if (!$league_id) {
-                $league_id = Tournament::where('id', $data['team']['tournament_id'])->first()->league?->id;
+                $league_id = Tournament::where('id', $data['team']['tournament_id'])->firstOrFail()->league?->id;
             }
             $team->leagues()->attach($league_id);
             $team->categories()->attach($data['team']['category_id']);
@@ -218,7 +219,7 @@ class TeamsController extends Controller
             $user->update(['image' => $media->getUrl()]);
         }
 
-        $user->league()->associate(auth()->user()->league);
+        $user->league()->associate(League::find($request->headers->get('X-League-Id')));
         $user->save();
         $user->assignRole($roleName);
         if ($sendEmail) {
@@ -386,7 +387,7 @@ class TeamsController extends Controller
             'address' => json_decode($data['team']['address'], false, 512, JSON_THROW_ON_ERROR),
             'colors' => json_decode($data['team']['colors'], false, 512, JSON_THROW_ON_ERROR)
         ]);
-        $team->leagues()->attach(auth()->user()->league_id);
+        $team->leagues()->attach(request()->headers->get('X-League-Id'));
         $team->categories()->attach($data['team']['category_id']);
         $team->tournaments()->attach($data['team']['tournament_id']);
     }
@@ -644,8 +645,8 @@ class TeamsController extends Controller
     }
     public function canRegister(Team $team): JsonResponse
     {
-        $conRegister = $team->players->count() < $team->tournaments()->first()->configuration->max_players_per_team;
-        return response()->json(['canRegister' => $conRegister]);
+        $canRegister = $team->players->count() < $team->tournaments()->first()->configuration->max_players_per_team;
+        return response()->json(['canRegister' => $canRegister]);
     }
 
 }

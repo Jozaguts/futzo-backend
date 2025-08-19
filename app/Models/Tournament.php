@@ -48,11 +48,20 @@ class Tournament extends Model implements HasMedia
         'end_date' => 'date',
 
     ];
+    protected $appends = ['register_link'];
     public function getSlugOptions(): SlugOptions
     {
         return SlugOptions::create()
             ->generateSlugsFrom('name')
             ->saveSlugsTo('slug');
+    }
+    protected function registerLink(): Attribute
+    {
+        $slug = $this->slug;
+        return Attribute::make(
+            get: static fn($value) => config('app.frontend_url','https://futzo.io') ."/torneos/$slug/equipos/inscripcion"
+        );
+
     }
     protected function startDateToString(): Attribute
     {

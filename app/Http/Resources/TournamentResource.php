@@ -50,6 +50,7 @@ class TournamentResource extends JsonResource
             ] : null,
             'max_teams' => optional($this->resource->configuration)->max_teams,
             'substitutions_per_team' => optional($this->resource->configuration)->substitutions_per_team,
+            'register_link' => $this->resource->register_link,
         ];
     }
 }

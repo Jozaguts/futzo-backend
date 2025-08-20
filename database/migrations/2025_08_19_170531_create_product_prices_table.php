@@ -30,7 +30,7 @@ return new class extends Migration {
                 [
                     'product_id' => 1,
                     'currency_id' => 1,
-                    'price' => 514800,
+                    'price' => 526800,
                     'billing_period' => 'annually',
                 ],
                 [

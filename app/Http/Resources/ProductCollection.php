@@ -44,12 +44,12 @@ class ProductCollection  extends ResourceCollection
     {
         $promo = '';
          if($sku === 'kickoff'){
-            $promo = $billing_period === 'monthly' ? 'Primer mes $299 MXN con cupón. Solo nuevos clientes.' : "<strong style='font-size: 18px;'>$439.00 MXN</strong> / mes<br>(ahorra 12%)";
+            $promo = $billing_period === 'monthly' ? 'Primer mes $299 MXN. <br> Empieza simple, juega en serio.' : "<strong style='font-size: 18px;'>$439.00 MXN</strong> / mes<br>(ahorra 12%)";
         } else if($sku ==='pro_play') {
-             $promo =  $billing_period === 'monthly' ? 'Primer mes $299 MXN con cupón. Solo nuevos clientes.' : "<strong style='font-size: 18px;'>$639 MXN </strong> / mes <br>(ahorra 20%)";
+             $promo =  $billing_period === 'monthly' ? 'Primer mes $299 MXN. <br> Inscribe equipos con un clic.' : "<strong style='font-size: 18px;'>$639 MXN </strong> / mes <br>(ahorra 20%)";
          }
         else if ($sku ==='elite_league'){
-            $promo = $billing_period === 'monthly' ? 'Primer mes $699 MXN con cupón. Solo nuevos clientes.' : "<strong style='font-size: 18px;'> $1,274 MXN </strong> /mes <br>(ahorra 15%)";
+            $promo = $billing_period === 'monthly' ? 'Primer mes $699 MXN. <br> Soporte prioritario sin límites.' : "<strong style='font-size: 18px;'> $1,274 MXN </strong> /mes <br>(ahorra 15%)";
         }
         return $promo;
     }

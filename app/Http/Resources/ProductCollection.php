@@ -32,6 +32,7 @@ class ProductCollection  extends ResourceCollection
                               'iso_code' => $price->currency->iso_code,
                               'promo' =>  $this->getPromo( $item->sku, $price->billing_period, $monthlyPrice),
                               'cta' => $this->getCTA($item->sku),
+                              'url' => config('app.frontend_url') . "/suscripcion?plan=$item->sku",
                           ]
                       ];
                   }),

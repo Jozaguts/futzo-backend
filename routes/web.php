@@ -17,5 +17,6 @@ Route::get('/', function () {
     'message' => 'Welcome to '. env('APP_NAME').' API'
   ]);
 });
+Route::webhooks('stripe/webhook','STRIPE_NOTIFICATION');
 require __DIR__.'/auth.php';
 require __DIR__.'/auth/routes.php';

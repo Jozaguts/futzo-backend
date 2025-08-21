@@ -56,6 +56,8 @@ class User extends Authenticatable implements MustVerifyEmail, HasMedia
         'image',
         'verified_at',
         'league_id',
+        'stripe_customer_id',
+        'status',
     ];
 
     /**

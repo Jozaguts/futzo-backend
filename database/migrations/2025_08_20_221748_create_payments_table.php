@@ -12,7 +12,7 @@ return new class extends Migration {
         Schema::create('payment', function (Blueprint $table) {
             $table->id();
             $table->foreignIdFor(User::class)->constrained('users');
-            $table->foreignIdFor(Subscription::class, 'subscription_id')->constrained('subscription');
+            $table->foreignIdFor(Subscription::class, 'subscription_id')->constrained('subscriptions');
             $table->string('stripe_payment_intent_id', 255)->nullable()->index();
             $table->bigInteger('amount')->unsigned();
             $table->string('currency',3);

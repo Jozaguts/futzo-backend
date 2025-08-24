@@ -36,7 +36,7 @@ class ProductCollection extends ResourceCollection
                     'price' => number_format($intro_price->price / 100, 0, '.', ','),
                     'promo_price' => number_format($promo_price->price / 100, 0, '.', ','),
                     'annually_price' => number_format($annually_price->price / 100 / 12, 0, '.', ','),
-                    'url' => config('app.frontend_url') . "/suscripcion?plan=$intro_price->plan_slug",
+                    'url' => config('app.frontend_url') . "/suscripcion?plan=$product->sku",
                     'discount' =>  $this->getDiscountPercentage($product->sku),
                     'cta' => $this->getCTA($product->sku),
                 ]

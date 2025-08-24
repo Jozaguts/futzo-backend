@@ -52,4 +52,7 @@ return [
         'number' => env('TWILIO_NUMBER'),
         'verify_sid' =>env('TWILIO_VERIFY_SID'),
     ],
+    'stripe' => [
+        'secret' => env('STRIPE_SECRET'),
+    ]
 ];

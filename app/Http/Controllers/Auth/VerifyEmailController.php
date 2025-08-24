@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\VerifyEmailRequest;
+use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\JsonResponse;
@@ -22,7 +23,7 @@ class VerifyEmailController extends Controller
         $code = $request->input('code',false);
         $email = $request->input('email',false);
         $verified = false;
-        $message = 'Error al verificar, por favor intente mas tarde';
+        $response = ['message' => 'Error al verificar, por favor intente mas tarde', 'user' => null];
         $status = 401;
 
         if($phone){
@@ -46,13 +47,15 @@ class VerifyEmailController extends Controller
                 } elseif (!empty($phone)) {
                     $q->where('phone', $phone);
                 }
-            })->first();
+            })->firstOrFail();
+            auth()->login($user, true);
+            $request->session()->regenerate();
             $this->markEmailAsVerified($user);
             event(new Verified($user));
-            $message = 'Cuenta verificada exitosamente.';
+            $response = ['message' => 'Cuenta verificada exitosamente.', 'user' => new UserResource($user)];
             $status = 200;
         }
-        return response()->json(['message' => $message],$status);
+        return response()->json($response,$status);
     }
 
     private function markEmailAsVerified(User $user): void

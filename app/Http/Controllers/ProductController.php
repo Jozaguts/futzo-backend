@@ -9,6 +9,6 @@ class ProductController extends Controller
 {
     public function prices(): ProductCollection
     {
-         return new ProductCollection(Product::with(['productPrices','productPrices.currency'])->get());
+         return new ProductCollection(Product::with('productPrices.currency')->get());
     }
 }

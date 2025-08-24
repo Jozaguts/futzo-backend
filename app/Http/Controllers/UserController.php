@@ -59,8 +59,11 @@ class UserController extends Controller
 	{
 		$validated = $request->validated();
 		$isPhone = isset($validated['phone']);
-		$user = User::where($isPhone ? 'phone' : 'email', $validated[$isPhone ? 'phone' : 'email'])->first();
-		$user->update(['verification_token' => random_int(1000, 9999)]);
+		$user = User::where($isPhone ? 'phone' : 'email', $validated[$isPhone ? 'phone' : 'email'])->firstOrFail();
+		$user->update([
+            'verification_token' => random_int(1000, 9999),
+            'verified_at' => null,
+        ]);
 
 		$user->sendEmailVerificationNotification();
 

@@ -1,14 +1,13 @@
 <?php
 
 use App\Http\Controllers\Auth\PreRegisterController;
-use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\GameActionDetailController;
-use App\Http\Controllers\GameController;
 use App\Http\Controllers\GameGeneralDetailsController;
 use App\Http\Controllers\GameTimeDetailsController;
 use App\Http\Controllers\GenderController;
-use App\Http\Controllers\LeaguesController;
 use App\Http\Controllers\LineupsController;
+use App\Http\Controllers\OnBoardingCallbackController;
 use App\Http\Controllers\PenaltyController;
 use App\Http\Controllers\PenaltyGoalKeeperController;
 use App\Http\Controllers\RefereeController;
@@ -63,7 +62,9 @@ Route::prefix('public')->group(function () {
    require __DIR__ . '/tournaments/public.php';
    require __DIR__ . '/products/public.php';
 });
-
+Route::get('checkout', CheckoutController::class)->name('checkout');
+Route::get('billing/callback', OnBoardingCallbackController::class)
+    ->name('billing.callback');
 Route::post('/pre-register', [PreRegisterController::class, 'preRegister'])
     ->middleware(['throttle:3,1'])
     ->name('pre-register');

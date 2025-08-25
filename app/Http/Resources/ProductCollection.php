@@ -20,7 +20,7 @@ class ProductCollection extends ResourceCollection
                 ->firstOrFail();
             $promo_price = $product->productPrices
                 ->where('billing_period','month')
-                ->where('variant','special')
+                ->where('variant','special_first_month')
                 ->firstOrFail();
             $annually_price = $product->productPrices
                 ->where('billing_period','year')
@@ -36,7 +36,11 @@ class ProductCollection extends ResourceCollection
                     'price' => number_format($intro_price->price / 100, 0, '.', ','),
                     'promo_price' => number_format($promo_price->price / 100, 0, '.', ','),
                     'annually_price' => number_format($annually_price->price / 100 / 12, 0, '.', ','),
-                    'url' => config('app.frontend_url') . "/suscripcion?plan=$product->sku",
+                    'urls' => [
+                        'month' =>  config('app.frontend_url') . "/suscripcion?plan=$intro_price->plan_slug",
+                        'year' => config('app.frontend_url') . "/suscripcion?plan=$annually_price->plan_slug",
+                    ],
+
                     'discount' =>  $this->getDiscountPercentage($product->sku),
                     'cta' => $this->getCTA($product->sku),
                 ]

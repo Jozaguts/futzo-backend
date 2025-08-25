@@ -21,7 +21,8 @@ class League extends Model
         'banner',
         'status',
         'location',
-        'football_type_id'
+        'football_type_id',
+        'active'
     ];
     protected $casts = [
         'creation_date' => 'datetime',

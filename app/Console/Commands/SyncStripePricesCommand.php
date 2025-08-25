@@ -43,7 +43,7 @@ class SyncStripePricesCommand extends Command
                             'currency_id' => $currency?->id,
                             'billing_period' => $price->recurring['interval'] ?? 'one_time',
                             'price' => $amount,
-                            'plan_slug' => $stripeProduct->metadata->plan_slug,
+                            'plan_slug' => $price->lookup_key,
                             'variant' => $price->metadata->variant,
                             'active' => $price->active,
                         ]

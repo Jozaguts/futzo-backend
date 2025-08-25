@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -29,6 +28,13 @@ class ProductPrice extends Model
     public function currency(): BelongsTo
     {
         return $this->belongsTo(Currency::class);
+    }
+
+    public static function for(string $sku, string $variant, string $period): ?self {
+        return static::whereHas('product', static fn($q)=>$q->where('sku',$sku))
+            ->where('variant',$variant)
+            ->where('billing_period',$period)
+            ->first();
     }
 
 }

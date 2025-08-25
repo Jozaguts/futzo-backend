@@ -122,6 +122,8 @@ class User extends Authenticatable implements MustVerifyEmail, HasMedia
                     ->height(400);
             });
     }
-
-
+    public function hasActiveSubscription(): bool
+    {
+        return $this->subscribed() && optional($this->subscription())?->valid();
+    }
 }

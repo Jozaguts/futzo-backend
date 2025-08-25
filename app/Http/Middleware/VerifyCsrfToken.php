@@ -13,5 +13,6 @@ class VerifyCsrfToken extends Middleware
      */
     protected $except = [
         'stripe/webhook',
+        'api/v1/pre-register'
     ];
 }

@@ -2,9 +2,9 @@
 
 namespace App\Providers;
 
-use App\Events\TournamentCreatedEvent;
-use App\Listeners\StripeEventListener;
-use App\Listeners\TournamentCreatedListener;
+use App\Listeners\AssignAdminRoleOnCheckoutListener;
+use App\Listeners\CreatePostCheckoutLoginListener;
+use App\Listeners\ProgramSpecialFirstMonthScheduleListener;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
@@ -22,7 +22,9 @@ class EventServiceProvider extends ServiceProvider
             SendEmailVerificationNotification::class,
         ],
         WebhookReceived::class => [
-            StripeEventListener::class,
+            AssignAdminRoleOnCheckoutListener::class,
+            CreatePostCheckoutLoginListener::class,
+            ProgramSpecialFirstMonthScheduleListener::class,
         ],
     ];
 

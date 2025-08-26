@@ -62,7 +62,9 @@ Route::prefix('public')->group(function () {
    require __DIR__ . '/tournaments/public.php';
    require __DIR__ . '/products/public.php';
 });
-Route::get('checkout', CheckoutController::class)->name('checkout');
+Route::get('checkout', CheckoutController::class)
+    ->middleware('checkout.eligibility')
+    ->name('checkout');
 Route::get('billing/callback', OnBoardingCallbackController::class)
     ->name('billing.callback');
 Route::post('/pre-register', [PreRegisterController::class, 'preRegister'])

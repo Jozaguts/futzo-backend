@@ -63,7 +63,6 @@ class StripeNotificationJob extends ProcessWebhookJob
                     $object['payment_status'] ?? null
                 );
                 break;
-
             case 'checkout.session.expired':
                 $object = $data['object'] ?? [];
                 $this->closeIntentInCacheBySession(
@@ -72,15 +71,16 @@ class StripeNotificationJob extends ProcessWebhookJob
                     $object['payment_status'] ?? null
                 );
                 break;
-
             case 'invoice.payment_succeeded':
                 logger('invoice.payment_succeeded');
                 break;
-
+            case 'customer.subscription.created':
+                $object = $data['object'] ?? [];
+//                add logic with casier
+                break;
             case 'customer.subscription.updated':
                 logger('customer.subscription.updated');
                 break;
-
             case 'customer.subscription.deleted':
                 logger('customer.subscription.deleted');
                 break;

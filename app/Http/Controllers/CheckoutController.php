@@ -59,9 +59,9 @@ class CheckoutController extends Controller
             // 3. en este punto se validó que el identifier=email no ha intentado crear un payment intent de Stripe
 
             // 4. validamos si alguna vez tuvo una subscription
-            $isFirst = !$user ||  $user->subscriptions()->count() > 0;
+            $hasSubscriptions = $user->subscriptions()->count() > 0;
             // 5. Si es primera compra se aplica el special_first_month price caso contrario intro/regular price
-            $price = $isFirst && $period == 'month'
+            $price = !$hasSubscriptions && $period == 'month'
                 ? ProductPrice::for($plan, 'special_first_month', 'month') // primer mes
                 : ProductPrice::for($plan, 'intro', $period); // intro mensual/anual
             abort_unless($price?->stripe_price_id, 422, 'Price not configured');
@@ -73,7 +73,7 @@ class CheckoutController extends Controller
                     'plan_sku'  => (string)$plan,
                     'period'    => (string)$period,
                     'app_email' => (string)$identifier,
-                    'first_purchase' => $isFirst ? '1' : '0',
+                    'first_purchase' => !$hasSubscriptions ? '1' : '0',
                     'variant' => (string) $price?->variant
                 ])
                 ->checkout([

@@ -2,12 +2,10 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\ProductPrice;
 use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
 use Stripe\Exception\ApiErrorException;
-use Stripe\StripeClient;
 
 class EnsureCheckoutEligibilityMiddleware
 {
@@ -19,10 +17,11 @@ class EnsureCheckoutEligibilityMiddleware
 
         $identifier = strtolower($request->input('identifier', $request->input('email')));
         $authUser = $request->user();
+        $owner = $authUser ?? User::where('email', $identifier)->first();
 
-        $owner = $authUser || User::where('email', $identifier)->first();
+
         // si no existe el owner pasa al checkout
-        if ($owner) {
+        if (!is_null($owner) && $owner->subscriptions()->count() > 0) {
             return response()->json([
                 'error' => 'already_has_account',
                 'message' => 'Ya existe una cuenta con este correo. Inicia sesión para gestionar o cambiar tu suscripción.',

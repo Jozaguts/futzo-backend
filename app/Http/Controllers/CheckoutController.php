@@ -10,13 +10,13 @@ use Carbon\Carbon;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 use Stripe\Exception\ApiErrorException;
 use Stripe\StripeClient;
 
 class CheckoutController extends Controller
 {
     /**
-     * @throws ApiErrorException
      * @throws LockTimeoutException
      */
     public function __invoke(CheckoutRequest $request)
@@ -31,11 +31,14 @@ class CheckoutController extends Controller
         $intentKey = "checkout:intent:{$ownerKey}:{$plan}:{$period}";
         $lockKey   = "lock:{$intentKey}";
         return Cache::lock($lockKey, 10)->block(5, function () use ($request, $plan, $period, $identifier, $ownerKey, $intentKey) {
-            $stripe = new StripeClient(config('services.stripe.secret'));
+            $user =  User::firstOrCreate(['email' => $identifier], [
+                'name' => Str::before($identifier, '@'),
+            ]);
+//            $stripe = new StripeClient(config('services.stripe.secret'));
             $cached = Cache::get($intentKey);
             if ($cached && isset($cached['session_id'])) {
                 try {
-                    $s = $stripe->checkout->sessions->retrieve($cached['session_id']);
+                    $s = $user->stripe()->checkout->sessions->retrieve($cached['session_id']);
 
                     if ($s->status === 'open' && ($s->expires_at ?? 0) > now()->timestamp) {
                         return response()->json(['url' => $cached['url']]);
@@ -72,18 +75,27 @@ class CheckoutController extends Controller
                     'variant' => (string) $price?->variant
                 ],
             ];
-            if ($user = $request->user()) {
+            if ($user) {
                 $user->createOrGetStripeCustomer();
                 $params['customer'] = $user->stripe_id;
                 $params['client_reference_id'] = (string)$user->id;
             } else {
                 $params['customer_email'] = (string)$identifier;
             }
-            $idempotencyKey = 'chk:' . hash('sha256', "{$ownerKey}|{$plan}|{$period}");
+//            $idempotencyKey = 'chk:' . hash('sha256', "{$ownerKey}|{$plan}|{$period}");
 
-            $session = $stripe->checkout->sessions->create($params, [
-                'idempotency_key' => $idempotencyKey,
-            ]);
+            $session = $user->newSubscription('default',$price?->stripe_price_id)
+                ->withMetadata([
+                    'plan_sku'  => (string)$plan,
+                    'period'    => (string)$period,
+                    'app_email' => (string)$identifier,
+                    'first_purchase' => $isFirst ? '1' : '0',
+                    'variant' => (string) $price?->variant
+                ])
+                ->checkout([
+                    'success_url' => $success,
+                    'cancel_url'  => $cancel,
+                ]);
             $expiresAtTs = $session->expires_at ?? (now()->addDay()->timestamp);
             $ttlSeconds  = max(60, now()->diffInSeconds(Carbon::createFromTimestamp($expiresAtTs)));
             $payload = [

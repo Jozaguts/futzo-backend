@@ -12,9 +12,9 @@ use Illuminate\Support\Facades\Route;
 | be assigned to the "web" middleware group. Make something great!
 |
 */
-Route::get('/', function () {
+Route::get('/', static function () {
   return response()->json([
-    'message' => 'Welcome to '. env('APP_NAME').' API'
+    'message' => 'Welcome to '. config('app.name').' API'
   ]);
 });
 //Route::webhooks('stripe/webhook','STRIPE_NOTIFICATION')

@@ -9,7 +9,7 @@ use Twilio\Rest\Client;
 class SendOTPViaTwilioVerifyNotification extends Notification
 {
 
-    public function __construct(public string $phone)
+    public function __construct(public string $phone, public string | int $code)
     {
     }
 
@@ -23,9 +23,16 @@ class SendOTPViaTwilioVerifyNotification extends Notification
     {
         $twilio = new Client(config('services.twilio.sid'),config('services.twilio.token'));
         try {
-            $twilio->verify->v2->services(config('services.twilio.verify_sid'))
+         $response =  $twilio->verify->v2->services(config('services.twilio.verify_sid'))
                 ->verifications
-                ->create($this->phone,'sms');
+                ->create(
+                    $this->phone,
+                    'sms',
+                    ['customCode' => $this->code]
+                );
+         logger('response', [
+             'data' => $response,
+         ]);
         }catch(TwilioException $exception){
             logger('error',['message' => $exception->getMessage(), 'code' => $exception->getCode()]);
         }

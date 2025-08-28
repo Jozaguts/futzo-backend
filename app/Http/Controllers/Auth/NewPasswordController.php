@@ -33,9 +33,9 @@ class NewPasswordController extends Controller
 
         $isPhone = $request->has('phone');
         if ($isPhone) {
-            $user = User::where('phone', $request->phone)->first();
+            $user = User::where('phone', trim($request->phone))->firstOrFail();
 
-            if ($user->verification_token !== null) {
+            if ($user->verified_at === null) {
                 throw ValidationException::withMessages([
                     'token' => ['Debes verificar el código antes de cambiar la contraseña.'],
                 ]);
@@ -51,7 +51,6 @@ class NewPasswordController extends Controller
                 ]);
             }
 
-            $user = User::where('phone', $request->phone)->first();
             $user->forceFill([
                 'password' => $request->password,
                 'remember_token' => Str::random(60),
@@ -64,7 +63,7 @@ class NewPasswordController extends Controller
         }
         $status = Password::reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
-            function ($user) use ($request) {
+            static function ($user) use ($request) {
                 $user->forceFill([
                     'password' => Hash::make($request->password),
                     'remember_token' => Str::random(60),

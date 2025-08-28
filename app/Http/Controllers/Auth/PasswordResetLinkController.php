@@ -5,15 +5,16 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PasswordResetLinkRequest;
 use App\Models\User;
-use App\Notifications\SendOTPNotification;
+use App\Notifications\SendOTPViaTwilioVerifyNotification;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\ValidationException;
 use Random\RandomException;
+use Twilio\Exceptions\TwilioException;
+use Twilio\Rest\Client;
 
 class PasswordResetLinkController extends Controller
 {
@@ -30,30 +31,26 @@ class PasswordResetLinkController extends Controller
         if ($isPhone) {
             $phone = $request->phone;
             $token = random_int(1000, 9999);
-            $user = User::where('phone', $phone)->first();
+            $user = User::where('phone', $phone)->firstOrFail();
             $user->verification_token = $token;
             $user->save();
             DB::table('phone_password_resets')->updateOrInsert(
                 ['phone' => $phone],
                 ['token' => $token, 'created_at' => now()]
             );
-
-            Notification::route('whatsapp', $phone)->notify(new SendOTPNotification($token, $token));
-
+            $user->notify(new SendOTPViaTwilioVerifyNotification($phone, $token));
             return response()->json(['message' => 'Código enviado por SMS', 'code' => 200]);
-        } else {
-            
-            $status = Password::sendResetLink(
-                $request->only($isPhone ? 'phone' : 'email')
-            );
-
-            if ($status != Password::RESET_LINK_SENT) {
-                throw ValidationException::withMessages([
-                    'email' => [__($status)],
-                ]);
-            }
         }
 
+        $status = Password::sendResetLink(
+            $request->only('email')
+        );
+
+        if ($status !== Password::RESET_LINK_SENT) {
+            throw ValidationException::withMessages([
+                'email' => [__($status)],
+            ]);
+        }
 
         return response()->json(['status' => __($status), 'code' => 200]);
     }
@@ -84,22 +81,31 @@ class PasswordResetLinkController extends Controller
         return response()->json(['message' => 'Contraseña actualizada con éxito']);
     }
 
+    /**
+     * @throws TwilioException
+     */
     public function verifyResetToken(Request $request): JsonResponse
     {
         $request->validate([
             'phone' => 'required|regex:/^\+?[1-9]\d{1,14}$/|exists:users,phone',
             'token' => 'required|string',
         ]);
-
-        $user = User::where('phone', $request->phone)->first();
-
-        if (!$user || $user->verification_token !== $request->token) {
-            return response()->json(['message' => 'Código inválido'], 422);
+        $phone = $request->input('phone');
+        $code = $request->input('token');
+        $user = User::where('phone', $phone)->first();
+        $verified = false;
+        if($user){
+            $twilio = new Client(config('services.twilio.sid'), config('services.twilio.token'));
+            $check = $twilio->verify->v2->services(config('services.twilio.verify_sid'))
+                ->verificationChecks
+                ->create([
+                    'code' => $code,
+                    'to' => $phone,
+                ]);
+            $verified = $check->status === 'approved';
         }
-
-        $user->verification_token = null;
-        $user->save();
-
+        abort_unless($verified,401,'Código inválido');
+        $user->update(['verified_at' => now()]);
         return response()->json(['message' => 'Código verificado correctamente', 'code' => 200]);
     }
 }

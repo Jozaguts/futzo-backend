@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Models\User;
 use App\Notifications\SendOTPNotification;
 use App\Notifications\SendOTPViaTwilioVerifyNotification;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Random\RandomException;
 
@@ -18,7 +19,14 @@ class UserObserver
     {
         if (!is_null($user->phone) && is_null($user->email)) {
             $phoneNumber = $user->phone;
-            $user->notify(new SendOTPViaTwilioVerifyNotification($phoneNumber));
+            $token = random_int(1000, 9999);
+            $user->verification_token = $token;
+            $user->save();
+            DB::table('phone_password_resets')->updateOrInsert(
+                ['phone' => $phoneNumber],
+                ['token' => $token, 'created_at' => now()]
+            );
+            $user->notify(new SendOTPViaTwilioVerifyNotification($phoneNumber, $token));
         }
     }
 

@@ -41,8 +41,12 @@ class LeaguesController extends Controller
             'status' => $request->status ?? self::DEFAULT_STATUS,
         ]);
 
-        auth()->user()->league_id = $league->id;
-        auth()->user()->save();
+        $user = auth()->user();
+        $user->league_id = $league->id;
+        if (is_null($user->verified_at)){
+            $user->verified_at = now();
+        }
+        $user->save();
 
         return new LeagueResource($league);
     }

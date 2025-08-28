@@ -13,16 +13,14 @@ class AssignAdminRoleOnCheckoutListener implements ShouldQueue
         if ($event->payload['type'] === 'checkout.session.completed') {
             $object = $event->payload['data']['object'];
             $email = $object['customer_details']['email'] ?? ($object['metadata']['app_email'] ?? null);
-            if ($event->payload['type'] === 'checkout.session.completed') {
-                if (!$email) {
-                    logger('checkout.session.completed: missing email');
-                }
-                $user = User::where('email', $email)->firstOrFail();
-                try {
-                    $user->assignRole('administrador');
-                } catch (\Throwable $e) {
-                    logger('role assign skipped/failed');
-                }
+            if (!$email) {
+                logger('checkout.session.completed: missing email');
+            }
+            $user = User::where('email', $email)->firstOrFail();
+            try {
+                $user->assignRole('administrador');
+            } catch (\Throwable $e) {
+                logger('role assign skipped/failed');
             }
         }
     }

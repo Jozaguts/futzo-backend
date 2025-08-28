@@ -9,7 +9,6 @@ class PostCheckoutLoginController extends Controller
 {
     public function __invoke(Request $request)
     {
-        logger('PostCheckoutLoginController');
         $token = $request->input('token');
 
         abort_unless($token, 400, 'Token missing');

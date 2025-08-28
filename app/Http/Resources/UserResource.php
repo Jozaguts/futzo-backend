@@ -14,16 +14,17 @@ class UserResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+
         return [
-            'id' => $this->id,
-            'name' => $this->name,
-            'email' => $this->email,
-            'roles' => $this->roles()->pluck('name'),
-            'league' => $this->league,
-            'has_league' => !!$this->league,
-            'verified' => !!$this->verified_at,
-            'phone' => $this->phone,
-            'image' => $this->image,
+            'id' => $this->resource->id,
+            'name' => $this->resource->name,
+            'email' => $this->resource->email,
+            'roles' => $this->resource->roles()->pluck('name'),
+            'league' => $this->resource->league,
+            'has_league' => (bool)$this->resource->league,
+            'verified' => (bool)$this->resource->verified_at,
+            'phone' => $this->resource->phone,
+            'image' => $this->resource->image,
         ];
     }
 }

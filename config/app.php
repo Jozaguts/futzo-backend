@@ -61,6 +61,8 @@ return [
 
     'asset_url' => env('ASSET_URL'),
 
+    'landing_url' => env('LANDING_PAGE_URL','https://hola.futzo.io'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

@@ -12,6 +12,7 @@ class PostCheckoutLogin extends Model
         'user_id',
         'expires_at',
         'used_at',
+        'login_token',
     ];
 
     public function user(): BelongsTo

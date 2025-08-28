@@ -10,6 +10,7 @@ use App\Http\Controllers\LineupsController;
 use App\Http\Controllers\OnBoardingCallbackController;
 use App\Http\Controllers\PenaltyController;
 use App\Http\Controllers\PenaltyGoalKeeperController;
+use App\Http\Controllers\PostCheckoutLoginController;
 use App\Http\Controllers\RefereeController;
 use App\Http\Controllers\RoleAndPermissionsController;
 use App\Http\Controllers\UserController;
@@ -61,6 +62,7 @@ Route::prefix('public')->group(function () {
    require __DIR__ . '/teams/public.php';
    require __DIR__ . '/tournaments/public.php';
    require __DIR__ . '/products/public.php';
+   Route::post('/post-checkout-login', PostCheckoutLoginController::class);
 });
 Route::get('checkout', CheckoutController::class)
     ->middleware('checkout.eligibility')

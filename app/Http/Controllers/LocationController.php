@@ -19,8 +19,8 @@ class LocationController extends Controller
     public function index(Request $request): LocationCollection
     {
         $data = Location::with(['tags', 'fields.leaguesFields', 'fields.tournamentsFields'])
-            ->whereHas('leagues', function ($query) {
-                $query->where('league_id', auth()->user()->league->id);
+            ->whereHas('leagues', function ($query) use($request) {
+                $query->where('league_id', $request->headers->get('X-League-Id'));
             })
             ->when($request->has('search'), function ($query) use ($request) {
                 $query->where('locations.name', 'like', '%' . $request->get('search') . '%');

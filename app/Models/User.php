@@ -33,6 +33,9 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable implements MustVerifyEmail, HasMedia
 
 {
+    public const string PENDING_ONBOARDING_STATUS = 'pending_onboarding';
+    public const string ACTIVE_STATUS = 'active';
+    public const string SUSPENDED_STATUS = 'suspended';
     use HasApiTokens, HasFactory, Notifiable, HasRoles, InteractsWithMedia, Billable;
 
     public function sendEmailVerificationNotification(): void
@@ -129,7 +132,6 @@ class User extends Authenticatable implements MustVerifyEmail, HasMedia
 
     public function isOperationalForBilling(): bool
     {
-        // Activo si tiene suscripción válida o está en trial genérico
         return $this->hasActiveSubscription() || $this->onTrial();
     }
 }

@@ -26,6 +26,8 @@ class AuthenticateController extends Controller
 			$validated['image'] = 'https://ui-avatars.com/api/?name=' . $validated['name'] . '&color=9155fd&background=F9FAFB';
 			$user = User::create($validated);
 			$user->assignRole('predeterminado');
+            $user->status = 'pending_onboarding';
+            $user->save();
 			event(new Registered($user));
 			DB::commit();
 			return response()->json(['success' => true, 'message' => 'User created successfully'], 201);

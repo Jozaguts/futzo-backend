@@ -35,7 +35,7 @@ class CreateTournamentScheduleRequest extends FormRequest
             ],
             'general.tournament_format_id' => 'required|integer|exists:tournament_formats,id',
             'general.football_type_id' => 'required|integer|exists:football_types,id',
-            'general.start_date' => 'required|date|after:today',
+            'general.start_date' => 'required|date',
             'general.game_time' => ['required', 'integer', 'min:1'],
             'general.time_between_games' => ['required', 'integer', 'min:0'],
             'general.total_teams' => [
@@ -135,6 +135,14 @@ class CreateTournamentScheduleRequest extends FormRequest
             'fields_phase.*.availability.sunday.intervals' => 'sometimes|required|array',
             'fields_phase.*.availability.sunday.label' => 'sometimes|required|string',
 
+        ];
+    }
+    public function messages(): array
+    {
+        return [
+            'general.total_teams.min' => 'El número mínimo de equipos es :min.',
+            'general.total_teams.max' => 'El número máximo de equipos es :max.',
+            'general.locations.*.id.exists' => 'La ubicación seleccionada no está asociada al torneo o a la liga correspondiente.',
         ];
     }
 }

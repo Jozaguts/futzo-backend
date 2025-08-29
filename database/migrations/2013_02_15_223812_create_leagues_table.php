@@ -20,7 +20,7 @@ return new class extends Migration {
             $table->date('creation_date')->nullable();
             $table->string('logo')->nullable();
             $table->string('banner')->nullable();
-            $table->string('status')->default('Activa');
+            $table->enum('status',['draft','ready','suspended','archived'])->default('draft');
             $table->softDeletes();
             $table->timestamps();
         });

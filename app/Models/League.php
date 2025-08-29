@@ -13,6 +13,11 @@ class League extends Model
 {
     use HasFactory, SoftDeletes;
 
+    public const STATUS_DRAFT     = 'draft';
+    public const STATUS_READY     = 'ready';
+    public const STATUS_SUSPENDED = 'suspended';
+    public const STATUS_ARCHIVED  = 'archived';
+
     protected $fillable = [
         'name',
         'description',
@@ -22,7 +27,7 @@ class League extends Model
         'status',
         'location',
         'football_type_id',
-        'active'
+        'owner_id',
     ];
     protected $casts = [
         'creation_date' => 'datetime',
@@ -59,5 +64,10 @@ class League extends Model
     public function fields(): BelongsToMany
     {
         return $this->belongsToMany(Field::class, LeagueField::class)->withPivot('availability');
+    }
+
+    public function isReady(): bool
+    {
+        return $this->status === self::STATUS_READY;
     }
 }

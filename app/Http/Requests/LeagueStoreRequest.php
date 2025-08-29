@@ -39,7 +39,7 @@ class LeagueStoreRequest extends FormRequest
                 'image',
                 'mimes:jpg,png',
             ],
-            'status' => 'string|nullable',
+            'status' => 'nullable|in:draft,ready,suspended,archived',
         ];
     }
 }

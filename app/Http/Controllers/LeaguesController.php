@@ -10,13 +10,14 @@ use App\Models\FootballType;
 use App\Models\League;
 use App\Models\Location;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Storage;
 
 class LeaguesController extends Controller
 {
-    public const DEFAULT_STATUS = 'active';
+    public const string DEFAULT_STATUS = 'draft';
 
-    public function index()
+    public function index(): AnonymousResourceCollection
     {
         $league = League::withCount('tournaments')->get();
 
@@ -28,8 +29,8 @@ class LeaguesController extends Controller
         $data = $request->validated();
 
         if ($request->hasFile('logo')) {
-            $path = $request->file('logo')->store('images', 'public');
-            $request->logo = Storage::disk('public')->url($path);
+            $path = $request->file('logo')?->store('images', 'public');
+            $data->logo = Storage::disk('public')->url($path);
         }
         if ($request->hasFile('banner')) {
             $path = $request->file('banner')->store('images', 'public');
@@ -39,6 +40,7 @@ class LeaguesController extends Controller
         $league = League::create([
             'name' => $request->name,
             'status' => $request->status ?? self::DEFAULT_STATUS,
+            'owner_id' => auth()->id(),
         ]);
 
         $user = auth()->user();

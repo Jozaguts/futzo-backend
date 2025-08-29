@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ReSendVerificationCodeRequest;
+use App\Http\Requests\SendVerificationCodeRequest;
 use App\Http\Requests\UserImageUpdateRequest;
 use App\Http\Requests\UserPasswordUpdateRequest;
 use App\Http\Requests\UserUpdateRequest;
@@ -55,7 +55,7 @@ class UserController extends Controller
 	/**
 	 * @throws RandomException
 	 */
-	public function resendVerifyCode(ReSendVerificationCodeRequest $request)
+	public function resendVerifyCode(SendVerificationCodeRequest $request)
 	{
 		$validated = $request->validated();
 		$isPhone = isset($validated['phone']);

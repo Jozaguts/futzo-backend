@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PasswordResetLinkRequest;
+use App\Http\Requests\SendVerificationCodeRequest;
 use App\Models\User;
 use App\Notifications\SendOTPViaTwilioVerifyNotification;
 use Carbon\Carbon;
@@ -16,7 +17,7 @@ use Random\RandomException;
 use Twilio\Exceptions\TwilioException;
 use Twilio\Rest\Client;
 
-class PasswordResetLinkController extends Controller
+class VerificationCodeController extends Controller
 {
 
     /**
@@ -25,20 +26,20 @@ class PasswordResetLinkController extends Controller
      * @throws ValidationException
      * @throws RandomException
      */
-    public function send(PasswordResetLinkRequest $request): JsonResponse
+    public function send(SendVerificationCodeRequest $request): JsonResponse
     {
         $isPhone = $request->has('phone');
         if ($isPhone) {
             $phone = $request->phone;
-            $token = random_int(1000, 9999);
+            $verificationCode = random_int(1000, 9999);
             $user = User::where('phone', $phone)->firstOrFail();
-            $user->verification_token = $token;
+            $user->verification_token = $verificationCode;
             $user->save();
             DB::table('phone_password_resets')->updateOrInsert(
                 ['phone' => $phone],
-                ['token' => $token, 'created_at' => now()]
+                ['token' => $verificationCode, 'created_at' => now()]
             );
-            $user->notify(new SendOTPViaTwilioVerifyNotification($phone, $token));
+            $user->notify(new SendOTPViaTwilioVerifyNotification($phone, $verificationCode));
             return response()->json(['message' => 'Código enviado por SMS', 'code' => 200]);
         }
 

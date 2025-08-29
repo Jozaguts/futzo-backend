@@ -2,22 +2,22 @@
 
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\NewPasswordController;
-use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\Auth\VerificationCodeController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 
-Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])
+Route::post('verification-code/send', [VerificationCodeController::class, 'send'])
     ->middleware('guest')
-    ->name('password.email');
+    ->name('code.send');
 
 Route::get('/reset-password/{token}', function (string $token) {
     return ['token' => $token];
 })->middleware('guest')
     ->name('password.reset');
 
-Route::post('/reset-password-phone', [PasswordResetLinkController::class, 'resetWithPhoneToken'])
+Route::post('/reset-password-phone', [VerificationCodeController::class, 'resetWithPhoneToken'])
     ->middleware('guest');
-Route::post('/verify-reset-token', [PasswordResetLinkController::class, 'verifyResetToken'])
+Route::post('/verify-reset-token', [VerificationCodeController::class, 'verifyResetToken'])
     ->middleware('guest');
 
 

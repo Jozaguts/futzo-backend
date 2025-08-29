@@ -22,7 +22,7 @@ return [
         'verify',
         'auth/*/redirect',
         'auth/*/callback',
-        'forgot-password',
+        'verification-code/send',
         'reset-password',
         'verify-reset-token',
     ],

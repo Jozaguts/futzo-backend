@@ -5,7 +5,7 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class ReSendVerificationCodeRequest extends FormRequest
+class SendVerificationCodeRequest extends FormRequest
 {
 	public function rules(): array
 	{
@@ -32,4 +32,16 @@ class ReSendVerificationCodeRequest extends FormRequest
 	{
 		return true;
 	}
+    public function messages(): array
+    {
+        return [
+            'phone.regex' => 'Numero de teléfono no valido.',
+            'phone.whereNull' => 'Numero teléfono ya ha sido valido',
+            'phone.exists' => 'Numero teléfono no coincide en nuestro sistema.',
+            'email.required_without' => 'Email es requerido.',
+            'email.email' => 'Email debe ser valido.',
+            'email.exists' => 'Email es invalido.',
+
+        ];
+    }
 }

@@ -34,6 +34,7 @@ class CheckoutController extends Controller
             // 1. se obtiene o se crea al usuario
             $user =  User::firstOrCreate(['email' => $identifier], [
                 'name' => Str::before($identifier, '@'),
+                'status' => 'pending_onboarding',
             ]);
             // 2. si existe un intento de pago del mismo plan, email y periodo se obtiene desde el caché
             $cached = Cache::get($intentKey);

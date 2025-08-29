@@ -126,4 +126,10 @@ class User extends Authenticatable implements MustVerifyEmail, HasMedia
     {
         return $this->subscribed() && optional($this->subscription())?->valid();
     }
+
+    public function isOperationalForBilling(): bool
+    {
+        // Activo si tiene suscripción válida o está en trial genérico
+        return $this->hasActiveSubscription() || $this->onTrial();
+    }
 }

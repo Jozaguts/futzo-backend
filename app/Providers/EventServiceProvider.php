@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Listeners\AssignAdminRoleOnCheckoutListener;
 use App\Listeners\CreatePostCheckoutLoginListener;
 use App\Listeners\ProgramSpecialFirstMonthScheduleListener;
+use App\Listeners\SyncOwnerAndLeagueStatusListener;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
@@ -25,7 +26,7 @@ class EventServiceProvider extends ServiceProvider
             AssignAdminRoleOnCheckoutListener::class,
             CreatePostCheckoutLoginListener::class,
             ProgramSpecialFirstMonthScheduleListener::class,
-            \App\Listeners\SyncOwnerAndLeagueStatusListener::class,
+            SyncOwnerAndLeagueStatusListener::class,
         ],
     ];
 

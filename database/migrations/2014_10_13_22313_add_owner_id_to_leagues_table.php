@@ -7,15 +7,15 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::table('leagues', function (Blueprint $table) {
-            $table->boolean('active')->default(true);
+        Schema::table('leagues', static function (Blueprint $table) {
+            $table->foreignId('owner_id')->nullable()->constrained('users')->nullOnDelete();
         });
     }
 
     public function down(): void
     {
         Schema::table('leagues', function (Blueprint $table) {
-            //
+           $table->dropColumn('owner_id');
         });
     }
 };

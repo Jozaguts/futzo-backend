@@ -22,10 +22,10 @@ class PasswordResetLinkController extends Controller
     /**
      * Handle an incoming password reset link request.
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * @throws ValidationException
      * @throws RandomException
      */
-    public function store(PasswordResetLinkRequest $request): JsonResponse
+    public function send(PasswordResetLinkRequest $request): JsonResponse
     {
         $isPhone = $request->has('phone');
         if ($isPhone) {

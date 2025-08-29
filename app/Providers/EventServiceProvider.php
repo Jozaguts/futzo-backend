@@ -25,6 +25,7 @@ class EventServiceProvider extends ServiceProvider
             AssignAdminRoleOnCheckoutListener::class,
             CreatePostCheckoutLoginListener::class,
             ProgramSpecialFirstMonthScheduleListener::class,
+            \App\Listeners\SyncOwnerAndLeagueStatusListener::class,
         ],
     ];
 

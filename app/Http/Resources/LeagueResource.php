@@ -23,6 +23,7 @@ class LeagueResource extends JsonResource
             'football_type_id' => $this->football_type_id,
             'banner' => $this->banner,
             'status' => $this->status,
+            'owner_id' => $this->owner_id,
             'location' => $this->location,
             'tournament_count' => $this->tournaments_count,
         ];

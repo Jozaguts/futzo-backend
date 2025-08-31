@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Http;
 
 class MetaCapiService
 {
-    private string $graph = 'https://graph.facebook.com/v20.0';
+    private string $graph = 'https://graph.facebook.com/v21.0';
     private string $pixelId;
     private string $accessToken;
 
@@ -56,10 +56,12 @@ class MetaCapiService
      */
     public function postEvent(array $event, ?string $testCode = null): array
     {
+        \Log::info('env', [app()->environment()]);
         $payload = ['data' => [$event]];
         if ($testCode) {
             $payload['test_event_code'] = $testCode;
         }
+
 
         $url = "{$this->graph}/{$this->pixelId}/events?access_token={$this->accessToken}";
         $resp = Http::asJson()->retry(3, 800)->post($url, $payload);

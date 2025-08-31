@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\StoreUserRequest;
+use App\Jobs\SendMetaCapiEventJob;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\JsonResponse;
@@ -12,6 +13,7 @@ use Illuminate\Http\Response;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class AuthenticateController extends Controller
@@ -29,6 +31,26 @@ class AuthenticateController extends Controller
             $user->status = 'pending_onboarding';
             $user->save();
 			event(new Registered($user));
+            $eventId = $request->input('event_id', (string) Str::uuid());
+            $userCtx = [
+                'email'       => $user->email,
+                'external_id' => (string) $user->id,
+                'ip'          => $request->ip(),
+                'ua'          => $request->userAgent(),
+                'fbp'         => $request->input('fbp'),
+                'fbc'         => $request->input('fbc'),
+                'fbclid'      => $request->input('fbclid'),
+            ];
+            SendMetaCapiEventJob::dispatch(
+                eventName: 'StartTrial',
+                eventId: $eventId,
+                userCtx: $userCtx,
+                custom: ['trial_days'=>7,'value'=>0,'currency'=>'MXN'],
+                eventSourceUrl: config('app.url').'/login',
+                testCode: $request->input('test_event_code'),
+                actionSource: 'website',
+                consent: $request->boolean('consent', true)
+            );
 			DB::commit();
 			return response()->json(['success' => true, 'message' => 'User created successfully'], 201);
 		} catch (\Exception $e) {

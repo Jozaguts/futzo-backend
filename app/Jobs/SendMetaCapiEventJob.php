@@ -44,7 +44,7 @@ class SendMetaCapiEventJob implements ShouldQueue
             'user_data'        => $svc->buildUserData($this->userCtx),
             'custom_data'      => $this->custom,
         ];
-
-        $svc->postEvent($event, $this->testCode);
+        $effectiveTestCode = $this->testCode ?: (app()->environment('local') ? config('services.meta.test_event_code') : null);
+        $svc->postEvent($event, $effectiveTestCode);
     }
 }

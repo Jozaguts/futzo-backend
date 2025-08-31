@@ -32,6 +32,7 @@ return [
     'allowed_origins' => [
         'https://futzo.io',
         'https://app.futzo.io',
+        'https://hola.futzo.io',
         'http://futzo.test:3000',
         'http://hola.futzo.test:3001',
         'https://hola.futzo.io:3001',

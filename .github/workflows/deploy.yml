@@ -31,82 +31,95 @@ jobs:
             git checkout main
             git pull --ff-only origin main
 
-            # Write/update .env from GitHub Secrets
-            cat > .env << 'EOL'
-              APP_NAME=${{ vars.APP_NAME || 'Futzo' }}
-              APP_ENV=${{ vars.APP_ENV || 'production' }}
-              APP_KEY=${{ secrets.APP_KEY }}
-              APP_DEBUG=${{ vars.APP_DEBUG || 'false' }}
-              APP_URL=${{ vars.APP_URL }}
-              
-              LOG_CHANNEL=${{ vars.LOG_CHANNEL || 'stack' }}
-              LOG_LEVEL=${{ vars.LOG_LEVEL || 'info' }}
-              
-              DB_CONNECTION=${{ vars.DB_CONNECTION || 'mysql' }}
-              DB_HOST=${{ vars.DB_HOST }}
-              DB_PORT=${{ vars.DB_PORT || '3306' }}
-              DB_DATABASE=${{ vars.DB_DATABASE }}
-              DB_USERNAME=${{ secrets.DB_USERNAME }}
-              DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-              
-              BROADCAST_DRIVER=${{ vars.BROADCAST_DRIVER || 'log' }}
-              CACHE_DRIVER=${{ vars.CACHE_DRIVER || 'file' }}
-              FILESYSTEM_DISK=${{ vars.FILESYSTEM_DISK || 'local' }}
-              QUEUE_CONNECTION=${{ vars.QUEUE_CONNECTION || 'sync' }}
-              SESSION_DRIVER=${{ vars.SESSION_DRIVER || 'file' }}
-              SESSION_LIFETIME=${{ vars.SESSION_LIFETIME || '120' }}
-              SESSION_DOMAIN=${{ vars.SESSION_DOMAIN }}
-              SESSION_SECURE_COOKIE=${{ vars.SESSION_SECURE_COOKIE || 'true' }}
-              
-              REDIS_HOST=${{ vars.REDIS_HOST }}
-              REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
-              REDIS_PORT=${{ vars.REDIS_PORT || '6379' }}
-              
-              MAIL_MAILER=${{ vars.MAIL_MAILER || 'ses' }}
-              MAIL_HOST=${{ vars.MAIL_HOST }}
-              MAIL_PORT=${{ vars.MAIL_PORT }}
-              MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}
-              MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
-              MAIL_ENCRYPTION=${{ vars.MAIL_ENCRYPTION || 'tls' }}
-              MAIL_FROM_ADDRESS=${{ vars.MAIL_FROM_ADDRESS }}
-              MAIL_FROM_NAME=${{ vars.MAIL_FROM_NAME }}
-              
-              AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
-              AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
-              AWS_DEFAULT_REGION=${{ vars.AWS_DEFAULT_REGION }}
-              AWS_BUCKET=${{ vars.AWS_BUCKET }}
-              AWS_USE_PATH_STYLE_ENDPOINT=${{ vars.AWS_USE_PATH_STYLE_ENDPOINT || 'false' }}
-              
-              STRIPE_SECRET=${{ secrets.STRIPE_SECRET }}
-              
-              TWILIO_SID=${{ secrets.TWILIO_SID }}
-              TWILIO_AUTH_TOKEN=${{ secrets.TWILIO_AUTH_TOKEN }}
-              TWILIO_VERIFY_SID=${{ secrets.TWILIO_VERIFY_SID }}
-              TWILIO_NUMBER=${{ vars.TWILIO_NUMBER }}
-              
-              META_PIXEL_ID=${{ vars.META_PIXEL_ID }}
-              META_ACCESS_TOKEN=${{ secrets.META_ACCESS_TOKEN }}
-              META_TEST_EVENT_CODE=${{ vars.META_TEST_EVENT_CODE }}
-              
-              FACEBOOK_CLIENT_ID=${{ vars.FACEBOOK_CLIENT_ID }}
-              FACEBOOK_CLIENT_SECRET=${{ secrets.FACEBOOK_CLIENT_SECRET }}
-              FACEBOOK_REDIRECT_URI=${{ vars.FACEBOOK_REDIRECT_URI }}
-              
-              GOOGLE_CLIENT_ID=${{ vars.GOOGLE_CLIENT_ID }}
-              GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
-              GOOGLE_REDIRECT_URI=${{ vars.GOOGLE_REDIRECT_URI }}
-              
-              WHATSAPP_TOKEN=${{ secrets.WHATSAPP_TOKEN }}
-              WHATSAPP_PHONE_ID=${{ vars.WHATSAPP_PHONE_ID }}
-              WHATSAPP_ACCOUNT_ID=${{ vars.WHATSAPP_ACCOUNT_ID }}
-              WHATSAPP_URL=${{ vars.WHATSAPP_URL || 'https://graph.facebook.com/v22.0' }}
-              
-              FRONTEND_URL=${{ vars.FRONTEND_URL }}
-              
-              SANCTUM_STATEFUL_DOMAINS=${{ vars.SANCTUM_STATEFUL_DOMAINS }}
+            # Build new .env without APP_KEY (preserve existing key)
+            cat > .env.new << 'EOL'
+            APP_NAME=${{ vars.APP_NAME || 'Futzo' }}
+            APP_ENV=${{ vars.APP_ENV || 'production' }}
+            APP_DEBUG=${{ vars.APP_DEBUG || 'false' }}
+            APP_URL=${{ vars.APP_URL }}
+            
+            LOG_CHANNEL=${{ vars.LOG_CHANNEL || 'stack' }}
+            LOG_LEVEL=${{ vars.LOG_LEVEL || 'info' }}
+            
+            DB_CONNECTION=${{ vars.DB_CONNECTION || 'mysql' }}
+            DB_HOST=${{ vars.DB_HOST }}
+            DB_PORT=${{ vars.DB_PORT || '3306' }}
+            DB_DATABASE=${{ vars.DB_DATABASE }}
+            DB_USERNAME=${{ secrets.DB_USERNAME }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            
+            BROADCAST_DRIVER=${{ vars.BROADCAST_DRIVER || 'log' }}
+            CACHE_DRIVER=${{ vars.CACHE_DRIVER || 'file' }}
+            FILESYSTEM_DISK=${{ vars.FILESYSTEM_DISK || 'local' }}
+            QUEUE_CONNECTION=${{ vars.QUEUE_CONNECTION || 'sync' }}
+            SESSION_DRIVER=${{ vars.SESSION_DRIVER || 'file' }}
+            SESSION_LIFETIME=${{ vars.SESSION_LIFETIME || '120' }}
+            SESSION_DOMAIN=${{ vars.SESSION_DOMAIN }}
+            SESSION_SECURE_COOKIE=${{ vars.SESSION_SECURE_COOKIE || 'true' }}
+            
+            REDIS_HOST=${{ vars.REDIS_HOST }}
+            REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+            REDIS_PORT=${{ vars.REDIS_PORT || '6379' }}
+            
+            MAIL_MAILER=${{ vars.MAIL_MAILER || 'ses' }}
+            MAIL_HOST=${{ vars.MAIL_HOST }}
+            MAIL_PORT=${{ vars.MAIL_PORT }}
+            MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}
+            MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
+            MAIL_ENCRYPTION=${{ vars.MAIL_ENCRYPTION || 'tls' }}
+            MAIL_FROM_ADDRESS=${{ vars.MAIL_FROM_ADDRESS }}
+            MAIL_FROM_NAME=${{ vars.MAIL_FROM_NAME }}
+            
+            AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+            AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            AWS_DEFAULT_REGION=${{ vars.AWS_DEFAULT_REGION }}
+            AWS_BUCKET=${{ vars.AWS_BUCKET }}
+            AWS_USE_PATH_STYLE_ENDPOINT=${{ vars.AWS_USE_PATH_STYLE_ENDPOINT || 'false' }}
+            
+            STRIPE_SECRET=${{ secrets.STRIPE_SECRET }}
+            
+            TWILIO_SID=${{ secrets.TWILIO_SID }}
+            TWILIO_AUTH_TOKEN=${{ secrets.TWILIO_AUTH_TOKEN }}
+            TWILIO_VERIFY_SID=${{ secrets.TWILIO_VERIFY_SID }}
+            TWILIO_NUMBER=${{ vars.TWILIO_NUMBER }}
+            
+            META_PIXEL_ID=${{ vars.META_PIXEL_ID }}
+            META_ACCESS_TOKEN=${{ secrets.META_ACCESS_TOKEN }}
+            META_TEST_EVENT_CODE=${{ vars.META_TEST_EVENT_CODE }}
+            
+            FACEBOOK_CLIENT_ID=${{ vars.FACEBOOK_CLIENT_ID }}
+            FACEBOOK_CLIENT_SECRET=${{ secrets.FACEBOOK_CLIENT_SECRET }}
+            FACEBOOK_REDIRECT_URI=${{ vars.FACEBOOK_REDIRECT_URI }}
+            
+            GOOGLE_CLIENT_ID=${{ vars.GOOGLE_CLIENT_ID }}
+            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+            GOOGLE_REDIRECT_URI=${{ vars.GOOGLE_REDIRECT_URI }}
+            
+            WHATSAPP_TOKEN=${{ secrets.WHATSAPP_TOKEN }}
+            WHATSAPP_PHONE_ID=${{ vars.WHATSAPP_PHONE_ID }}
+            WHATSAPP_ACCOUNT_ID=${{ vars.WHATSAPP_ACCOUNT_ID }}
+            WHATSAPP_URL=${{ vars.WHATSAPP_URL || 'https://graph.facebook.com/v22.0' }}
+            
+            FRONTEND_URL=${{ vars.FRONTEND_URL }}
+            
+            SANCTUM_STATEFUL_DOMAINS=${{ vars.SANCTUM_STATEFUL_DOMAINS }}
             EOL
-            # Install dependencies and optimize
+
+            # Preserve existing APP_KEY if present
+            if [ -f .env ] && grep -q '^APP_KEY=' .env; then
+              grep '^APP_KEY=' .env >> .env.new
+            fi
+            mv .env.new .env
+
+            # Install dependencies
             composer install --no-dev --prefer-dist --no-progress --no-interaction --optimize-autoloader
+
+            # Ensure APP_KEY exists (generate only if missing/empty)
+            if ! grep -q '^APP_KEY=' .env || [ -z "$(sed -n 's/^APP_KEY=//p' .env)" ]; then
+              php artisan key:generate --force
+            fi
+
+            # Run migrations and optimize caches
             php artisan migrate --force --no-interaction
             php artisan route:cache
             php artisan view:cache

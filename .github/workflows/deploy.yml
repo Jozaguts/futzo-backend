@@ -31,6 +31,20 @@ jobs:
             git checkout main
             git pull --ff-only origin main
 
+            # PHP / Composer diagnostics and setup
+            echo "PHP: $(php -v | head -n1)"
+            if ! command -v composer >/dev/null 2>&1; then
+              echo "Composer not found; attempting install..."
+              EXPECTED_SIGNATURE=$(curl -s https://composer.github.io/installer.sig)
+              php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+              ACTUAL_SIGNATURE=$(php -r "echo hash_file('sha384', 'composer-setup.php');")
+              if [ "$EXPECTED_SIGNATURE" != "$ACTUAL_SIGNATURE" ]; then echo 'ERROR: Invalid installer signature'; rm composer-setup.php; exit 1; fi
+              php composer-setup.php --install-dir=/usr/local/bin --filename=composer --quiet
+              rm composer-setup.php
+            fi
+            echo "Composer: $(composer --version)"
+            export COMPOSER_MEMORY_LIMIT=-1
+
             # Build new .env without APP_KEY (preserve existing key)
             cat > .env.new << 'EOL'
             APP_NAME=${{ vars.APP_NAME || 'Futzo' }}
@@ -112,7 +126,9 @@ jobs:
             mv .env.new .env
 
             # Install dependencies
-            composer install --no-dev --prefer-dist --no-progress --no-interaction --optimize-autoloader
+            composer install --no-dev --prefer-dist --no-progress --no-interaction --optimize-autoloader --classmap-authoritative
+            composer show laravel/cashier || true
+            php artisan package:discover --ansi || true
 
             # Ensure APP_KEY exists (generate only if missing/empty)
             if ! grep -q '^APP_KEY=' .env || [ -z "$(sed -n 's/^APP_KEY=//p' .env)" ]; then
@@ -120,6 +136,8 @@ jobs:
             fi
 
             # Run migrations and optimize caches
+            php artisan config:clear || true
+            php artisan cache:clear || true
             php artisan migrate --force --no-interaction
             php artisan route:cache
             php artisan view:cache

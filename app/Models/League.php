@@ -14,10 +14,10 @@ class League extends Model
 {
     use HasFactory, SoftDeletes;
 
-    public const STATUS_DRAFT     = 'draft';
-    public const STATUS_READY     = 'ready';
-    public const STATUS_SUSPENDED = 'suspended';
-    public const STATUS_ARCHIVED  = 'archived';
+    public const string STATUS_DRAFT     = 'draft';
+    public const string STATUS_READY     = 'ready';
+    public const string STATUS_SUSPENDED = 'suspended';
+    public const string STATUS_ARCHIVED  = 'archived';
 
     protected $fillable = [
         'name',

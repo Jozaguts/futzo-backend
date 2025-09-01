@@ -1,9 +1,8 @@
 <?php
 
-use App\Models\User;
+use App\Models\League;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\UploadedFile;
-use Laravel\Sanctum\Sanctum;
 
 
 beforeEach(function () {
@@ -22,7 +21,7 @@ it('store a league and upload logo and banner', function () {
             'creation_date' => '2021-10-10',
             'logo' => $logo,
             'banner' => $banner,
-            'status' => 'active',
+            'status' => League::STATUS_DRAFT,
         ]);
 
     $response->assertCreated();

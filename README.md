@@ -185,6 +185,34 @@ Post.php / Video.php
 ## Despliegue y permisos de servidor
 
 Consulta `docs/server-permissions.md` para la configuración recomendada de permisos (ACLs, ownership y sudoers) entre el usuario del runtime (por ejemplo `www-data`) y el usuario de deploy.
+
+## Migraciones de datos (producción)
+
+- Recomendado: para poblar/ajustar datos en producción usa migraciones de datos en lugar de seeders.
+- Beneficios: versionadas, idempotentes y se aplican junto con `php artisan migrate` del workflow.
+- Buenas prácticas:
+  - Idempotencia: protege con `if (!DB::table('...')->where(...)->exists()) { ... }` o usa `updateOrInsert`/`upsert`.
+  - Sin Faker en prod: genera valores estáticos o con lógica mínima (ya se retiró Faker de factories/seeders de este proyecto).
+  - Reversible si aplica: en `down()` elimina o deshace sólo lo creado por la migración.
+  - Alcance mínimo: toca sólo las tablas/filas necesarias para evitar efectos colaterales.
+
+Ejemplo breve (patrón):
+
+```php
+public function up(): void
+{
+    // Insertar rol si no existe
+    DB::table('roles')->updateOrInsert(
+        ['name' => 'predeterminado'],
+        ['guard_name' => 'web']
+    );
+}
+
+public function down(): void
+{
+    DB::table('roles')->where('name', 'predeterminado')->delete();
+}
+```
 ````
 ┌───────────────────┐        ┌───────────────────┐
 │      Team         │ 1     *│     Standing      │

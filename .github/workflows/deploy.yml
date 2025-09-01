@@ -140,24 +140,6 @@ jobs:
             php artisan config:clear
             php artisan cache:clear
             php artisan migrate --force --no-interaction
-            # Optional: seed database on deploy
-            if [ "${{ vars.SEED_ON_DEPLOY || 'false' }}" = "true" ]; then
-              if [ -n "${{ vars.SEEDER_CLASS || '' }}" ]; then
-                echo "Seeding class: ${{ vars.SEEDER_CLASS }}"
-                if command -v sudo >/dev/null 2>&1; then
-                  sudo -n -u "$WEB_USER" "$PHP_BIN" artisan db:seed --force --class="${{ vars.SEEDER_CLASS }}"
-                else
-                  "$PHP_BIN" artisan db:seed --force --class="${{ vars.SEEDER_CLASS }}"
-                fi
-              else
-                echo "Seeding default DatabaseSeeder"
-                if command -v sudo >/dev/null 2>&1; then
-                  sudo -n -u "$WEB_USER" "$PHP_BIN" artisan db:seed --force
-                else
-                  "$PHP_BIN" artisan db:seed --force
-                fi
-              fi
-            fi
             php artisan route:cache
             php artisan view:cache
             php artisan config:cache

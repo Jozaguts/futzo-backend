@@ -1,7 +1,18 @@
 <?php
 
-use Laravel\Cashier\Console\WebhookCommand;
 use Laravel\Cashier\Invoices\DompdfInvoiceRenderer;
+// Not all Cashier versions expose the same WebhookCommand FQCN. Guard to avoid fatal errors.
+$cashierDefaultEvents = (class_exists(\Laravel\Cashier\Console\WebhookCommand::class)
+    && defined('\\Laravel\\Cashier\\Console\\WebhookCommand::DEFAULT_EVENTS'))
+    ? \Laravel\Cashier\Console\WebhookCommand::DEFAULT_EVENTS
+    : [
+        'customer.subscription.created',
+        'customer.subscription.updated',
+        'customer.subscription.deleted',
+        'invoice.payment_action_required',
+        'invoice.payment_failed',
+        'invoice.payment_succeeded',
+    ];
 
 return [
 
@@ -47,7 +58,7 @@ return [
     'webhook' => [
         'secret' => env('STRIPE_WEBHOOK_SECRET'),
         'tolerance' => env('STRIPE_WEBHOOK_TOLERANCE', 300),
-        'events' => WebhookCommand::DEFAULT_EVENTS,
+        'events' => $cashierDefaultEvents,
     ],
 
     /*

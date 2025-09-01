@@ -55,10 +55,10 @@ class OnboardingService
         // Allowed paths based on the next required step.
         $allowed = ['/']; // index siempre permitido
         if ($next === 'create_league') {
-            // Crear liga solo se hace en /bienvenido
-            $allowed[] = '/bienvenido';
+            // Crear liga: lo gestiona otro middleware hacia /bienvenido.
+            // Aquí no añadimos /bienvenido para no colisionar; se permite permanecer en '/'.
         } elseif (in_array($next, ['create_location','create_field'], true)) {
-            // Ubicaciones/canchas se gestionan en /config/locations
+            // Ubicaciones/canchas se gestionan en /ubicaciones (frontend)
             $allowed[] = '/ubicaciones';
         }
 

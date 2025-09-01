@@ -46,6 +46,10 @@ jobs:
             echo "Composer: $(composer --version)"
             export COMPOSER_MEMORY_LIMIT=-1
 
+            # Ensure writable directories before any Artisan runs in composer scripts
+            mkdir -p storage/logs bootstrap/cache
+            chmod -R 775 storage bootstrap/cache || chmod -R 777 storage bootstrap/cache || true
+
             # Build new .env content without heredoc to avoid EOL issues
             rm -f .env.new
             {

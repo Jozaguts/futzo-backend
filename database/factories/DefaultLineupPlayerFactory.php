@@ -7,6 +7,7 @@ use App\Models\DefaultLineupPlayer;
 use App\Models\Player;
 use App\Models\Position;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use App\Support\Fake;
 use Illuminate\Support\Carbon;
 
 class DefaultLineupPlayerFactory extends Factory
@@ -20,7 +21,7 @@ class DefaultLineupPlayerFactory extends Factory
             'updated_at' => Carbon::now(),
             'default_lineup_id' => DefaultLineup::factory(),
             'player_id' => Player::factory(),
-            'field_location' => $this->faker->numberBetween(1, 11),
+            'field_location' => Fake::numberBetween(1, 11),
         ];
     }
 }

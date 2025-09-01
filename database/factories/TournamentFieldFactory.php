@@ -6,6 +6,7 @@ use App\Models\Field;
 use App\Models\Tournament;
 use App\Models\TournamentField;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use App\Support\Fake;
 use Illuminate\Support\Carbon;
 
 class TournamentFieldFactory extends Factory
@@ -15,7 +16,7 @@ class TournamentFieldFactory extends Factory
     public function definition(): array
     {
         return [
-            'availability' => $this->faker->words(),
+            'availability' => Fake::words(),
             'created_at' => Carbon::now(),
             'updated_at' => Carbon::now(),
 

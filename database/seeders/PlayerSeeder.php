@@ -28,12 +28,12 @@ class PlayerSeeder extends Seeder
                                     'team_id' => $team->id,
                                     'position_id' => rand(1, 20),
                                     'category_id' => $team->categories()->first()->id,
-                                    'nationality' => fake()->country,
-                                    'height' => fake()->numberBetween(170, 200),
-                                    'weight' => fake()->numberBetween(70, 110),
-                                    'birthdate' => fake()->date,
-                                    'dominant_foot' => fake()->randomElement(['izquierda', 'derecha']),
-                                    'number' => fake()->numberBetween(1, 20),
+                                    'nationality' => \App\Support\Fake::country(),
+                                    'height' => \App\Support\Fake::numberBetween(170, 200),
+                                    'weight' => \App\Support\Fake::numberBetween(70, 110),
+                                    'birthdate' => \App\Support\Fake::date(),
+                                    'dominant_foot' => \App\Support\Fake::randomElement(['izquierda', 'derecha']),
+                                    'number' => \App\Support\Fake::numberBetween(1, 20),
                                 ]);
                             });
                     });

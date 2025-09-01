@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\Team;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use App\Support\Fake;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Team>
@@ -20,14 +21,14 @@ class TeamFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => $name = $this->faker->unique()->domainWord . ' FC',
+            'name' => $name = Fake::domainWord() . ' FC',
             'address' => config('constants.address'),
-            'email' => $this->faker->unique()->safeEmail,
-            'phone' => $this->faker->phoneNumber(),
-            'description' => $this->faker->sentence(10),
+            'email' => Fake::safeEmail(),
+            'phone' => Fake::phoneNumber(),
+            'description' => Fake::sentence(10),
             'image' => 'https://ui-avatars.com/api/?name=' . $name,
             'colors' => config('constants.colors'),
-            'created_at' => $this->faker->randomElement([now()->startOfMonth(), now()->endOfMonth()]),
+            'created_at' => Fake::randomElement([now()->startOfMonth(), now()->endOfMonth()]),
         ];
     }
 }

@@ -6,6 +6,7 @@ use App\Models\Tournament;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use App\Support\Fake;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Tournament>
@@ -36,14 +37,14 @@ class TournamentFactory extends Factory
             'category_id' => 1, // ID de categoría ficticio
             'tournament_format_id' => 1, // ID de formato ficticio
             'football_type_id' => 1,
-            'name' => 'Torneo ' . $this->faker->company,
-            'image' => $this->faker->imageUrl(640, 480, 'sports', true, 'tournament'),
-            'thumbnail' => $this->faker->imageUrl(150, 150, 'sports', true, 'thumbnail'),
+            'name' => 'Torneo ' . Fake::company(),
+            'image' => Fake::imageUrl(640, 480, 'sports', true, 'tournament'),
+            'thumbnail' => Fake::imageUrl(150, 150, 'sports', true, 'thumbnail'),
             'start_date' => Carbon::now()->next(CarbonInterface::FRIDAY)->startOfDay()->toIso8601String(),
             'end_date' => $endDate,
-            'prize' => $this->faker->randomElement(['$5000', '$10000', '$15000']),
+            'prize' => Fake::randomElement(['$5000', '$10000', '$15000']),
             'winner' => null,
-            'description' => $this->faker->paragraph,
+            'description' => Fake::paragraph(),
             'status' => $status,
         ];
     }

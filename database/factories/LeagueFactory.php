@@ -6,6 +6,7 @@ use App\Models\Country;
 use App\Models\FootballType;
 use App\Models\League;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use App\Support\Fake;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\League>
@@ -30,13 +31,13 @@ class LeagueFactory extends Factory
     {
 
         return [
-            'name' => $this->faker->company,
-            'description' => fake()->text(20),
-            'creation_date' => fake()->dateTime(),
-            'logo' => fake()->imageUrl(),
-            'banner' => fake()->imageUrl(),
-            'country_id' => fake()->randomElement(Country::all()->pluck('id')->toArray()),
-            'football_type_id' => fake()->randomElement(FootballType::all()->pluck('id')->toArray()), // todo cambiar el football_type_id
+            'name' => Fake::company(),
+            'description' => Fake::text(20),
+            'creation_date' => Fake::dateTime(),
+            'logo' => Fake::imageUrl(),
+            'banner' => Fake::imageUrl(),
+            'country_id' => Fake::randomElement(Country::all()->pluck('id')->toArray()),
+            'football_type_id' => Fake::randomElement(FootballType::all()->pluck('id')->toArray()), // todo cambiar el football_type_id
         ];
     }
 }

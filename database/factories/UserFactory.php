@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use App\Support\Fake;
 use Illuminate\Support\Str;
 use Random\RandomException;
 
@@ -21,10 +22,10 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => $name = fake()->firstName(),
-            'last_name' => fake()->lastName(),
-            'email' => fake()->unique()->safeEmail(),
-            'phone' => '+52 ' . fake()->numerify('322 ### ## ##'),
+            'name' => $name = Fake::firstName(),
+            'last_name' => Fake::lastName(),
+            'email' => Fake::safeEmail(),
+            'phone' => '+52 ' . Fake::numerify('322 ### ## ##'),
             'verified_at' => now(),
             'image' => 'https://ui-avatars.com/api/?name=' . $name,
             'verification_token' => random_int(1000, 9999),

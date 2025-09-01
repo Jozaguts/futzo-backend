@@ -22,14 +22,14 @@ class GameSeeder extends Seeder
                         // Genera múltiples juegos por cada par de equipos
                         for ($i = 0; $i < env('GAMES_PER_PAIR', 2); $i++) {
                             Game::factory()->create([
-                                'date' => fake()->randomElement([now()->startOfMonth(), now()->endOfMonth()]),
+                                'date' => \App\Support\Fake::randomElement([now()->startOfMonth(), now()->endOfMonth()]),
                                 'league_id' => $league->id,
                                 'tournament_id' => $tournament->id,
                                 'home_team_id' => $homeTeam->id,
                                 'away_team_id' => $awayTeam->id,
                                 'location' => $tournament->locations()->first()->name,
                                 'category_id' => $tournament->category->id,
-                                'winner_team_id' => fake()->randomElement([$homeTeam->id, $awayTeam->id, null]), // permite empates con null
+                                'winner_team_id' => \App\Support\Fake::randomElement([$homeTeam->id, $awayTeam->id, null]), // permite empates con null
                             ]);
                         }
                     }

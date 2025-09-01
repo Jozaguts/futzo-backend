@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\Formation;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use App\Support\Fake;
 use Illuminate\Support\Carbon;
 
 class FormationFactory extends Factory
@@ -13,7 +14,7 @@ class FormationFactory extends Factory
     public function definition(): array
     {
         return [
-            'value' => $this->faker->randomElement([
+            'value' => Fake::randomElement([
                 '4-4-2',
                 '4-4-3',
                 '4-4-4',

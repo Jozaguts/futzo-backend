@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\Player;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use App\Support\Fake;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Player>
@@ -26,7 +27,7 @@ class PlayerFactory extends Factory
     {
 
         return [
-            'number' => $this->faker->numberBetween(1, 25),
+            'number' => Fake::numberBetween(1, 25),
             'team_id' => 3,
             'position_id' => rand(1, 12)
         ];

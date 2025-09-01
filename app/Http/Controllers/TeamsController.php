@@ -147,7 +147,7 @@ class TeamsController extends Controller
 
                     $media = $team->president
                         ->addMedia($request->file('president.image'))
-                        ->toMediaCollection('image', 's3');
+                        ->toMediaCollection('image');
                     $team->president->update([
                         'image' => $media->getUrl(),
                     ]);
@@ -159,7 +159,7 @@ class TeamsController extends Controller
 
                     $media = $team->coach
                         ->addMedia($request->file('coach.image'))
-                        ->toMediaCollection('image', 's3');
+                        ->toMediaCollection('image');
                     logger('media', [
                         'coach url' => $media->getUrl(),
                     ]);

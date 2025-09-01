@@ -115,7 +115,6 @@ class User extends Authenticatable implements MustVerifyEmail, HasMedia
     {
         $this->addMediaCollection('image')
             ->singleFile()
-            ->storeConversionsOnDisk('s3')
             ->registerMediaConversions(function (Media $media) {
                 $this->addMediaConversion('thumbnail')
                     ->width(150)

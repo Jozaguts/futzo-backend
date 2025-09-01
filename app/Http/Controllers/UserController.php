@@ -34,7 +34,7 @@ class UserController extends Controller
 
 		$url = $user
 			->addMedia($validated['image'])
-			->toMediaCollection('image', 's3')
+			->toMediaCollection('image')
 			->getUrl();
 
 		$response = $user->update(['image' => $url]);

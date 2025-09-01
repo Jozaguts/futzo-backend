@@ -21,7 +21,8 @@ jobs:
       CACHE_DRIVER: array
       SESSION_DRIVER: array
       QUEUE_CONNECTION: sync
-      FILESYSTEM_DISK: local
+      FILESYSTEM_DISK: public
+      MEDIA_DISK: public
       MAIL_MAILER: log
       FRONTEND_URL: http://localhost
       # Dummies for third-party services to avoid external calls in CI
@@ -85,6 +86,7 @@ jobs:
           cp .env.example .env
           php artisan key:generate
           php artisan migrate --force
+          php artisan db:seed --force
 
       - name: Directory Permissions
         run: chmod -R 777 storage bootstrap/cache

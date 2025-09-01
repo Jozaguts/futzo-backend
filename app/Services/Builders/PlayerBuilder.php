@@ -85,7 +85,7 @@ class PlayerBuilder implements IPlayerBuilder
         if (request()->hasFile('basic.image')) {
             $url = $this->user
                 ->addMedia($this->userData['image'])
-                ->toMediaCollection('image', 's3')
+                ->toMediaCollection('image')
                 ->getUrl();
             $this->user->update(['image' => $url]);
         }

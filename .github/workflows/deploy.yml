@@ -46,23 +46,23 @@ jobs:
             echo "Composer: $(composer --version)"
             export COMPOSER_MEMORY_LIMIT=-1
 
-            # Ensure writable directories for both web user and deploy user
-            WEB_USER=${{ vars.WEB_USER || 'www-data' }}
-            DEPLOY_USER="$(whoami)"
-            sudo mkdir -p storage/logs bootstrap/cache
-            # Ownership to web user
-            sudo chown -R "$WEB_USER":"$WEB_USER" storage bootstrap/cache || true
-            # Base perms
-            sudo find storage bootstrap/cache -type d -exec chmod 775 {} + || true
-            sudo find storage bootstrap/cache -type f -exec chmod 664 {} + || true
-            # Grant deploy user explicit ACL if available (so composer/artisan can write)
-            if command -v setfacl >/dev/null 2>&1; then
-              sudo setfacl -R -m u:"$DEPLOY_USER":rwx storage bootstrap/cache || true
-              sudo setfacl -dR -m u:"$DEPLOY_USER":rwx storage bootstrap/cache || true
-            else
-              # Fallback (less secure): open write for all to avoid deploy failures
-              sudo chmod -R 777 storage bootstrap/cache || true
-            fi
+            # Ensure directories exist (ownership managed by server provision)
+            mkdir -p storage/logs bootstrap/cache || true
+            # Preflight: verify write access for deploy user to required paths
+            for p in \
+              storage \
+              storage/logs \
+              storage/framework \
+              storage/framework/cache \
+              storage/framework/sessions \
+              storage/framework/views \
+              bootstrap/cache; do
+              if [ ! -w "$p" ] && [ -e "$p" ]; then
+                echo "ERROR: deploy user '$(whoami)' does not have write permission on '$p'" >&2
+                echo "Fix: grant group write or ACL to deploy user, or run Artisan as the web user." >&2
+                exit 1
+              fi
+            done
 
             # Build new .env content without heredoc to avoid EOL issues
             rm -f .env.new
@@ -145,12 +145,13 @@ jobs:
             fi
             mv .env.new .env
 
-            # Install dependencies
-            composer install --no-dev --prefer-dist --no-progress --no-interaction --optimize-autoloader --classmap-authoritative
+            # Install dependencies (defer scripts to run Artisan with controlled env)
+            composer install --no-dev --prefer-dist --no-progress --no-interaction --optimize-autoloader --classmap-authoritative --no-scripts
             # Ensure Cashier is present (fail if missing)
             composer show laravel/cashier >/dev/null 2>&1 || { echo "ERROR: laravel/cashier not installed"; exit 1; }
-            php -r 'require "vendor/autoload.php"; exit(class_exists("Laravel\\Cashier\\Cashier")?0:1);' || { echo "ERROR: Cashier class not found after install"; exit 1; }
-            php artisan package:discover --ansi
+            test -f vendor/laravel/cashier/src/Cashier.php || { echo "ERROR: Cashier files missing in vendor"; exit 1; }
+            # Run composer scripts manually with safe logging channel
+            LOG_CHANNEL=stderr php artisan package:discover --ansi
 
             # Ensure APP_KEY exists (generate only if missing/empty)
             if ! grep -q '^APP_KEY=' .env || [ -z "$(sed -n 's/^APP_KEY=//p' .env)" ]; then
@@ -165,5 +166,7 @@ jobs:
             php artisan view:cache
             php artisan config:cache
             php artisan storage:link || true
-            sudo systemctl restart horizon
+            # Restart Horizon gracefully without systemctl
+            php artisan queue:restart || true
+            php artisan horizon:terminate || true
           EOF

@@ -50,21 +50,6 @@ jobs:
 
             # Ensure directories exist (ownership managed by server provision)
             mkdir -p storage/logs bootstrap/cache || true
-            # Preflight: verify write access for deploy user to required paths
-            for p in \
-              storage \
-              storage/logs \
-              storage/framework \
-              storage/framework/cache \
-              storage/framework/sessions \
-              storage/framework/views \
-              bootstrap/cache; do
-              if [ ! -w "$p" ] && [ -e "$p" ]; then
-                echo "ERROR: deploy user '$(whoami)' does not have write permission on '$p'" >&2
-                echo "Fix: grant group write or ACL to deploy user, or run Artisan as the web user." >&2
-                exit 1
-              fi
-            done
 
             # Build new .env content without heredoc to avoid EOL issues
             rm -f .env.new
@@ -181,7 +166,9 @@ jobs:
               sudo -n -u "$WEB_USER" "$PHP_BIN" artisan view:cache
               sudo -n -u "$WEB_USER" "$PHP_BIN" artisan config:cache
               sudo -n -u "$WEB_USER" "$PHP_BIN" artisan storage:link || true
-              sudo -n systemctl restart horizon || {
+              # Restart Horizon via systemctl (path configurable); fallback to artisan
+              SYSCTL_BIN=${{ vars.SYSTEMCTL_BIN || '/bin/systemctl' }}
+              sudo -n "$SYSCTL_BIN" restart horizon || {
                 sudo -n -u "$WEB_USER" "$PHP_BIN" artisan queue:restart || true
                 sudo -n -u "$WEB_USER" "$PHP_BIN" artisan horizon:terminate || true
               }

@@ -179,6 +179,12 @@ Post.php / Video.php
     Video * ─┘
 
 ## Team  | Standing | Tournament
+
+---
+
+## Despliegue y permisos de servidor
+
+Consulta `docs/server-permissions.md` para la configuración recomendada de permisos (ACLs, ownership y sudoers) entre el usuario del runtime (por ejemplo `www-data`) y el usuario de deploy.
 ````
 ┌───────────────────┐        ┌───────────────────┐
 │      Team         │ 1     *│     Standing      │

@@ -45,11 +45,6 @@ jobs:
             fi
             echo "Composer: $(composer --version)"
             export COMPOSER_MEMORY_LIMIT=-1
-            WEB_USER=${{ vars.WEB_USER || 'www-data' }}
-            PHP_BIN=$(command -v php8.4 || command -v php)
-
-            # Ensure directories exist (ownership managed by server provision)
-            mkdir -p storage/logs bootstrap/cache || true
 
             # Build new .env content without heredoc to avoid EOL issues
             rm -f .env.new
@@ -131,56 +126,26 @@ jobs:
               grep '^APP_KEY=' .env >> .env.new
             fi
             mv .env.new .env
-            # Ensure web user owns .env for key:generate and caches
-            if command -v sudo >/dev/null 2>&1; then
-              sudo -n chown "$WEB_USER":"$WEB_USER" .env || true
-            fi
 
-            # Install dependencies (defer scripts to run Artisan with controlled env)
-            composer install --no-dev --prefer-dist --no-progress --no-interaction --optimize-autoloader --classmap-authoritative --no-scripts
+            # Install dependencies
+            composer install --no-dev --prefer-dist --no-progress --no-interaction --optimize-autoloader --classmap-authoritative
             # Ensure Cashier is present (fail if missing)
-            composer show laravel/cashier >/dev/null 2>&1 || { echo "ERROR: laravel/cashier not installed"; exit 1; }
-            test -f vendor/laravel/cashier/src/Cashier.php || { echo "ERROR: Cashier files missing in vendor"; exit 1; }
-            # Run composer scripts manually with safe logging channel as web user
-            if command -v sudo >/dev/null 2>&1; then
-              sudo -n -u "$WEB_USER" env LOG_CHANNEL=stderr "$PHP_BIN" artisan package:discover --ansi
-            else
-              LOG_CHANNEL=stderr "$PHP_BIN" artisan package:discover --ansi
-            fi
+            composer show laravel/cashier >/dev/null 2>&1 || { echo 'ERROR: laravel/cashier not installed'; exit 1; }
+            php -r 'exit(class_exists("Laravel\\Cashier\\Cashier")?0:1);' || { echo 'ERROR: Cashier class not found after install'; exit 1; }
+            php artisan package:discover --ansi
 
             # Ensure APP_KEY exists (generate only if missing/empty)
             if ! grep -q '^APP_KEY=' .env || [ -z "$(sed -n 's/^APP_KEY=//p' .env)" ]; then
-              if command -v sudo >/dev/null 2>&1; then
-                sudo -n -u "$WEB_USER" "$PHP_BIN" artisan key:generate --force
-              else
-                "$PHP_BIN" artisan key:generate --force
-              fi
+              php artisan key:generate --force
             fi
 
             # Run migrations and optimize caches
-            if command -v sudo >/dev/null 2>&1; then
-              sudo -n -u "$WEB_USER" "$PHP_BIN" artisan config:clear
-              sudo -n -u "$WEB_USER" "$PHP_BIN" artisan cache:clear
-              sudo -n -u "$WEB_USER" "$PHP_BIN" artisan migrate --force --no-interaction
-              sudo -n -u "$WEB_USER" "$PHP_BIN" artisan route:cache
-              sudo -n -u "$WEB_USER" "$PHP_BIN" artisan view:cache
-              sudo -n -u "$WEB_USER" "$PHP_BIN" artisan config:cache
-              sudo -n -u "$WEB_USER" "$PHP_BIN" artisan storage:link || true
-              # Restart Horizon via systemctl (path configurable); fallback to artisan
-              SYSCTL_BIN=${{ vars.SYSTEMCTL_BIN || '/bin/systemctl' }}
-              sudo -n "$SYSCTL_BIN" restart horizon || {
-                sudo -n -u "$WEB_USER" "$PHP_BIN" artisan queue:restart || true
-                sudo -n -u "$WEB_USER" "$PHP_BIN" artisan horizon:terminate || true
-              }
-            else
-              "$PHP_BIN" artisan config:clear
-              "$PHP_BIN" artisan cache:clear
-              "$PHP_BIN" artisan migrate --force --no-interaction
-              "$PHP_BIN" artisan route:cache
-              "$PHP_BIN" artisan view:cache
-              "$PHP_BIN" artisan config:cache
-              "$PHP_BIN" artisan storage:link || true
-              "$PHP_BIN" artisan queue:restart || true
-              "$PHP_BIN" artisan horizon:terminate || true
-            fi
+            php artisan config:clear
+            php artisan cache:clear
+            php artisan migrate --force --no-interaction
+            php artisan route:cache
+            php artisan view:cache
+            php artisan config:cache
+            php artisan storage:link || true
+            sudo systemctl restart horizon
           EOF

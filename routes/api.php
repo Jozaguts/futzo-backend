@@ -8,6 +8,7 @@ use App\Http\Controllers\GameTimeDetailsController;
 use App\Http\Controllers\GenderController;
 use App\Http\Controllers\LineupsController;
 use App\Http\Controllers\OnBoardingCallbackController;
+use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\PenaltyController;
 use App\Http\Controllers\PenaltyGoalKeeperController;
 use App\Http\Controllers\PostCheckoutLoginController;
@@ -35,6 +36,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         return new UserResource($request->user());
     });
     Route::prefix('admin')->group(function () {
+        Route::get('onboarding/steps', [OnboardingController::class, 'index']);
         Route::apiResource('/roles', RoleAndPermissionsController::class);
         Route::apiResources(['genders' => GenderController::class]);
         Route::apiResources(['referees' => RefereeController::class]);
@@ -75,5 +77,4 @@ Route::post('/pre-register', [PreRegisterController::class, 'preRegister'])
 Route::get('verify-code/resend', [UserController::class, 'resendVerifyCode'])
     ->middleware(['throttle:3,1'])
     ->name('verify-code.resend');
-
 

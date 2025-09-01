@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Services\OnboardingService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -14,6 +15,7 @@ class UserResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $onboarding = app(OnboardingService::class)->stepsFor($this->resource);
 
         return [
             'id' => $this->resource->id,
@@ -27,6 +29,7 @@ class UserResource extends JsonResource
             'image' => $this->resource->image,
             'trail_ends_at' => $this->resource->trial_ends_at,
             'status' => $this->resource->status,
+            'onboarding' => $onboarding,
         ];
     }
 }

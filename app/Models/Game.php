@@ -3,26 +3,27 @@
 namespace App\Models;
 
 use App\Observers\GameObserver;
+use App\Scopes\LeagueScope;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Sluggable\SlugOptions;
-
+use Illuminate\Database\Eloquent\Attributes\ScopedBy;
 #[ObservedBy([GameObserver::class])]
+#[ScopedBy(LeagueScope::class)]
 class Game extends Model
 {
     use HasFactory, SoftDeletes;
 
-    const STATUS_SCHEDULED = 'programado';
-    const STATUS_IN_PROGRESS = 'en_progreso';
-    const STATUS_COMPLETED = 'completado';
-    const STATUS_POSTPONED = 'aplazado';
-    const STATUS_CANCELED = 'cancelado';
+    const string STATUS_SCHEDULED = 'programado';
+    const string STATUS_IN_PROGRESS = 'en_progreso';
+    const string STATUS_COMPLETED = 'completado';
+    const string STATUS_POSTPONED = 'aplazado';
+    const string STATUS_CANCELED = 'cancelado';
 
     protected $fillable = [
         'home_team_id',

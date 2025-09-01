@@ -2,6 +2,7 @@
 
 namespace App\Scopes;
 
+use App\Models\Game;
 use App\Models\Team;
 use App\Models\Tournament;
 use Illuminate\Database\Eloquent\Builder;
@@ -18,13 +19,16 @@ class LeagueScope implements Scope
         if (auth()->check()) {
             if ($model instanceof Team) {
                 $teamIds = \DB::table('league_team')
-                    ->where('league_id', auth()->user()->league_id)
+                    ->where('league_id', request()->header('X-League-ID', auth()->user()->league_id))
                     ->pluck('team_id');
-
                 $builder->whereIn('teams.id', $teamIds);
             } elseif ($model instanceof Tournament && auth()->check() && auth()->user()->league_id) {
-                $builder->where('league_id', auth()->user()->league_id);
+                $builder->where('league_id', request()->header('X-League-ID', auth()->user()->league_id));
             }
+            else if($model instanceof Game ){
+                $builder->where('league_id', request()->header('X-League-ID', auth()->user()->league_id));
+            }
+
         }
     }
 }

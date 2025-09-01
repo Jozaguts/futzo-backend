@@ -23,7 +23,8 @@ jobs:
       - name: Deploy App
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-            set -euo pipefail
+            set -Eeuo pipefail
+            trap 'echo "[deploy] Failed at line $LINENO" >&2' ERR
             cd "${{ secrets.DEPLOY_PATH }}"
 
             # Ensure correct branch and up-to-date code
@@ -128,8 +129,10 @@ jobs:
 
             # Install dependencies
             composer install --no-dev --prefer-dist --no-progress --no-interaction --optimize-autoloader --classmap-authoritative
-            composer show laravel/cashier || true
-            php artisan package:discover --ansi || true
+            # Ensure Cashier is present (fail if missing)
+            composer show laravel/cashier >/dev/null 2>&1 || { echo 'ERROR: laravel/cashier not installed'; exit 1; }
+            php -r 'exit(class_exists("Laravel\\Cashier\\Cashier")?0:1);' || { echo 'ERROR: Cashier class not found after install'; exit 1; }
+            php artisan package:discover --ansi
 
             # Ensure APP_KEY exists (generate only if missing/empty)
             if ! grep -q '^APP_KEY=' .env || [ -z "$(sed -n 's/^APP_KEY=//p' .env)" ]; then
@@ -137,8 +140,8 @@ jobs:
             fi
 
             # Run migrations and optimize caches
-            php artisan config:clear || true
-            php artisan cache:clear || true
+            php artisan config:clear
+            php artisan cache:clear
             php artisan migrate --force --no-interaction
             php artisan route:cache
             php artisan view:cache

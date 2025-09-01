@@ -30,27 +30,30 @@ class AuthenticateController extends Controller
 			$user->assignRole('predeterminado');
             $user->status = 'pending_onboarding';
             $user->save();
+            if (app()->environment('production') || app()->environment('local')) {
+                $user->sendEmailVerificationNotification();
+                $eventId = $request->input('event_id', (string) Str::uuid());
+                $userCtx = [
+                    'email'       => $user->email,
+                    'external_id' => (string) $user->id,
+                    'ip'          => $request->ip(),
+                    'ua'          => $request->userAgent(),
+                    'fbp'         => $request->input('fbp'),
+                    'fbc'         => $request->input('fbc'),
+                    'fbclid'      => $request->input('fbclid'),
+                ];
+                SendMetaCapiEventJob::dispatch(
+                    eventName: 'StartTrial',
+                    eventId: $eventId,
+                    userCtx: $userCtx,
+                    custom: ['trial_days'=>7,'value'=>0,'currency'=>'MXN'],
+                    eventSourceUrl: config('app.url').'/login',
+                    testCode: $request->input('test_event_code'),
+                    actionSource: 'website',
+                    consent: $request->boolean('consent', true)
+                );
+            }
 			event(new Registered($user));
-            $eventId = $request->input('event_id', (string) Str::uuid());
-            $userCtx = [
-                'email'       => $user->email,
-                'external_id' => (string) $user->id,
-                'ip'          => $request->ip(),
-                'ua'          => $request->userAgent(),
-                'fbp'         => $request->input('fbp'),
-                'fbc'         => $request->input('fbc'),
-                'fbclid'      => $request->input('fbclid'),
-            ];
-            SendMetaCapiEventJob::dispatch(
-                eventName: 'StartTrial',
-                eventId: $eventId,
-                userCtx: $userCtx,
-                custom: ['trial_days'=>7,'value'=>0,'currency'=>'MXN'],
-                eventSourceUrl: config('app.url').'/login',
-                testCode: $request->input('test_event_code'),
-                actionSource: 'website',
-                consent: $request->boolean('consent', true)
-            );
 			DB::commit();
 			return response()->json(['success' => true, 'message' => 'User created successfully'], 201);
 		} catch (\Exception $e) {

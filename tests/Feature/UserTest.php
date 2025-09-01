@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 
-it('get users', function () {
+it('store user', function () {
     $this->json('POST', '/auth/register', [
         'name' => 'John',
         'email' => 'test@test.com',

@@ -46,14 +46,4 @@ class PlayerCollection extends ResourceCollection
 				'weight' => $player->weight,
 			])->toArray();
 	}
-
-	public function paginationInformation(): array
-	{
-		return ['pagination' => [
-			'currentPage' => $this->currentPage(),
-			'lastPage' => $this->lastPage(),
-			'perPage' => $this->perPage(),
-			'total' => $this->total(),
-		]];
-	}
 }

@@ -190,8 +190,8 @@ class TournamentController extends Controller
         $filterBy = $request->get('filterBy', false);
         $search = $request->get('search', false);
         $page = (int)$request->get('page', 1);
-        $perPage = 1;
-        $skip = ($page - 1) * $perPage;
+        $per_page = 1;
+        $skip = ($page - 1) * $per_page;
         $schedule = Game::where([
             'tournament_id' => $tournamentId
         ])
@@ -205,13 +205,13 @@ class TournamentController extends Controller
             ->orderBy('round')
             ->get()
             ->groupBy('round')
-            ->slice($skip, $perPage)
+            ->slice($skip, $per_page)
             ->flatten();
         return response()->json([
             'rounds' => TournamentScheduleCollection::make($schedule)->toArray($request),
             'pagination' => [
                 'current_page' => $page,
-                'per_page' => $perPage,
+                'per_page' => $per_page,
                 'total_rounds' => Game::where([
                     'tournament_id' => $tournamentId,
                 ])->when($filterBy, function ($query) use ($filterBy) {

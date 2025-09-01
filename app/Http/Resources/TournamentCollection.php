@@ -21,18 +21,6 @@ class TournamentCollection extends ResourceCollection
 
     }
 
-    public function paginationInformation(): array
-    {
-        return [
-            'pagination' => [
-                'currentPage' => $this->currentPage(),
-                'lastPage' => $this->lastPage(),
-                'perPage' => $this->perPage(),
-                'total' => $this->total(),
-            ]
-        ];
-    }
-
     private function positions()
     {
         // todo generar la tabla general de standing table de los equipos en el torneo

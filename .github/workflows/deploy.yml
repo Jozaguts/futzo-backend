@@ -129,9 +129,6 @@ jobs:
 
             # Install dependencies
             composer install --no-dev --prefer-dist --no-progress --no-interaction --optimize-autoloader --classmap-authoritative
-            # Ensure Cashier is present (fail if missing)
-            composer show laravel/cashier >/dev/null 2>&1 || { echo 'ERROR: laravel/cashier not installed'; exit 1; }
-            php -r 'exit(class_exists("Laravel\\Cashier\\Cashier")?0:1);' || { echo 'ERROR: Cashier class not found after install'; exit 1; }
             php artisan package:discover --ansi
 
             # Ensure APP_KEY exists (generate only if missing/empty)

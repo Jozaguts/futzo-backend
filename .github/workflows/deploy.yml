@@ -45,79 +45,80 @@ jobs:
             echo "Composer: $(composer --version)"
             export COMPOSER_MEMORY_LIMIT=-1
 
-            # Build new .env without APP_KEY (preserve existing key)
-            cat > .env.new << 'EOL'
-            APP_NAME=${{ vars.APP_NAME || 'Futzo' }}
-            APP_ENV=${{ vars.APP_ENV || 'production' }}
-            APP_DEBUG=${{ vars.APP_DEBUG || 'false' }}
-            APP_URL=${{ vars.APP_URL }}
-            
-            LOG_CHANNEL=${{ vars.LOG_CHANNEL || 'stack' }}
-            LOG_LEVEL=${{ vars.LOG_LEVEL || 'info' }}
-            
-            DB_CONNECTION=${{ vars.DB_CONNECTION || 'mysql' }}
-            DB_HOST=${{ vars.DB_HOST }}
-            DB_PORT=${{ vars.DB_PORT || '3306' }}
-            DB_DATABASE=${{ vars.DB_DATABASE }}
-            DB_USERNAME=${{ secrets.DB_USERNAME }}
-            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-            
-            BROADCAST_DRIVER=${{ vars.BROADCAST_DRIVER || 'log' }}
-            CACHE_DRIVER=${{ vars.CACHE_DRIVER || 'file' }}
-            FILESYSTEM_DISK=${{ vars.FILESYSTEM_DISK || 'local' }}
-            QUEUE_CONNECTION=${{ vars.QUEUE_CONNECTION || 'sync' }}
-            SESSION_DRIVER=${{ vars.SESSION_DRIVER || 'file' }}
-            SESSION_LIFETIME=${{ vars.SESSION_LIFETIME || '120' }}
-            SESSION_DOMAIN=${{ vars.SESSION_DOMAIN }}
-            SESSION_SECURE_COOKIE=${{ vars.SESSION_SECURE_COOKIE || 'true' }}
-            
-            REDIS_HOST=${{ vars.REDIS_HOST }}
-            REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
-            REDIS_PORT=${{ vars.REDIS_PORT || '6379' }}
-            
-            MAIL_MAILER=${{ vars.MAIL_MAILER || 'ses' }}
-            MAIL_HOST=${{ vars.MAIL_HOST }}
-            MAIL_PORT=${{ vars.MAIL_PORT }}
-            MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}
-            MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
-            MAIL_ENCRYPTION=${{ vars.MAIL_ENCRYPTION || 'tls' }}
-            MAIL_FROM_ADDRESS=${{ vars.MAIL_FROM_ADDRESS }}
-            MAIL_FROM_NAME=${{ vars.APP_NAME }}
-            
-            AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
-            AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
-            AWS_DEFAULT_REGION=${{ vars.AWS_DEFAULT_REGION }}
-            AWS_BUCKET=${{ vars.AWS_BUCKET }}
-            AWS_USE_PATH_STYLE_ENDPOINT=${{ vars.AWS_USE_PATH_STYLE_ENDPOINT || 'false' }}
-            
-            STRIPE_SECRET=${{ secrets.STRIPE_SECRET }}
-            
-            TWILIO_SID=${{ secrets.TWILIO_SID }}
-            TWILIO_AUTH_TOKEN=${{ secrets.TWILIO_AUTH_TOKEN }}
-            TWILIO_VERIFY_SID=${{ secrets.TWILIO_VERIFY_SID }}
-            TWILIO_NUMBER=${{ vars.TWILIO_NUMBER }}
-            
-            META_PIXEL_ID=${{ vars.META_PIXEL_ID }}
-            META_ACCESS_TOKEN=${{ secrets.META_ACCESS_TOKEN }}
-            META_TEST_EVENT_CODE=${{ vars.META_TEST_EVENT_CODE }}
-            
-            FACEBOOK_CLIENT_ID=${{ vars.FACEBOOK_CLIENT_ID }}
-            FACEBOOK_CLIENT_SECRET=${{ secrets.FACEBOOK_CLIENT_SECRET }}
-            FACEBOOK_REDIRECT_URI=${{ vars.APP_URL }}/auth/facebook/callback
-            
-            GOOGLE_CLIENT_ID=${{ vars.GOOGLE_CLIENT_ID }}
-            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
-            GOOGLE_REDIRECT_URI=${{ vars.APP_URL }}/auth/google/callback
-            
-            WHATSAPP_TOKEN=${{ secrets.WHATSAPP_TOKEN }}
-            WHATSAPP_PHONE_ID=${{ vars.WHATSAPP_PHONE_ID }}
-            WHATSAPP_ACCOUNT_ID=${{ vars.WHATSAPP_ACCOUNT_ID }}
-            WHATSAPP_URL=${{ vars.WHATSAPP_URL || 'https://graph.facebook.com/v22.0' }}
-            
-            FRONTEND_URL=${{ vars.FRONTEND_URL }}
-            
-            SANCTUM_STATEFUL_DOMAINS=${{ vars.SANCTUM_STATEFUL_DOMAINS }}
-            EOL
+            # Build new .env content without heredoc to avoid EOL issues
+            rm -f .env.new
+            {
+              echo "APP_NAME=${{ vars.APP_NAME || 'Futzo' }}"
+              echo "APP_ENV=${{ vars.APP_ENV || 'production' }}"
+              echo "APP_DEBUG=${{ vars.APP_DEBUG || 'false' }}"
+              echo "APP_URL=${{ vars.APP_URL }}"
+              echo
+              echo "LOG_CHANNEL=${{ vars.LOG_CHANNEL || 'stack' }}"
+              echo "LOG_LEVEL=${{ vars.LOG_LEVEL || 'info' }}"
+              echo
+              echo "DB_CONNECTION=${{ vars.DB_CONNECTION || 'mysql' }}"
+              echo "DB_HOST=${{ vars.DB_HOST }}"
+              echo "DB_PORT=${{ vars.DB_PORT || '3306' }}"
+              echo "DB_DATABASE=${{ vars.DB_DATABASE }}"
+              echo "DB_USERNAME=${{ secrets.DB_USERNAME }}"
+              echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}"
+              echo
+              echo "BROADCAST_DRIVER=${{ vars.BROADCAST_DRIVER || 'log' }}"
+              echo "CACHE_DRIVER=${{ vars.CACHE_DRIVER || 'file' }}"
+              echo "FILESYSTEM_DISK=${{ vars.FILESYSTEM_DISK || 'local' }}"
+              echo "QUEUE_CONNECTION=${{ vars.QUEUE_CONNECTION || 'sync' }}"
+              echo "SESSION_DRIVER=${{ vars.SESSION_DRIVER || 'file' }}"
+              echo "SESSION_LIFETIME=${{ vars.SESSION_LIFETIME || '120' }}"
+              echo "SESSION_DOMAIN=${{ vars.SESSION_DOMAIN }}"
+              echo "SESSION_SECURE_COOKIE=${{ vars.SESSION_SECURE_COOKIE || 'true' }}"
+              echo
+              echo "REDIS_HOST=${{ vars.REDIS_HOST }}"
+              echo "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}"
+              echo "REDIS_PORT=${{ vars.REDIS_PORT || '6379' }}"
+              echo
+              echo "MAIL_MAILER=${{ vars.MAIL_MAILER || 'ses' }}"
+              echo "MAIL_HOST=${{ vars.MAIL_HOST }}"
+              echo "MAIL_PORT=${{ vars.MAIL_PORT }}"
+              echo "MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}"
+              echo "MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}"
+              echo "MAIL_ENCRYPTION=${{ vars.MAIL_ENCRYPTION || 'tls' }}"
+              echo "MAIL_FROM_ADDRESS=${{ vars.MAIL_FROM_ADDRESS }}"
+              echo "MAIL_FROM_NAME=${{ vars.APP_NAME }}"
+              echo
+              echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}"
+              echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+              echo "AWS_DEFAULT_REGION=${{ vars.AWS_DEFAULT_REGION }}"
+              echo "AWS_BUCKET=${{ vars.AWS_BUCKET }}"
+              echo "AWS_USE_PATH_STYLE_ENDPOINT=${{ vars.AWS_USE_PATH_STYLE_ENDPOINT || 'false' }}"
+              echo
+              echo "STRIPE_SECRET=${{ secrets.STRIPE_SECRET }}"
+              echo
+              echo "TWILIO_SID=${{ secrets.TWILIO_SID }}"
+              echo "TWILIO_AUTH_TOKEN=${{ secrets.TWILIO_AUTH_TOKEN }}"
+              echo "TWILIO_VERIFY_SID=${{ secrets.TWILIO_VERIFY_SID }}"
+              echo "TWILIO_NUMBER=${{ vars.TWILIO_NUMBER }}"
+              echo
+              echo "META_PIXEL_ID=${{ vars.META_PIXEL_ID }}"
+              echo "META_ACCESS_TOKEN=${{ secrets.META_ACCESS_TOKEN }}"
+              echo "META_TEST_EVENT_CODE=${{ vars.META_TEST_EVENT_CODE }}"
+              echo
+              echo "FACEBOOK_CLIENT_ID=${{ vars.FACEBOOK_CLIENT_ID }}"
+              echo "FACEBOOK_CLIENT_SECRET=${{ secrets.FACEBOOK_CLIENT_SECRET }}"
+              echo "FACEBOOK_REDIRECT_URI=${{ vars.APP_URL }}/auth/facebook/callback"
+              echo
+              echo "GOOGLE_CLIENT_ID=${{ vars.GOOGLE_CLIENT_ID }}"
+              echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}"
+              echo "GOOGLE_REDIRECT_URI=${{ vars.APP_URL }}/auth/google/callback"
+              echo
+              echo "WHATSAPP_TOKEN=${{ secrets.WHATSAPP_TOKEN }}"
+              echo "WHATSAPP_PHONE_ID=${{ vars.WHATSAPP_PHONE_ID }}"
+              echo "WHATSAPP_ACCOUNT_ID=${{ vars.WHATSAPP_ACCOUNT_ID }}"
+              echo "WHATSAPP_URL=${{ vars.WHATSAPP_URL || 'https://graph.facebook.com/v22.0' }}"
+              echo
+              echo "FRONTEND_URL=${{ vars.FRONTEND_URL }}"
+              echo
+              echo "SANCTUM_STATEFUL_DOMAINS=${{ vars.SANCTUM_STATEFUL_DOMAINS }}"
+            } > .env.new
 
             # Preserve existing APP_KEY if present
             if [ -f .env ] && grep -q '^APP_KEY=' .env; then

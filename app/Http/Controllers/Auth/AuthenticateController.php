@@ -26,9 +26,15 @@ class AuthenticateController extends Controller
 			DB::beginTransaction();
 			$validated['verification_token'] = random_int(1000, 9999);
 			$validated['image'] = 'https://ui-avatars.com/api/?name=' . $validated['name'] . '&color=9155fd&background=F9FAFB';
-			$user = User::create($validated);
-			$user->assignRole('predeterminado');
+            $user = User::create($validated);
+            $user->assignRole('predeterminado');
             $user->status = 'pending_onboarding';
+            // Asignar trial local en DB si está configurado
+            $days = (int) config('billing.trial_days', 14);
+            if ($days > 0) {
+                // Al registrarse no hay suscripción; iniciamos trial en DB
+                $user->trial_ends_at = now()->addDays($days);
+            }
             $user->save();
             if (app()->environment('production') || app()->environment('local')) {
                 $user->sendEmailVerificationNotification();

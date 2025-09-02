@@ -9,7 +9,9 @@ return new class extends Migration {
     {
         Schema::table('users', function (Blueprint $table) {
             $table->uuid('stripe_customer_id')->nullable();
-            $table->enum('status',['pending_onboarding','active','suspended'])->nullable();
+            $table->enum('status',['pending_onboarding','active','suspended'])
+                ->default('pending_onboarding')
+                ->nullable();
         });
     }
 

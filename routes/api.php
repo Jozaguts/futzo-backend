@@ -35,7 +35,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/me', function (Request $request) {
         return new UserResource($request->user());
     });
-    Route::prefix('admin')->group(function () {
+    Route::prefix('admin')->middleware(['billing.operational'])->group(function () {
         Route::get('onboarding/steps', [OnboardingController::class, 'index']);
         Route::apiResource('/roles', RoleAndPermissionsController::class);
         Route::apiResources(['genders' => GenderController::class]);
@@ -77,4 +77,3 @@ Route::post('/pre-register', [PreRegisterController::class, 'preRegister'])
 Route::get('verify-code/resend', [UserController::class, 'resendVerifyCode'])
     ->middleware(['throttle:3,1'])
     ->name('verify-code.resend');
-

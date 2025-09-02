@@ -74,5 +74,6 @@ class Kernel extends HttpKernel
         'team.can_register_player' => \App\Http\Middleware\CheckTeamCanRegisterMiddleware::class,
         'tournament.can_register_team' => \App\Http\Middleware\CheckTournamentCanRegisterMiddleware::class,
         'checkout.eligibility' => \App\Http\Middleware\EnsureCheckoutEligibilityMiddleware::class,
+        'billing.operational' => \App\Http\Middleware\EnsureOperationalForBilling::class,
     ];
 }

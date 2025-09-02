@@ -85,6 +85,7 @@ class User extends Authenticatable implements MustVerifyEmail, HasMedia
      */
     protected $casts = [
         'verified_at' => 'datetime',
+        'trial_ends_at' => 'datetime',
         'password' => 'hashed',
     ];
 
@@ -131,6 +132,11 @@ class User extends Authenticatable implements MustVerifyEmail, HasMedia
 
     public function isOperationalForBilling(): bool
     {
-        return $this->hasActiveSubscription() || $this->onTrial();
+        return $this->hasActiveSubscription() || $this->onTrial() || $this->onDatabaseTrial();
+    }
+
+    public function onDatabaseTrial(): bool
+    {
+        return !is_null($this->trial_ends_at) && $this->trial_ends_at->isFuture();
     }
 }

@@ -27,8 +27,9 @@ class UserResource extends JsonResource
             'verified' => (bool)$this->resource->verified_at,
             'phone' => $this->resource->phone,
             'image' => $this->resource->image,
-            'trail_ends_at' => $this->resource->trial_ends_at,
+            'trial_ends_at' => $this->resource->trial_ends_at,
             'status' => $this->resource->status,
+            'is_operational' => (bool) $this->resource->isOperationalForBilling(),
             'onboarding' => $onboarding,
         ];
     }

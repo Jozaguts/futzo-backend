@@ -34,7 +34,6 @@ it('get tournaments', function () {
                     'location',
                 ]
             ],
-            'pagination'
         ]);
 });
 
@@ -60,8 +59,7 @@ it('get tournaments with pagination', function () {
                     'league',
                     'location',
                 ]
-            ],
-            'pagination'
+            ]
         ]);
 });
 

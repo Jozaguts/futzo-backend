@@ -14,7 +14,8 @@ use Illuminate\Support\Facades\Route;
 */
 Route::get('/', static function () {
   return response()->json([
-    'message' => 'Welcome to '. config('app.name').' API'
+    'message' => 'Welcome to '. config('app.name').' API',
+    'version' => config('app.version')
   ]);
 });
 //Route::webhooks('stripe/webhook','STRIPE_NOTIFICATION')

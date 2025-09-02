@@ -60,6 +60,7 @@ return [
     'frontend_url' => env('FRONTEND_URL', 'https://futzo.io'),
 
     'asset_url' => env('ASSET_URL'),
+    'version' => env('APP_VERSION', 'dev'),
 
     'landing_url' => env('LANDING_PAGE_URL','https://hola.futzo.io'),
 

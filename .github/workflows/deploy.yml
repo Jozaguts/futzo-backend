@@ -41,10 +41,11 @@ jobs:
               BUMP=patch
               echo "$COMMITS" | grep -E 'BREAKING CHANGE|!:' >/dev/null 2>&1 && BUMP=major
               if [ "$BUMP" = "patch" ] && echo "$COMMITS" | grep -E '^feat(\(|:)' >/dev/null 2>&1; then BUMP=minor; fi
-                VER=${LAST_TAG#v}
-                IFS='.' read -r MA MI PA <<EOFV
-                $VER
-                EOFV
+              VER=${LAST_TAG#v}
+              MA=${VER%%.*}
+              REM=${VER#*.}
+              MI=${REM%%.*}
+              PA=${VER##*.}
               case "$BUMP" in
                 major) MA=$((MA+1)); MI=0; PA=0;;
                 minor) MI=$((MI+1)); PA=0;;

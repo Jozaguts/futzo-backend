@@ -22,7 +22,7 @@ class OnboardingService
             [
                 'id' => 'create_league',
                 'title' => 'Crea tu primera liga',
-                'description' => 'Configura tu liga para comenzar a organizar.',
+                'description' => 'El primer paso para organizar tus partidos.',
                 'done' => $hasLeague,
                 'link' => '/bienvenido',
                 'blocking' => true,
@@ -30,7 +30,7 @@ class OnboardingService
             [
                 'id' => 'create_location',
                 'title' => 'Crea tu primera ubicación',
-                'description' => 'Agrega la ubicación de tus canchas de juego.',
+                'description' => 'Dónde estan tus campos de juego.',
                 'done' => $hasLocation,
                 'link' => '/ubicaciones',
                 'blocking' => true,
@@ -39,7 +39,7 @@ class OnboardingService
             [
                 'id' => 'create_field',
                 'title' => 'Configura tus canchas',
-                'description' => 'Añade al menos una cancha y horarios disponibles.',
+                'description' => 'Donde se jugan tus partidos.',
                 'done' => $hasField,
                 'link' => '/ubicaciones',
                 'blocking' => true,

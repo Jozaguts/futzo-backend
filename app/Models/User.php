@@ -62,6 +62,10 @@ class User extends Authenticatable implements MustVerifyEmail, HasMedia
         'league_id',
         'stripe_customer_id',
         'status',
+        'stripe_id',
+        'pm_type'  ,
+        'pm_last_four' ,
+        'trial_ends_at',
     ];
 
     /**

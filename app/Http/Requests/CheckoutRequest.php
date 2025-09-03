@@ -9,7 +9,6 @@ class CheckoutRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'identifier' =>'required',
             'plan'   => 'required|in:kickoff,pro_play,elite_league',
             'period' => 'required|in:month,year',
         ];

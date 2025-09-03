@@ -19,6 +19,11 @@ class Currency extends Model
         'usd_rate_exchange',
     ];
 
+    protected $hidden =[
+        'created_at',
+        'updated_at',
+        'deleted_at'
+    ];
     protected function casts(): array
     {
         return [

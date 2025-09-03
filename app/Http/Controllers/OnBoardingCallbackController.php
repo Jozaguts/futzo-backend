@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\SendMetaCapiEventJob;
 use App\Models\PostCheckoutLogin;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -27,26 +28,42 @@ class OnBoardingCallbackController extends Controller
 
         abort_unless($s->payment_status === 'paid', 402, 'Payment not completed');
         $user = User::where('email', $email)->first();
-        $row = null;
-        if ($user) {
-            $row =  PostCheckoutLogin::updateOrCreate(
-                [
-                    'checkout_session_id' => $sessionId,
-                    'user_id' => $user->id
+        $eventId =  Str::uuid();
+        $userCtx = [
+            'email'       => $user?->email,
+            'external_id' => (string) $user?->id,
+            'ip'          => $request->ip(),
+            'ua'          => $request->userAgent(),
+            // Tomados de los valores persistidos en el usuario (capturados al registrar/login)
+            'fbp'         => $user?->fbp,
+            'fbc'         => $user?->fbc,
+            'fbclid'      => $user?->fbclid,
+        ];
+
+        // Solo enviar a Meta si tenemos tokens de FB (evita atribuir todo a Facebook)
+        $hasFbAttribution = !empty($user?->fbp) || !empty($user?->fbc) || !empty($user?->fbclid);
+        if ($hasFbAttribution) {
+            $amountTotal = (int) ($s->amount_total ?? 0);
+            $currency    = strtoupper((string) ($s->currency ?? 'MXN'));
+            $postTrial   = $user?->trial_ends_at && now()->greaterThan($user->trial_ends_at);
+            SendMetaCapiEventJob::dispatch(
+                eventName: 'Purchase',
+                eventId: $eventId,
+                userCtx: $userCtx,
+                custom: [
+                    'value'       => $amountTotal > 0 ? round($amountTotal / 100, 2) : 0,
+                    'currency'    => $currency,
+                    'is_post_trial' => (bool) $postTrial,
                 ],
-                ['expires_at' => now()->addMinutes(30),
-                    'login_token' => hash('sha256',$loginToken)
-                ]
+                eventSourceUrl: config('app.url') . '/configuracion?payment=success',
+                testCode: $request->input('test_event_code'),
+                actionSource: 'website',
+                consent: $request->boolean('consent', true)
             );
         }
-
-        abort_unless((bool)$row, 404);
-
         return redirect()->away(
-            config('app.landing_url') . "/gracias?code=" . self::PURCHASE_SUBSCRIPTION_CODE
+            config('app.frontend_url') . "/configuracion?payment=success" . self::PURCHASE_SUBSCRIPTION_CODE
             . "&amount_subtotal=" . $s->amount_subtotal
-            ."&redirect_url=".urldecode(config('app.frontend_url')."/bienvenido")
-            ."&token=".urlencode($loginToken)
         );
     }
 }

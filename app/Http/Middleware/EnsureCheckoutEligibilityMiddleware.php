@@ -14,19 +14,12 @@ class EnsureCheckoutEligibilityMiddleware
      */
     public function handle(Request $request, Closure $next)
     {
-
-        $identifier = strtolower($request->input('identifier', $request->input('email')));
-        $authUser = $request->user();
-        $owner = $authUser ?? User::where('email', $identifier)->first();
-
-
-        // si no existe el owner pasa al checkout
-        if (!is_null($owner) && $owner->subscriptions()->count() > 0) {
+        $owner = $request->user();
+        // si el usuario ya tiene suscripciones, no es elegible para este checkout
+        if ($owner && $owner->subscriptions()->count() > 0) {
             return response()->json([
-                'error' => 'already_has_account',
-                'message' => 'Ya existe una cuenta con este correo. Inicia sesión para gestionar o cambiar tu suscripción.',
-                'login_url' => config('app.frontend_url'),
-                'identifier' =>$identifier
+                'error' => 'already_has_subscription',
+                'message' => 'Ya tienes una suscripción activa. Gestiona tu plan desde Configuración.',
             ], 409);
         }
 

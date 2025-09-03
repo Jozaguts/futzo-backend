@@ -34,9 +34,7 @@ class EnsureOperationalForBilling
         }
 
         // Block: return a JSON response guiding to checkout
-        $checkoutUrl = route('checkout', [
-            'identifier' => $user->email,
-        ]);
+        $checkoutUrl = route('checkout');
 
         return response()->json([
             'error' => 'payment_required',
@@ -46,4 +44,3 @@ class EnsureOperationalForBilling
         ], 402);
     }
 }
-

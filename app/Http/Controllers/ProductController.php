@@ -13,6 +13,10 @@ class ProductController extends Controller
         if (ProductPrice::count() === 0) {
             abort(404, 'No product prices found');
         }
-         return new ProductCollection(Product::with('productPrices.currency')->get());
+         return new ProductCollection(Product::query()->with([
+             'productPrices' => function($query) {
+                $query->whereNot('variant','special_first_month')
+                    ->with('currency');
+         }])->get());
     }
 }

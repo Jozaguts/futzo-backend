@@ -58,6 +58,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
         require __DIR__ . '/categories/routes.php';
         require __DIR__ . '/games/routes.php';
     });
+    Route::middleware('checkout.eligibility')->group(function () {
+        Route::get('checkout', CheckoutController::class)
+            ->name('checkout');
+    });
 });
 
 Route::prefix('public')->group(function () {
@@ -66,9 +70,6 @@ Route::prefix('public')->group(function () {
    require __DIR__ . '/products/public.php';
    Route::post('/post-checkout-login', PostCheckoutLoginController::class);
 });
-Route::get('checkout', CheckoutController::class)
-    ->middleware('checkout.eligibility')
-    ->name('checkout');
 Route::get('billing/callback', OnBoardingCallbackController::class)
     ->name('billing.callback');
 Route::post('/pre-register', [PreRegisterController::class, 'preRegister'])

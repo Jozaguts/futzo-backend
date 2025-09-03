@@ -23,19 +23,12 @@ class CheckoutController extends Controller
     {
         $plan   = $request->string('plan');
         $period = $request->string('period'); // 'month'|'year'
-        $identifier  = $request->string('identifier'); // email por el momento, phone para despues.
-        $ownerKey = $request->user()
-            ? 'user:' . $request->user()->id
-            : 'email:' . $identifier;
+        $user  =  $request->user();
+        $ownerKey = $user->id;
 
         $intentKey = "checkout:intent:{$ownerKey}:{$plan}:{$period}";
         $lockKey   = "lock:{$intentKey}";
-        return Cache::lock($lockKey, 10)->block(5, function () use ($request, $plan, $period, $identifier, $ownerKey, $intentKey) {
-            // 1. se obtiene o se crea al usuario
-            $user =  User::firstOrCreate(['email' => $identifier], [
-                'name' => Str::before($identifier, '@'),
-                'status' => 'pending_onboarding',
-            ]);
+        return Cache::lock($lockKey, 10)->block(5, function () use ($plan, $period, $user, $intentKey) {
             // 2. si existe un intento de pago del mismo plan, email y periodo se obtiene desde el caché
             $cached = Cache::get($intentKey);
             if ($cached && isset($cached['session_id'])) {
@@ -57,7 +50,7 @@ class CheckoutController extends Controller
                     Cache::forget("checkout:intent:by_session:{$cached['session_id']}");
                 }
             }
-            // 3. en este punto se validó que el identifier=email no ha intentado crear un payment intent de Stripe
+            // 3. en este punto se validó que el user no ha intentado crear un payment intent de Stripe
 
             // 4. validamos si alguna vez tuvo una subscription
             $hasSubscriptions = $user->subscriptions()->count() > 0;
@@ -69,11 +62,11 @@ class CheckoutController extends Controller
             $success = route('billing.callback').'?session_id={CHECKOUT_SESSION_ID}';
             $cancel  = config('app.frontend_url'). '/suscripcion?cancel=1';
             // 6. se crea el checkout la subscription todavía no existe en base de datos
-            $session = $user->newSubscription('default',$price?->stripe_price_id)
+            $session = $user->newSubscription('default', $price?->stripe_price_id)
                 ->withMetadata([
                     'plan_sku'  => (string)$plan,
                     'period'    => (string)$period,
-                    'app_email' => (string)$identifier,
+                    'app_email' => (string)$user->email,
                     'first_purchase' => !$hasSubscriptions ? '1' : '0',
                     'variant' => (string) $price?->variant
                 ])

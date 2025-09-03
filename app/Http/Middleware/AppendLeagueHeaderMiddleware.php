@@ -13,6 +13,13 @@ class AppendLeagueHeaderMiddleware
     {
 
         $response = $next($request);
+
+        // On logout, ensure the header is removed to avoid client persistence
+        if ($request->routeIs('logout') || $request->is('auth/logout')) {
+            $response->headers->remove('X-League-Id');
+            return $response;
+        }
+
         $leagueId = $response->headers->get('X-League-Id');
 
         if (! $leagueId){

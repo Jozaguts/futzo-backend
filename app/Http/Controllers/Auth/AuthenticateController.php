@@ -27,6 +27,13 @@ class AuthenticateController extends Controller
 			$validated['verification_token'] = random_int(1000, 9999);
 			$validated['image'] = 'https://ui-avatars.com/api/?name=' . $validated['name'] . '&color=9155fd&background=F9FAFB';
             $user = User::create($validated);
+            // Persistir contexto de Meta si viene desde el frontend
+            $user->fbp = $request->input('fbp') ?: $user->fbp;
+            $user->fbc = $request->input('fbc') ?: $user->fbc;
+            $user->fbclid = $request->input('fbclid') ?: $user->fbclid;
+            if ($request->has('consent')) {
+                $user->capi_consent = $request->boolean('consent');
+            }
             $user->assignRole('predeterminado');
             $user->status = 'pending_onboarding';
             // Asignar trial local en DB si está configurado
@@ -39,25 +46,29 @@ class AuthenticateController extends Controller
             if (app()->environment('production') || app()->environment('local')) {
                 $user->sendEmailVerificationNotification();
                 $eventId = $request->input('event_id', (string) Str::uuid());
-                $userCtx = [
-                    'email'       => $user->email,
-                    'external_id' => (string) $user->id,
-                    'ip'          => $request->ip(),
-                    'ua'          => $request->userAgent(),
-                    'fbp'         => $request->input('fbp'),
-                    'fbc'         => $request->input('fbc'),
-                    'fbclid'      => $request->input('fbclid'),
-                ];
-                SendMetaCapiEventJob::dispatch(
-                    eventName: 'StartTrial',
-                    eventId: $eventId,
-                    userCtx: $userCtx,
-                    custom: ['trial_days'=>7,'value'=>0,'currency'=>'MXN'],
-                    eventSourceUrl: config('app.url').'/login',
-                    testCode: $request->input('test_event_code'),
-                    actionSource: 'website',
-                    consent: $request->boolean('consent', true)
-                );
+                // Solo enviar StartTrial si hay atribución de Meta
+                $hasFbAttribution = !empty($user->fbp) || !empty($user->fbc) || !empty($user->fbclid);
+                if ($hasFbAttribution) {
+                    $userCtx = [
+                        'email'       => $user->email,
+                        'external_id' => (string) $user->id,
+                        'ip'          => $request->ip(),
+                        'ua'          => $request->userAgent(),
+                        'fbp'         => $user->fbp,
+                        'fbc'         => $user->fbc,
+                        'fbclid'      => $user->fbclid,
+                    ];
+                    SendMetaCapiEventJob::dispatch(
+                        eventName: 'StartTrial',
+                        eventId: $eventId,
+                        userCtx: $userCtx,
+                        custom: ['trial_days'=> (int) config('billing.trial_days', 7), 'value'=>0,'currency'=>'MXN'],
+                        eventSourceUrl: config('app.url').'/login',
+                        testCode: $request->input('test_event_code'),
+                        actionSource: 'website',
+                        consent: $request->boolean('consent', true)
+                    );
+                }
             }
 			event(new Registered($user));
 			DB::commit();
@@ -71,16 +82,37 @@ class AuthenticateController extends Controller
 	/**
 	 * @throws ValidationException
 	 */
-	public function login(LoginRequest $request): JsonResponse
-	{
-		$request->authenticate();
+    public function login(LoginRequest $request): JsonResponse
+    {
+        $request->authenticate();
 
-		$request->session()->regenerate();
+        $request->session()->regenerate();
 
-		return response()->json([
-			'message' => 'Login successful'
-		]);
-	}
+        // Si llegan tokens de Meta al iniciar sesión, los persistimos para usarlos más adelante
+        /** @var User $user */
+        $user = $request->user();
+        if ($user) {
+            $updated = false;
+            foreach (['fbp','fbc','fbclid'] as $k) {
+                $v = $request->input($k);
+                if ($v && empty($user->{$k})) {
+                    $user->{$k} = $v;
+                    $updated = true;
+                }
+            }
+            if ($request->has('consent')) {
+                $user->capi_consent = $request->boolean('consent');
+                $updated = true;
+            }
+            if ($updated) {
+                $user->save();
+            }
+        }
+
+        return response()->json([
+            'message' => 'Login successful'
+        ]);
+    }
 
 	public function logout(Request $request): Response
 	{

@@ -40,11 +40,11 @@ class OnBoardingCallbackController extends Controller
             'fbclid'      => $user?->fbclid,
         ];
 
-        // Solo enviar a Meta si tenemos tokens de FB (evita atribuir todo a Facebook)
+        // Solo enviar a Meta si tenemos tokens de FB (evita atribuir a Facebook cuando no lo es)
         $hasFbAttribution = !empty($user?->fbp) || !empty($user?->fbc) || !empty($user?->fbclid);
         if ($hasFbAttribution) {
-            $amountTotal = (int) ($s->amount_total ?? 0);
-            $currency    = strtoupper((string) ($s->currency ?? 'MXN'));
+            $amountTotal = ($s->amount_total ?? 0);
+            $currency    = strtoupper($s->currency ?? 'MXN');
             $postTrial   = $user?->trial_ends_at && now()->greaterThan($user->trial_ends_at);
             SendMetaCapiEventJob::dispatch(
                 eventName: 'Purchase',
@@ -62,8 +62,7 @@ class OnBoardingCallbackController extends Controller
             );
         }
         return redirect()->away(
-            config('app.frontend_url') . "/configuracion?payment=success" . self::PURCHASE_SUBSCRIPTION_CODE
-            . "&amount_subtotal=" . $s->amount_subtotal
+            config('app.frontend_url') . "/configuracion?payment=success"
         );
     }
 }

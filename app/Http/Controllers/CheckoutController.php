@@ -55,9 +55,7 @@ class CheckoutController extends Controller
             // 4. validamos si alguna vez tuvo una subscription
             $hasSubscriptions = $user->subscriptions()->count() > 0;
             // 5. Si es primera compra se aplica el special_first_month price caso contrario intro/regular price
-            $price = !$hasSubscriptions && $period == 'month'
-                ? ProductPrice::for($plan, 'special_first_month', 'month') // primer mes
-                : ProductPrice::for($plan, 'intro', $period); // intro mensual/anual
+            $price = ProductPrice::for($plan, 'intro', $period);
             abort_unless($price?->stripe_price_id, 422, 'Price not configured');
             $success = route('billing.callback').'?session_id={CHECKOUT_SESSION_ID}';
             $cancel  = config('app.frontend_url'). '/suscripcion?cancel=1';

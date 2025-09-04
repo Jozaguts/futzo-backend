@@ -15,17 +15,17 @@ class LeagueResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
-            'name' => $this->name,
-            'description' => $this->description,
-            'creation_date' => $this->creation_date,
-            'logo' => $this->logo,
-            'football_type_id' => $this->football_type_id,
-            'banner' => $this->banner,
-            'status' => $this->status,
-            'owner_id' => $this->owner_id,
-            'location' => $this->location,
-            'tournament_count' => $this->tournaments_count,
+            'id' => $this->resource?->id,
+            'name' => $this->resource?->name,
+            'description' => $this->resource?->description,
+            'creation_date' => $this->resource?->creation_date,
+            'logo' => $this->resource?->logo,
+            'football_type_id' => $this->resource?->football_type_id,
+            'banner' => $this->resource?->banner,
+            'status' => $this->resource?->status,
+            'owner_id' => $this->resource?->owner_id,
+            'location' => $this->resource?->location,
+            'tournament_count' => $this->resource?->tournaments_count,
         ];
     }
 }

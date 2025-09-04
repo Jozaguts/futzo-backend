@@ -33,7 +33,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::get('/me', function (Request $request) {
-        return new UserResource($request->user());
+        return new UserResource($request->user()->load('league'));
     });
     Route::prefix('admin')->middleware(['billing.operational'])->group(function () {
         Route::get('onboarding/steps', [OnboardingController::class, 'index']);

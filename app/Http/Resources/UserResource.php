@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\ProductPrice;
 use App\Services\OnboardingService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -22,7 +23,7 @@ class UserResource extends JsonResource
             'name' => $this->resource->name,
             'email' => $this->resource->email,
             'roles' => $this->resource->roles()->pluck('name'),
-            'league' => $this->resource->league,
+            'league' => new LeagueResource($this->whenLoaded('league')),
             'has_league' => (bool)$this->resource->league,
             'verified' => (bool)$this->resource->verified_at,
             'phone' => $this->resource->phone,
@@ -31,6 +32,10 @@ class UserResource extends JsonResource
             'status' => $this->resource->status,
             'is_operational' => (bool) $this->resource->isOperationalForBilling(),
             'onboarding' => $onboarding,
+            'plan' => ProductPrice::where('stripe_price_id', $this->resource?->subscription()?->stripe_price)
+                ->select(['id','billing_period','price','product_id'])
+                ->with('product:id,name,sku')
+                ->first(),
         ];
     }
 }

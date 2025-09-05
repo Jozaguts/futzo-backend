@@ -44,7 +44,6 @@ class AuthenticateController extends Controller
             }
             $user->save();
             if (app()->environment('production') || app()->environment('local')) {
-                $user->sendEmailVerificationNotification();
                 $eventId = $request->input('event_id', (string) Str::uuid());
                 // Solo enviar StartTrial si hay atribución de Meta
                 $hasFbAttribution = !empty($user->fbp) || !empty($user->fbc) || !empty($user->fbclid);

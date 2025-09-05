@@ -45,6 +45,11 @@ class Field extends Model
         return $this->hasMany(TournamentField::class, 'field_id');
     }
 
+    public function windows(): HasMany
+    {
+        return $this->hasMany(FieldWindow::class);
+    }
+
     public function tournaments(): BelongsToMany
     {
         return $this->belongsToMany(Tournament::class, 'tournament_fields');

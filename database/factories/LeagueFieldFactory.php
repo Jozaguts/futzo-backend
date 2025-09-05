@@ -15,7 +15,6 @@ class LeagueFieldFactory extends Factory
     public function definition(): array
     {
         return [
-            'availability' => config('constants.availability'),
             'created_at' => Carbon::now(),
             'updated_at' => Carbon::now(),
             'league_id' => 1,

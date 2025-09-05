@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class LeagueField extends Model
@@ -14,7 +15,6 @@ class LeagueField extends Model
     protected $fillable = [
         'league_id',
         'field_id',
-        'availability',
     ];
 
     public function league(): BelongsTo
@@ -27,10 +27,15 @@ class LeagueField extends Model
         return $this->belongsTo(Field::class);
     }
 
-    protected function casts(): array
+    public function windows(): HasMany
     {
-        return [
-            'availability' => 'array',
-        ];
+        return $this->hasMany(LeagueFieldWindow::class);
     }
+
+    public function tournamentReservations(): HasMany
+    {
+        return $this->hasMany(TournamentFieldReservation::class);
+    }
+
+    // No JSON availability; windows live in league_field_windows
 }

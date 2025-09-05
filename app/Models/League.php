@@ -67,7 +67,7 @@ class League extends Model
 
     public function fields(): BelongsToMany
     {
-        return $this->belongsToMany(Field::class, LeagueField::class)->withPivot('availability');
+        return $this->belongsToMany(Field::class, LeagueField::class);
     }
 
     public function isReady(): bool

@@ -13,7 +13,6 @@ return new class extends Migration {
             $table->id();
             $table->foreignIdFor(League::class);
             $table->foreignIdFor(Field::class);
-            $table->json('availability')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

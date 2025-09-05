@@ -14,7 +14,6 @@ class TournamentField extends Model
     protected $fillable = [
         'tournament_id',
         'field_id',
-        'availability',
     ];
 
     public function tournament(): BelongsTo
@@ -27,10 +26,5 @@ class TournamentField extends Model
         return $this->belongsTo(Field::class);
     }
 
-    protected function casts(): array
-    {
-        return [
-            'availability' => 'array',
-        ];
-    }
+    // No JSON availability here; reservations live in tournament_field_reservations
 }

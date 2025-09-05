@@ -22,15 +22,17 @@ class OnBoardingCallbackController extends Controller
         abort_unless($sessionId, 400);
 
         $stripe = new StripeClient(config('services.stripe.secret'));
-        $s = $stripe->checkout->sessions->retrieve($sessionId);
+        $s = $stripe->checkout->sessions->retrieve($sessionId,[
+            'expand' => ['subscription'],
+        ]);
         $email =  $s->customer_details['email'];
-        $loginToken = Str::random(40); // One-time token set used_at at PostCheckoutLoginController
+        $phone = $s->subscription->metadata['app_phone'];
 
         abort_unless($s->payment_status === 'paid', 402, 'Payment not completed');
-        $user = User::where('email', $email)->first();
+        $user = User::where('email', $email)
+            ->orWhere('phone',$phone)->first();
         $eventId =  Str::uuid();
         $userCtx = [
-            'email'       => $user?->email,
             'external_id' => (string) $user?->id,
             'ip'          => $request->ip(),
             'ua'          => $request->userAgent(),
@@ -39,6 +41,12 @@ class OnBoardingCallbackController extends Controller
             'fbc'         => $user?->fbc,
             'fbclid'      => $user?->fbclid,
         ];
+        if (!is_null($phone)){
+            $userCtx['phone'] = $phone;
+        }
+        if (!is_null($email)){
+            $userCtx['email'] = $email;
+        }
 
         // Solo enviar a Meta si tenemos tokens de FB (evita atribuir a Facebook cuando no lo es)
         $hasFbAttribution = !empty($user?->fbp) || !empty($user?->fbc) || !empty($user?->fbclid);
@@ -62,7 +70,7 @@ class OnBoardingCallbackController extends Controller
             );
         }
         return redirect()->away(
-            config('app.frontend_url') . "/configuracion?payment=success"
+            config('app.frontend_url') . "/configuracion?payment=success&plan=kicjoff"
         );
     }
 }

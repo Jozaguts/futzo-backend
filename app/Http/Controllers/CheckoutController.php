@@ -65,6 +65,7 @@ class CheckoutController extends Controller
                     'plan_sku'  => (string)$plan,
                     'period'    => (string)$period,
                     'app_email' => (string)$user->email,
+                    'app_phone' => (string)$user->phone,
                     'first_purchase' => !$hasSubscriptions ? '1' : '0',
                     'variant' => (string) $price?->variant
                 ])

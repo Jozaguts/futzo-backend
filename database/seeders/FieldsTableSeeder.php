@@ -16,7 +16,7 @@ class FieldsTableSeeder extends Seeder
         $leagueId = League::first()->id;
 
         // Para cada ubicación, crear 2 campos y su relación con la liga
-        Location::all()->each(function (Location $location) use ($leagueId, $defaultAvailability) {
+        Location::all()->each(function (Location $location) use ($leagueId) {
             for ($n = 1; $n <= 2; $n++) {
                 // Crear el campo
                 $field = Field::create([

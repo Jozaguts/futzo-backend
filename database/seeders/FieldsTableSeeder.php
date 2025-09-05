@@ -14,8 +14,6 @@ class FieldsTableSeeder extends Seeder
     {
 
         $leagueId = League::first()->id;
-        // Disponibilidad por defecto definida en config/constants.php bajo 'availability'
-        $defaultAvailability = config('constants.availability');
 
         // Para cada ubicación, crear 2 campos y su relación con la liga
         Location::all()->each(function (Location $location) use ($leagueId, $defaultAvailability) {
@@ -32,7 +30,6 @@ class FieldsTableSeeder extends Seeder
                 LeagueField::create([
                     'league_id' => $leagueId,
                     'field_id' => $field->id,
-                    'availability' => $defaultAvailability,
                 ]);
             }
         });

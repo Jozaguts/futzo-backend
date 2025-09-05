@@ -6,6 +6,7 @@ use App\Models\ProductPrice;
 use App\Services\OnboardingService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Carbon;
 
 class UserResource extends JsonResource
 {
@@ -32,10 +33,13 @@ class UserResource extends JsonResource
             'status' => $this->resource->status,
             'is_operational' => (bool) $this->resource->isOperationalForBilling(),
             'onboarding' => $onboarding,
+            'subscribed' => $this->resource->hasActiveSubscription(),
             'plan' => ProductPrice::where('stripe_price_id', $this->resource?->subscription()?->stripe_price)
                 ->select(['id','billing_period','price','product_id'])
                 ->with('product:id,name,sku')
-                ->first(),
+                ->first()
+            ?->setAttribute('current_period_end',Carbon::createFromTimestamp( $this->resource?->subscription()?->asStripeSubscription()?->current_period_end)->translatedFormat('l d M Y'))
+
         ];
     }
 }

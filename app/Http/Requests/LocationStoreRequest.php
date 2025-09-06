@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class LocationStoreRequest extends FormRequest
@@ -17,40 +18,18 @@ class LocationStoreRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array|string>
      */
     public function rules(): array
     {
         return [
             'name' => 'required|string',
-            'city' => 'required|string',
             'address' => 'required|string',
-            'autocomplete_prediction' => [
-                'required',
-                'array',
-            ],
             'position' => 'required|array',
-            'autocomplete_prediction.description' => 'required|string',
-            'autocomplete_prediction.structured_formatting' => 'array',
-            'autocomplete_prediction.terms' => 'array',
-            'autocomplete_prediction.types' => 'array',
-            'autocomplete_prediction.matched_substrings' => 'array',
-            'autocomplete_prediction.structured_formatting.main_text' => 'string',
-            'autocomplete_prediction.structured_formatting.main_text_matched_substrings' => 'array',
-            'autocomplete_prediction.structured_formatting.secondary_text' => 'string',
             'tags' => 'array',
-            'autocomplete_prediction.place_id' => [
-                'required',
-                'string',
-//                function ($attribute, $value, $fail) {
-//                    $exists = \App\Models\Location::whereJsonContains('autocomplete_prediction->place_id', $value)->exists();
-//                    \App\Models\Location::whereJsonContains('autocomplete_prediction->place_id', $value)->exists();
-//                    if ($exists) {
-//                        $fail("Esta ubicación ya está registrada.");
-//                    }
-//                },
-            ],
-            'availability' => 'array',
+            'fields' => 'array',
+            'fields.*.name' => 'required_with:fields|string',
+            'fields.*.windows' => 'array',
         ];
     }
 

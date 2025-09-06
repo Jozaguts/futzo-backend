@@ -10,14 +10,12 @@ class LocationUpdateRequest extends FormRequest
     {
         return [
             'name' => 'required|string',
-            'city' => 'required|string',
             'address' => 'required|string',
-            'autocomplete_prediction' => [
-                'required',
-                'array',
-            ],
             'tags' => 'array',
-            'availability' => 'array',
+            'fields' => 'array',
+            'fields.*.id' => 'nullable|integer|exists:fields,id',
+            'fields.*.name' => 'required_with:fields|string',
+            'fields.*.windows' => 'array',
             'position' => 'required|array',
         ];
     }

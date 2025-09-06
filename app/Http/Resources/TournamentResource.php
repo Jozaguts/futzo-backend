@@ -44,9 +44,7 @@ class TournamentResource extends JsonResource
             'location' => ($location = $this->resource->locations->first()) ? [
                 'id' => $location->id,
                 'name' => $location->name,
-                'city' => $location->city,
                 'address' => $location->address,
-                'autocomplete_prediction' => $location->autocomplete_prediction,
             ] : null,
             'max_teams' => optional($this->resource->configuration)->max_teams,
             'substitutions_per_team' => optional($this->resource->configuration)->substitutions_per_team,

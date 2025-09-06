@@ -13,10 +13,9 @@ class Location extends Model
 {
     use HasFactory, SoftDeletes, HasTags;
 
-    protected $fillable = ['name', 'city', 'address', 'autocomplete_prediction', 'position'];
+    protected $fillable = ['name', 'address', 'position'];
 
     protected $casts = [
-        'autocomplete_prediction' => 'json',
         'position' => 'json'
     ];
     protected $hidden = ['created_at', 'updated_at', 'deleted_at'];

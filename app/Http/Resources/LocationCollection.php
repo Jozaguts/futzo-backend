@@ -13,27 +13,35 @@ class LocationCollection extends ResourceCollection
     public function toArray(Request $request): array
     {
         return $this->collection->map(function ($location) {
-            $availability = $location->fields->map(function ($field) {
-                return $field->leaguesFields->map(fn($leagueField) => [
-                    'id' => $field->id,
-                    'name' => $field->name,
-                    'type' => $field->type,
-                    'isCompleted' => false,
-
-                    ...$leagueField->availability
-                ]);
+            $windows = $location->fields->map(function ($field) {
+                return $field->leaguesFields->map(function ($leagueField) use ($field) {
+                    $byDay = $leagueField->windows
+                        ->groupBy('day_of_week')
+                        ->map(function ($items) {
+                            return $items->map(function ($w) {
+                                return [
+                                    'start' => sprintf('%02d:%02d', intdiv($w->start_minute,60), $w->start_minute%60),
+                                    'end' => sprintf('%02d:%02d', intdiv($w->end_minute,60), $w->end_minute%60),
+                                ];
+                            })->values()->toArray();
+                        })->toArray();
+                    return [
+                        'id' => $field->id,
+                        'name' => $field->name,
+                        'type' => $field->type,
+                        'windows' => $byDay,
+                    ];
+                });
             })->flatten(1)->toArray();
             return [
                 'id' => $location->id,
                 'name' => $location->name,
-                'city' => $location->city,
                 'address' => $location->address,
-                'availability' => $availability,
+                'windows' => $windows,
                 'fields_count' => $location->fields->count(),
                 'position' => $location->position,
                 'tags' => $location->tags->pluck('name'),
                 'image' => $this->imagesAvailable[array_rand($this->imagesAvailable)],
-                'autocomplete_prediction' => $location->autocomplete_prediction,
                 'completed' => true,
             ];
         })->toArray();

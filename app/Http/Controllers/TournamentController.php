@@ -110,8 +110,6 @@ class TournamentController extends Controller
             ], [
                 'name' => $requestLocation['structured_formatting']['main_text'],
                 'address' => $requestLocation['description'],
-                'city' => $requestLocation['terms'][2]['value'],
-                'autocomplete_prediction' => $requestLocation
             ]);
         }
         $tournament->update($data->except('location')->toArray());
@@ -178,8 +176,6 @@ class TournamentController extends Controller
         ], [
             'name' => $requestLocation['structured_formatting']['main_text'],
             'address' => $requestLocation['description'],
-            'city' => $requestLocation['terms'][2]['value'],
-            'autocomplete_prediction' => $requestLocation
         ]));
         $location->syncTags($request->tags);
         return response()->json($location);

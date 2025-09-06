@@ -403,6 +403,12 @@ class ScheduleGeneratorService
                 throw new RuntimeException("El campo {$field['field_name']} no está registrado en la liga.");
             }
 
+            // Asegurar registro en tournament_fields para este campo
+            TournamentField::updateOrCreate(
+                ['tournament_id' => $this->tournament->id, 'field_id' => $field['field_id']],
+                []
+            );
+
             // Limpiar reservas previas de este torneo en este campo de liga
             DB::table('tournament_field_reservations')
                 ->where('tournament_id', $this->tournament->id)
@@ -464,6 +470,18 @@ class ScheduleGeneratorService
                 $requestedStart = (int)$selected->min();
                 // el final del bloque = última hora seleccionada + duración del mismo
                 $requestedEnd = (int)$selected->max() + $blockDuration;
+
+                // Si el final solicitado rebasa el fin permitido por la liga
+                // para la ventana que contiene el inicio, recortar al máximo permitido
+                $containing = $leagueWindows->filter(function ($lw) use ($requestedStart) {
+                    return $requestedStart >= (int)$lw->start_minute && $requestedStart < (int)$lw->end_minute;
+                });
+                if ($containing->isNotEmpty()) {
+                    $maxAllowedEnd = (int)$containing->max('end_minute');
+                    if ($requestedEnd > $maxAllowedEnd) {
+                        $requestedEnd = $maxAllowedEnd;
+                    }
+                }
 
                 // Validar que la reserva cabe en alguna(s) ventana(s) de liga
                 $fitsAny = false;

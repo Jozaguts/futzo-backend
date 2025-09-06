@@ -26,6 +26,7 @@ class LocationStoreRequest extends FormRequest
             'name' => 'required|string',
             'address' => 'required|string',
             'position' => 'required|array',
+            'place_id' => 'required|string',
             'tags' => 'array',
             'fields' => 'array',
             'fields.*.name' => 'required_with:fields|string',

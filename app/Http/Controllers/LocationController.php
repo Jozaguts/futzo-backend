@@ -37,16 +37,14 @@ class LocationController extends Controller
     public function store(LocationStoreRequest $request): LocationResource
     {
         $validated = $request->safe();
-        $locationData = $validated->except('availability', 'fields');
-        $fieldsPayload = $request->input('fields', []);
+        $locationData = $validated->except('fields');
+        $fieldsPayload = $validated->only('fields')['fields'];
 
-        $placeId = $locationData['autocomplete_prediction']['place_id'] ?? null;
-
-        $location = null;
+        $place_id= $locationData['place_id'] ?? null;
         $league = auth()->user()->league;
         try {
             DB::beginTransaction();
-            $location = Location::whereJsonContains('autocomplete_prediction->place_id', $placeId)->first();
+            $location = Location::where('place_id', $place_id)->first();
 
             if (!$location) {
                 $location = Location::create($locationData);

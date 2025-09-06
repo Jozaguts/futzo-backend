@@ -9,6 +9,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 /** @mixin Location */
 class LocationResource extends JsonResource
 {
+
     private array $imagesAvailable = ['fans', 'game-day', 'goal', 'junior-soccer'];
 
     public function toArray(Request $request): array
@@ -19,7 +20,6 @@ class LocationResource extends JsonResource
             'address' => $this->address,
             'tags' => $this->tags->pluck('name'),
             'image' => $this->imagesAvailable[array_rand($this->imagesAvailable)],
-            'autocomplete_prediction' => $this->autocomplete_prediction
         ];
     }
 }

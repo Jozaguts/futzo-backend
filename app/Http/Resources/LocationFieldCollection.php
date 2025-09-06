@@ -10,7 +10,7 @@ use Illuminate\Http\Resources\Json\ResourceCollection;
 
 class LocationFieldCollection extends ResourceCollection
 {
-    const dayLabels = [
+    const array dayLabels = [
         'monday' => 'Lunes',
         'tuesday' => 'Martes',
         'wednesday' => 'Miércoles',
@@ -20,6 +20,9 @@ class LocationFieldCollection extends ResourceCollection
         'sunday' => 'Domingo',
     ];
 
+    /*
+     * devuelve disponibilidad “usable” por campo para un torneo (ya resta reservas exclusivas de otros torneos).
+     * */
     public function toArray(Request $request): array
     {
         $tournamentId = $request->query('tournament_id');

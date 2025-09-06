@@ -13,7 +13,9 @@ class GameResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
-     *
+     * Arma intervalos reservados [inicio, fin] para todos los partidos del mismo campo y fecha (de toda la liga, gracias al LeagueScope), incluyendo el propio partido.
+     * Al generar las franjas disponibles, descarta cualquier slot que se solape con algún intervalo reservado (no solo si coincide exacto el inicio).
+     * Restringe siempre a la disponibilidad del “día de la fecha seleccionada” para evitar devolver el último día del arreglo semanal cuando no se pasa date.
      * @return array<string, mixed>
      */
     public function toArray(Request $request): array
@@ -25,21 +27,23 @@ class GameResource extends JsonResource
         $dayOfWeek = strtolower($selectedDate->format('l'));
 
         // 2) Campo específico: del request o el original del juego
-        $fieldId = $request->input('field_id', $this->resource->field_id);
+        $fieldId = (int)$request->input('field_id', $this->resource->field_id);
+
         // 3) Fase activa y sus límites
         $currentPhase = $this->resource->tournamentPhase;
         $tournamentId = $this->resource->tournament_id;
-        $phaseGames = Game::where('tournament_id', $tournamentId)
-            ->where('tournament_phase_id', $currentPhase->id);
-        $phaseStart = $phaseGames->min('match_date');
-        $phaseEnd = $phaseGames->max('match_date');
+        $phaseGamesQuery = Game::where('tournament_id', $tournamentId)
+            ->where('tournament_phase_id', optional($currentPhase)->id);
+        $phaseStart = $phaseGamesQuery->min('match_date');
+        $phaseEnd = $phaseGamesQuery->max('match_date');
+
         // 4) Si la fecha solicitada está fuera de la ventana de la fase, no hay opciones
         if ($request->has('date') && ($selectedDate->lt($phaseStart) || $selectedDate->gt($phaseEnd))) {
             $options = [];
         } else {
-            // 3) Duración del partido (game_time + gap)
+            // 5) Duración del partido (game_time + gap + pausas)
             $config = $this->resource->tournament->configuration;
-            $matchDuration = $config->game_time + $config->time_between_games + 15 + 15;
+            $matchDuration = ($config->game_time ?? 0) + ($config->time_between_games ?? 0) + 15 + 15; // minutos
 
             // 6) Ventanas efectivas: field ∩ league − reservas de otros torneos
             $leagueField = LeagueField::where('field_id', $fieldId)
@@ -50,34 +54,72 @@ class GameResource extends JsonResource
                 ? $availabilityService->getWeeklyWindowsForLeagueField($leagueField->id, $this->resource->tournament_id)
                 : [];
 
-            // 8) Partidos ya agendados en la fase para la fecha y campo
-            $gamesReserved = $phaseGames
+            // 7) Construir intervalos reservados (cualquier torneo en el mismo campo/fecha)
+            $reservedIntervals = [];
+
+            // incluir el propio juego (si tiene hora)
+            if (!empty($this->resource->match_time)) {
+                $curStart = Carbon::createFromFormat('H:i', $this->resource->match_time);
+                $reservedIntervals[] = [
+                    $curStart->hour * 60 + $curStart->minute,
+                    $curStart->copy()->addMinutes($matchDuration)->hour * 60 + $curStart->copy()->addMinutes($matchDuration)->minute,
+                ];
+            }
+
+            // otros juegos del mismo campo y fecha (dentro de la misma liga por LeagueScope)
+            $otherGames = Game::with(['tournament.configuration'])
                 ->where('field_id', $fieldId)
                 ->whereDate('match_date', $selectedDate)
-                ->pluck('match_time')
-                ->map(fn($t) => substr($t, 0, 5))
-                ->toArray();
+                ->where('id', '!=', $this->resource->id)
+                ->get(['id', 'match_time', 'tournament_id']);
+            foreach ($otherGames as $g) {
+                if (empty($g->match_time)) { continue; }
+                $gStart = Carbon::createFromFormat('H:i', $g->match_time);
+                $gCfg = optional($g->tournament->configuration);
+                $gDuration = ($gCfg->game_time ?? $matchDuration)
+                    + ($gCfg->time_between_games ?? 0)
+                    + 15 + 15;
+                // Si sumamos doble 15 al fallback, nos pasamos; aseguremos fallback correcto
+                if (!isset($g->tournament->configuration)) {
+                    $gDuration = $matchDuration; // usa duración del torneo actual si no hay config cargada
+                }
+                $startMin = $gStart->hour * 60 + $gStart->minute;
+                $endMin = $startMin + $gDuration;
+                $reservedIntervals[] = [$startMin, $endMin];
+            }
 
-            // 8) Generar opciones de franjas
+            // 8) Generar opciones de franjas evitando solapes con reservados
             $intervals = [];
-            // map dow to day string
-            $map = [0=>'sunday',1=>'monday',2=>'tuesday',3=>'wednesday',4=>'thursday',5=>'friday',6=>'saturday'];
+            $map = [0 => 'sunday', 1 => 'monday', 2 => 'tuesday', 3 => 'wednesday', 4 => 'thursday', 5 => 'friday', 6 => 'saturday'];
             foreach ($weekly as $dow => $ranges) {
                 $day = $map[$dow];
-                if ($request->has('date') && $day !== $dayOfWeek) {
+                if ($day !== $dayOfWeek) {
                     continue;
                 }
-                $slotDate = $request->has('date') ? $selectedDate : Carbon::parse($phaseStart)->startOfWeek()->next($day);
+                $slotDate = $selectedDate;
                 $freeSlots = [];
-                foreach ($ranges as [$s,$e]) {
-                    $start = $slotDate->copy()->setTime(intdiv($s,60), $s%60);
-                    $end = $slotDate->copy()->setTime(intdiv($e,60), $e%60);
+                foreach ($ranges as [$s, $e]) {
+                    $start = $slotDate->copy()->setTime(intdiv($s, 60), $s % 60);
+                    $end = $slotDate->copy()->setTime(intdiv($e, 60), $e % 60);
                     $cursor = $start->copy();
                     while ($cursor->copy()->addMinutes($matchDuration)->lessThanOrEqualTo($end)) {
-                        $startStr = $cursor->format('H:i');
-                        if (!in_array($startStr, $gamesReserved, true)) {
-                            $endStr = $cursor->copy()->addMinutes($matchDuration)->format('H:i');
-                            $freeSlots[] = ['start' => $startStr, 'end' => $endStr];
+                        $slotStart = $cursor->copy();
+                        $slotEnd = $cursor->copy()->addMinutes($matchDuration);
+                        $slotStartMin = $slotStart->hour * 60 + $slotStart->minute;
+                        $slotEndMin = $slotEnd->hour * 60 + $slotEnd->minute;
+
+                        // verificar solape con cualquier reservado
+                        $overlaps = false;
+                        foreach ($reservedIntervals as [$rs, $re]) {
+                            if ($slotStartMin < $re && $slotEndMin > $rs) { // solapan
+                                $overlaps = true; break;
+                            }
+                        }
+                        if (!$overlaps) {
+                            $freeSlots[] = [
+                                'start' => $slotStart->format('H:i'),
+                                'end' => $slotEnd->format('H:i'),
+                            ];
                         }
                         $cursor->addMinutes($matchDuration);
                     }
@@ -88,7 +130,7 @@ class GameResource extends JsonResource
                 }
             }
             $options = [
-                ['field_id' => $fieldId, 'available_intervals' => $intervals]
+                ['field_id' => (int)$fieldId, 'available_intervals' => $intervals]
             ];
         }
         return [

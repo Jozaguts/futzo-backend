@@ -29,7 +29,11 @@ class GameController extends Controller
         $game = Game::with(["tournament.locations.fields"])->findOrFail($gameId);
         return new GameResource($game);
     }
-
+    /*
+     * Valida reprogramación sin solapamientos: además de caber en la ventana disponible,
+     *  revisa que el intervalo propuesto no choque con ningún otro partido en el mismo campo y fecha (de cualquier torneo).
+     *  Antes solo verificaba igualdad exacta de hora.
+     * */
     public function update(Request $request, Game $game): GameResource
     {
         $data = $request->validate([
@@ -69,14 +73,27 @@ class GameController extends Controller
             abort(422, 'La hora seleccionada no cabe en la disponibilidad.');
         }
 
-        // evitar choque con otros juegos en el mismo campo/fecha
-        $exists = Game::where('field_id', $data['field_id'])
+        // evitar choque con otros juegos en el mismo campo/fecha (cualquier torneo)
+        $conflicting = false;
+        $others = Game::with(['tournament.configuration'])
+            ->where('field_id', $data['field_id'])
             ->whereDate('match_date', $date)
             ->where('id', '!=', $game->id)
-            ->where('match_time', $newStart . ':00')
-            ->exists();
-        if ($exists) {
-            abort(422, 'Ya existe un partido a esa hora en el campo elegido.');
+            ->get(['id', 'match_time', 'tournament_id']);
+        foreach ($others as $og) {
+            if (empty($og->match_time)) { continue; }
+            $ogStart = \Carbon\Carbon::createFromFormat('H:i', $og->match_time);
+            $ogCfg = optional($og->tournament->configuration);
+            $ogDuration = ($ogCfg->game_time ?? $matchDuration) + ($ogCfg->time_between_games ?? 0) + 15 + 15;
+            if (!isset($og->tournament->configuration)) { $ogDuration = $matchDuration; }
+            $ogStartMin = $ogStart->hour * 60 + $ogStart->minute;
+            $ogEndMin = $ogStartMin + $ogDuration;
+            if ($startMinutes < $ogEndMin && $endMinutes > $ogStartMin) {
+                $conflicting = true; break;
+            }
+        }
+        if ($conflicting) {
+            abort(422, 'Existe un partido que se solapa en ese campo y fecha.');
         }
 
         // Actualizar game

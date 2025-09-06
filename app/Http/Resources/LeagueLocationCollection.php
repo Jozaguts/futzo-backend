@@ -7,6 +7,9 @@ use Illuminate\Http\Resources\Json\ResourceCollection;
 
 class LeagueLocationCollection extends ResourceCollection
 {
+    /*
+     * Devuelve, por liga, las “ventanas” configuradas por campo y día (sin restar reservas)
+     * */
     public function toArray(Request $request): array
     {
         return $this->collection->map(function ($location) use ($request) {

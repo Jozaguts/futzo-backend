@@ -9,6 +9,15 @@ use Illuminate\Http\Resources\Json\ResourceCollection;
 class LocationCollection extends ResourceCollection
 {
     private array $imagesAvailable = ['fans', 'game-day', 'goal', 'junior-soccer'];
+    private const DOW_LABELS = [
+        0 => 'domingo',
+        1 => 'lunes',
+        2 => 'martes',
+        3 => 'miércoles',
+        4 => 'jueves',
+        5 => 'viernes',
+        6 => 'sábado',
+    ];
 
     public function toArray(Request $request): array
     {
@@ -17,14 +26,18 @@ class LocationCollection extends ResourceCollection
                 return $field->leaguesFields->map(function ($leagueField) use ($field) {
                     $byDay = $leagueField->windows
                         ->groupBy('day_of_week')
-                        ->map(function ($items) {
-                            return $items->map(function ($w) {
+                        ->map(function ($items, $dow) {
+                            $day = self::DOW_LABELS[$dow] ?? (string) $dow;
+                            return $items->map(function ($w) use ($day) {
                                 return [
+                                    'day' => $day,
                                     'start' => sprintf('%02d:%02d', intdiv($w->start_minute,60), $w->start_minute%60),
                                     'end' => sprintf('%02d:%02d', intdiv($w->end_minute,60), $w->end_minute%60),
                                 ];
                             })->values()->toArray();
-                        })->toArray();
+                        })
+                        ->values() // remover claves numéricas para mantener arreglo simple
+                        ->toArray();
                     return [
                         'id' => $field->id,
                         'name' => $field->name,

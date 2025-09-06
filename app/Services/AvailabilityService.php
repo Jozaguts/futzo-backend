@@ -38,8 +38,8 @@ class AvailabilityService
             $reservationsQ = TournamentFieldReservation::query()
                 ->where('league_field_id', $leagueFieldId)
                 ->where('day_of_week', $dow)
-                ->where('exclusive', true)
-            ;
+                ->where('exclusive', true);
+
             if ($excludeTournamentId) {
                 $reservationsQ->where('tournament_id', '!=', $excludeTournamentId);
             }

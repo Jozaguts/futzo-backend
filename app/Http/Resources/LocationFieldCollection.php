@@ -4,7 +4,7 @@ namespace App\Http\Resources;
 
 use App\Models\Tournament;
 use App\Models\TournamentConfiguration;
-use App\Models\TournamentField;
+use App\Services\AvailabilityService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 
@@ -29,15 +29,12 @@ class LocationFieldCollection extends ResourceCollection
         }
         $config = TournamentConfiguration::where('tournament_id', $tournamentId)->firstOrFail();
 
-        $gameTime = $config->game_time;            // p.ej. 90
-        $adminGap = $config->time_between_games;   // p.ej.  0–15
-        $buffer = 15;                            // tiempo imprevistos
-        $restGlobal = 15;                            // descanso reglamentario
+        $gameTime = $config->game_time;            // ej. 90
+        $adminGap = $config->time_between_games;   // ej.  0–15
+        // UI: anclar selección a horas; slots reales = gameTime+gap se validan más adelante
+        $uiStep = 60;
 
-        // cada bloque durará:
-        $step = $gameTime + $adminGap + $restGlobal + $buffer; // p.ej. 120
-
-        return $this->collection->map(function ($field, $key) use ($tournament, $step) {
+        return $this->collection->map(function ($field, $key) use ($tournament, $uiStep) {
             $leagueField = $field
                 ->leaguesFields()
                 ->where('league_id', $tournament->league_id)
@@ -50,100 +47,67 @@ class LocationFieldCollection extends ResourceCollection
                 'location_id' => $field->location->id,
                 'location_name' => $field->location->name,
                 'disabled' => false,
-                // PASAMOS slot de 60 minutos
-                'availability' => $this->transformAvailability(
-                    $leagueField->availability,
-                    $field->id,
+                // Disponibilidad derivada de field/league windows menos reservas de otros torneos
+                'availability' => $this->buildAvailabilityFromWindows(
+                    $leagueField->id,
                     $tournament->id,
-                    60,  // **1 hora**
-                    $tournament->league_id,
+                    $uiStep
                 ),
             ];
         })->toArray();
     }
 
-    /**
-     * Transforma la disponibilidad de la liga en bloques de $step minutos,
-     * permitiendo arrancar en cada hora marcada.
-     */
-    private function transformAvailability(array $leagueFieldGlobalAvailability, int $fieldId, int $excludeTournamentId, int $step, int $leagueId): array
+    private function buildAvailabilityFromWindows(int $leagueFieldId, int $excludeTournamentId, int $step): array
     {
-        $bookings = TournamentField::where('field_id', $fieldId)
-            ->whereHas('tournament', function ($q) use ($leagueId, $excludeTournamentId) {
-                $q->where('league_id', $leagueId);
-                if ($excludeTournamentId) {
-                    $q->where('id', '!=', $excludeTournamentId);
+        $service = app(AvailabilityService::class);
+        $weekly = $service->getWeeklyWindowsForLeagueField($leagueFieldId, $excludeTournamentId);
+
+        $map = [
+            1 => 'monday', 2 => 'tuesday', 3 => 'wednesday', 4 => 'thursday', 5 => 'friday', 6 => 'saturday', 0 => 'sunday',
+        ];
+        $labels = self::dayLabels;
+        $out = [];
+        foreach ($weekly as $dow => $ranges) {
+            if (empty($ranges)) {
+                continue;
+            }
+            $dayKey = $map[$dow];
+            $intervals = [];
+            foreach ($ranges as [$s, $e]) {
+                for ($t = $s; $t + $step <= $e; $t += $step) {
+                    $fromText = sprintf('%02d:%02d', intdiv($t, 60), $t % 60);
+                    $intervals[] = [
+                        'value' => $fromText,
+                        'text' => $fromText,
+                        'selected' => false,
+                        'disabled' => false,
+                    ];
                 }
-            })
-            ->pluck('availability')
-            ->all();
-
-        $bookedSlots = []; // ej. ['monday'=>['09:00','11:00', ...], ...]
-
-        foreach ($bookings as $json) {
-            foreach ($json as $day => $data) {
-                foreach ($data['intervals'] ?? [] as $int) {
-                    if (!empty($int['selected']) && $int['selected'] === true && is_string($int['value']) && !empty($int['in_use'] && $int['in_use'])) {
-                        $bookedSlots[$day][] = $int['value'];
+                if ($t ?? null) {
+                    if ($t < $e) {
+                        $fromText = sprintf('%02d:%02d', intdiv($t, 60), $t % 60);
+                        $intervals[] = [
+                            'value' => $fromText,
+                            'text' => $fromText,
+                            'selected' => false,
+                            'disabled' => true,
+                            'is_partial' => true,
+                        ];
                     }
                 }
             }
-        }
 
-        // 2) Generamos slots de 1 hora dentro de cada día habilitado
-        $result = [];
-        $daysOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-
-        foreach ($daysOrder as $day) {
-            if (empty($leagueFieldGlobalAvailability[$day]['enabled'])) {
-                continue;
-            }
-
-            $startH = (int)$leagueFieldGlobalAvailability[$day]['start']['hours'];
-            $startM = (int)$leagueFieldGlobalAvailability[$day]['start']['minutes'];
-            $endH = (int)$leagueFieldGlobalAvailability[$day]['end']['hours'];
-            $endM = (int)$leagueFieldGlobalAvailability[$day]['end']['minutes'];
-
-            $start = $startH * 60 + $startM;
-            $end = $endH * 60 + $endM;
-
-            $intervals = [];
-            // Generar bloques completos de $step
-            for ($t = $start; $t + $step <= $end; $t += $step) {
-                $fromText = sprintf('%02d:%02d', intdiv($t, 60), $t % 60);
-
-                $intervals[] = [
-                    // <-- aquí sólo la hora de inicio como value
-                    'value' => $fromText,
-                    'text' => $fromText,
-                    'selected' => false,
-                    'disabled' => in_array($fromText, $bookedSlots[$day] ?? [], true),
-                    'in_use' => in_array($fromText, $bookedSlots[$day] ?? [], true),
-                ];
-            }
-
-            // Si queda un bloque parcial al final...
-            if (isset($t) && $t < $end) {
-                $fromText = sprintf('%02d:%02d', intdiv($t, 60), $t % 60);
-
-                $intervals[] = [
-                    'value' => $fromText,
-                    'text' => $fromText,
-                    'selected' => false,
-                    'disabled' => true,
-                    'is_partial' => true,
-                ];
-            }
-
-            $result[$day] = [
+            // available_range usando primer inicio y último fin del día
+            $firstStart = $ranges[0][0];
+            $lastEnd = $ranges[count($ranges)-1][1];
+            $out[$dayKey] = [
                 'enabled' => true,
-                'available_range' => sprintf('%02d:%02d a %02d:%02d', $startH, $startM, $endH, $endM),
+                'available_range' => sprintf('%02d:%02d a %02d:%02d', intdiv($firstStart,60), $firstStart%60, intdiv($lastEnd,60), $lastEnd%60),
                 'intervals' => $intervals,
-                'label' => self::dayLabels[$day],
+                'label' => $labels[$dayKey],
             ];
         }
-
-        $result['isCompleted'] = false;
-        return $result;
+        $out['isCompleted'] = false;
+        return $out;
     }
 }

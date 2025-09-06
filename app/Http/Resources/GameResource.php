@@ -4,7 +4,7 @@ namespace App\Http\Resources;
 
 use App\Models\Game;
 use App\Models\LeagueField;
-use App\Models\TournamentField;
+use App\Services\AvailabilityService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -41,14 +41,14 @@ class GameResource extends JsonResource
             $config = $this->resource->tournament->configuration;
             $matchDuration = $config->game_time + $config->time_between_games + 15 + 15;
 
-            // 6) Disponibilidad global de la liga solo para este campo
-            $leagueAvail = LeagueField::where('field_id', $fieldId)
-                ->first()
-                ->availability ?? [];
-
-            // 7) Bloqueos en tournament_fields solo para este campo
-            $tournReserved = TournamentField::where('field_id', $fieldId)
-                ->value('availability') ?? [];
+            // 6) Ventanas efectivas: field ∩ league − reservas de otros torneos
+            $leagueField = LeagueField::where('field_id', $fieldId)
+                ->where('league_id', $this->resource->tournament->league_id)
+                ->first();
+            $availabilityService = app(AvailabilityService::class);
+            $weekly = $leagueField
+                ? $availabilityService->getWeeklyWindowsForLeagueField($leagueField->id, $this->resource->tournament_id)
+                : [];
 
             // 8) Partidos ya agendados en la fase para la fecha y campo
             $gamesReserved = $phaseGames
@@ -60,54 +60,28 @@ class GameResource extends JsonResource
 
             // 8) Generar opciones de franjas
             $intervals = [];
-            foreach ($leagueAvail as $day => $cfg) {
-                if (empty($cfg['enabled'])) {
-                    continue;
-                }
+            // map dow to day string
+            $map = [0=>'sunday',1=>'monday',2=>'tuesday',3=>'wednesday',4=>'thursday',5=>'friday',6=>'saturday'];
+            foreach ($weekly as $dow => $ranges) {
+                $day = $map[$dow];
                 if ($request->has('date') && $day !== $dayOfWeek) {
                     continue;
                 }
-
-                // Determinar fecha a iterar dentro de fase
-                $slotDate = $request->has('date')
-                    ? $selectedDate
-                    : Carbon::parse($phaseStart)->startOfWeek()->modify($day);
-
-                // Generar todos los posibles inicios de slot
-                $start = $slotDate->copy()
-                    ->setTime((int)$cfg['start']['hours'], (int)$cfg['start']['minutes']);
-                $end = $slotDate->copy()
-                    ->setTime((int)$cfg['end']['hours'], (int)$cfg['end']['minutes']);
-
-                $allSlots = [];
-                $cursor = $start->copy();
-                while ($cursor->copy()->addMinutes($matchDuration)->lessThanOrEqualTo($end)) {
-                    $allSlots[] = $cursor->format('H:i');
-                    $cursor->addMinutes($matchDuration);
-                }
-
-                // Restar bloques reservados
-                $takenByConfig = [];
-                if (!empty($tournReserved[$day]['intervals'] ?? [])) {
-                    $takenByConfig = collect($tournReserved[$day]['intervals'])
-                        ->filter(fn($i) => !empty($i['in_use']))
-                        ->pluck('value')
-                        ->toArray();
-                }
-
-                // Restar partidos existentes
-                $takenByGames = $gamesReserved;
-
-                // Calcular start/end de cada intervalo libre
-                $rawFree = array_values(array_diff($allSlots, $takenByConfig, $takenByGames));
+                $slotDate = $request->has('date') ? $selectedDate : Carbon::parse($phaseStart)->startOfWeek()->next($day);
                 $freeSlots = [];
-                foreach ($rawFree as $startTime) {
-                    $endTime = Carbon::createFromFormat('H:i', $startTime)
-                        ?->addMinutes($matchDuration)
-                        ->format('H:i');
-                    $freeSlots[] = ['start' => $startTime, 'end' => $endTime];
+                foreach ($ranges as [$s,$e]) {
+                    $start = $slotDate->copy()->setTime(intdiv($s,60), $s%60);
+                    $end = $slotDate->copy()->setTime(intdiv($e,60), $e%60);
+                    $cursor = $start->copy();
+                    while ($cursor->copy()->addMinutes($matchDuration)->lessThanOrEqualTo($end)) {
+                        $startStr = $cursor->format('H:i');
+                        if (!in_array($startStr, $gamesReserved, true)) {
+                            $endStr = $cursor->copy()->addMinutes($matchDuration)->format('H:i');
+                            $freeSlots[] = ['start' => $startStr, 'end' => $endStr];
+                        }
+                        $cursor->addMinutes($matchDuration);
+                    }
                 }
-
                 if (!empty($freeSlots)) {
                     $intervals['day'] = $day;
                     $intervals['hours'] = $freeSlots;

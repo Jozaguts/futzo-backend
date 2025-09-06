@@ -9,6 +9,8 @@ use App\Http\Resources\LocationFieldCollection;
 use App\Http\Resources\LocationResource;
 use App\Models\Field;
 use App\Models\LeagueField;
+use App\Models\FieldWindow;
+use App\Models\LeagueFieldWindow;
 use App\Models\Location;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -35,8 +37,8 @@ class LocationController extends Controller
     public function store(LocationStoreRequest $request): LocationResource
     {
         $validated = $request->safe();
-        $locationData = $validated->except('availability');
-        $availabilityData = $validated->only('availability');
+        $locationData = $validated->except('availability', 'fields');
+        $fieldsPayload = $request->input('fields', []);
 
         $placeId = $locationData['autocomplete_prediction']['place_id'] ?? null;
 
@@ -57,28 +59,38 @@ class LocationController extends Controller
             if ($league && !$league->locations()->where('locations.id', $location->id)->exists()) {
                 $league->locations()->attach($location->id, ['updated_at' => now(), 'created_at' => now()]);
             }
-            // Crear campos de juego asociados a la liga
-            if (!empty($availabilityData)) {
-                foreach ($availabilityData['availability'] as $fieldData) {
-                    $field = Field::create([
-                        'location_id' => $location->id,
-                        'name' => $fieldData['name'],
-                        'type' => Field::defaultType,
-                        'dimensions' => Field::defaultDimensions,
-                    ]);
-                    $league->fields()->attach($field->id, [
-                        'availability' => json_encode([
-                            'monday' => $fieldData['monday'] ?? [],
-                            'tuesday' => $fieldData['tuesday'] ?? [],
-                            'wednesday' => $fieldData['wednesday'] ?? [],
-                            'thursday' => $fieldData['thursday'] ?? [],
-                            'friday' => $fieldData['friday'] ?? [],
-                            'saturday' => $fieldData['saturday'] ?? [],
-                            'sunday' => $fieldData['sunday'] ?? [],
-                        ], JSON_THROW_ON_ERROR),
-                        'updated_at' => now(),
-                        'created_at' => now()
-                    ]);
+            // Crear campos de juego asociados a la liga + ventanas
+            foreach ($fieldsPayload as $fieldData) {
+                $field = Field::create([
+                    'location_id' => $location->id,
+                    'name' => $fieldData['name'],
+                    'type' => Field::defaultType,
+                    'dimensions' => Field::defaultDimensions,
+                ]);
+
+                // Ventanas base 24/7 si no existen
+                if (!FieldWindow::where('field_id', $field->id)->exists()) {
+                    for ($dow = 0; $dow <= 6; $dow++) {
+                        FieldWindow::create([
+                            'field_id' => $field->id,
+                            'day_of_week' => $dow,
+                            'start_minute' => 0,
+                            'end_minute' => 1440,
+                            'enabled' => true,
+                        ]);
+                    }
+                }
+
+                // Pivot league_field
+                $leagueField = LeagueField::create([
+                    'league_id' => $league->id,
+                    'field_id' => $field->id,
+                ]);
+
+                // Ventanas por liga-campo
+                $windows = $fieldData['windows'] ?? [];
+                if (!empty($windows)) {
+                    $this->upsertLeagueFieldWindows($leagueField->id, $windows);
                 }
             }
 
@@ -99,40 +111,36 @@ class LocationController extends Controller
         try {
             DB::beginTransaction();
             $data = $request->safe()->except('tags');
-            $availability = $data['availability'] ?? [];
+            $fields = $request->input('fields', []);
             $league = auth()->user()->league;
             $location->update([
                     'name' => $data['name'],
-                    'city' => $data['city'],
                     'address' => $data['address'],
-                    'autocomplete_prediction' => $data['address'],
                     'position' => $data['position']
                 ]
             );
-            if (!empty($availability)) {
-                foreach ($availability as $fieldData) {
-                    Field::where([
-                        'location_id' => $location->id,
-                        'id' => $fieldData ['id']
-                    ])->update([
+            foreach ($fields as $fieldData) {
+                $field = Field::where([
+                    'location_id' => $location->id,
+                    'id' => $fieldData['id'] ?? 0,
+                ])->first();
+
+                if ($field) {
+                    $field->update([
                         'name' => $fieldData['name'],
                         'type' => Field::defaultType,
-                        'dimensions' => Field::defaultDimensions
+                        'dimensions' => Field::defaultDimensions,
                     ]);
-                    LeagueField::where([
+
+                    $leagueField = LeagueField::where([
                         'league_id' => $league->id,
-                        'field_id' => $fieldData['id']
-                    ])->update([
-                        'availability' => json_encode([
-                            'monday' => $fieldData['monday'] ?? [],
-                            'tuesday' => $fieldData['tuesday'] ?? [],
-                            'wednesday' => $fieldData['wednesday'] ?? [],
-                            'thursday' => $fieldData['thursday'] ?? [],
-                            'friday' => $fieldData['friday'] ?? [],
-                            'saturday' => $fieldData['saturday'] ?? [],
-                            'sunday' => $fieldData['sunday'] ?? [],
-                        ], JSON_THROW_ON_ERROR),
-                    ]);
+                        'field_id' => $field->id,
+                    ])->first();
+                    if ($leagueField && isset($fieldData['windows'])) {
+                        // Reemplazar ventanas
+                        LeagueFieldWindow::where('league_field_id', $leagueField->id)->delete();
+                        $this->upsertLeagueFieldWindows($leagueField->id, $fieldData['windows']);
+                    }
                 }
             }
             if ($request->has('tags')) {
@@ -145,6 +153,57 @@ class LocationController extends Controller
             DB::rollBack();
             return response()->json(['message' => $e->getMessage()], 500);
         }
+    }
+
+    private function upsertLeagueFieldWindows(int $leagueFieldId, array $windows): void
+    {
+        $map = [
+            'sun' => 0, 'sunday' => 0,
+            'mon' => 1, 'monday' => 1,
+            'tue' => 2, 'tuesday' => 2,
+            'wed' => 3, 'wednesday' => 3,
+            'thu' => 4, 'thursday' => 4,
+            'fri' => 5, 'friday' => 5,
+            'sat' => 6, 'saturday' => 6,
+            'all' => 'all',
+        ];
+        foreach ($windows as $dayKey => $ranges) {
+            $dk = strtolower($dayKey);
+            if (!array_key_exists($dk, $map)) {
+                continue;
+            }
+            if ($map[$dk] === 'all') {
+                // apply to all days
+                for ($dow = 0; $dow <= 6; $dow++) {
+                    foreach ($ranges as $r) {
+                        LeagueFieldWindow::create([
+                            'league_field_id' => $leagueFieldId,
+                            'day_of_week' => $dow,
+                            'start_minute' => $this->toMinutes($r['start'] ?? '00:00'),
+                            'end_minute' => $this->toMinutes($r['end'] ?? '24:00'),
+                            'enabled' => true,
+                        ]);
+                    }
+                }
+                continue;
+            }
+            $dow = $map[$dk];
+            foreach ($ranges as $r) {
+                LeagueFieldWindow::create([
+                    'league_field_id' => $leagueFieldId,
+                    'day_of_week' => $dow,
+                    'start_minute' => $this->toMinutes($r['start'] ?? '00:00'),
+                    'end_minute' => $this->toMinutes($r['end'] ?? '24:00'),
+                    'enabled' => true,
+                ]);
+            }
+        }
+    }
+
+    private function toMinutes(string $hhmm): int
+    {
+        [$h, $m] = array_map('intval', explode(':', $hhmm));
+        return $h * 60 + $m;
     }
 
     public function destroy(Location $location): JsonResponse

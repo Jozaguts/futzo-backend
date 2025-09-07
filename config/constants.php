@@ -141,6 +141,12 @@ return [
             'description' => 'Equipos juegan rondas contra oponentes de rendimiento similar; el equipo con más puntos gana.',
             'status' => 'created',
         ],
+        [
+            'id' => 5,
+            'name' => 'Grupos y Eliminatoria',
+            'description' => 'Fase de grupos seguida de eliminatoria; clasifican mejores por grupo (y terceros si aplica).',
+            'status' => 'created',
+        ],
     ],
     'location' => $locations[0],
     'locations' => $locations,
@@ -188,7 +194,22 @@ return [
             'elimination_round_trip' => 0
         ],
         [
-            'tournament_format_id' => 2, // Liga y Eliminatoria
+            'tournament_format_id' => 2, // Liga y Eliminatoria (Tabla general + KO)
+            'football_type_id' => 1, // Fútbol 11
+            'max_teams' => 16,
+            'min_teams' => 8,
+            'substitutions_per_team' => 3,
+            'max_players_per_team' => 18,
+            'min_players_per_team' => 11,
+            'max_teams_per_player' => 1,
+            'game_time' => 90,
+            'time_between_games' => 0,
+            'round_trip' => 0,
+            'group_stage' => 0, // diferencia clave: no usa grupos
+            'elimination_round_trip' => 1
+        ],
+        [
+            'tournament_format_id' => 5, // Grupos y Eliminatoria
             'football_type_id' => 1, // Fútbol 11
             'max_teams' => 16,
             'min_teams' => 8,

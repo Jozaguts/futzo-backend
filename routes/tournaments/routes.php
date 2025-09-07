@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\TournamentController;
+use App\Http\Controllers\BracketController;
 use Illuminate\Support\Facades\Route;
 use function Pest\Laravel\get;
 
@@ -21,10 +22,13 @@ Route::prefix('tournaments')->group(function () {
     Route::get('{tournament}/stats', [TournamentController::class, 'getStats']);
     Route::get('{tournament}/last-results', [TournamentController::class, 'getLastResults']);
     Route::get('{tournament}/next-games', [TournamentController::class, 'getNextGames']);
+    Route::get('{tournament}/group-standings', [BracketController::class, 'groupStandings']);
+    Route::get('{tournament}/bracket/preview', [BracketController::class, 'preview']);
 
     Route::get('{tournament}', [TournamentController::class, 'show'])->withoutMiddleware('auth:sanctum');
 
     Route::put('{tournament}/status', [TournamentController::class, 'updateStatus']);
+    Route::put('{tournament}/phases/{tournamentPhase}', [TournamentController::class, 'updatePhaseStatus']);
     Route::put('{tournament}/schedule/rounds/{roundId}', [TournamentController::class, 'updateGameStatus']);
     Route::put('{tournament}', [TournamentController::class, 'update']);
 
@@ -32,5 +36,6 @@ Route::prefix('tournaments')->group(function () {
     Route::post('{tournament}/schedule', [TournamentController::class, 'schedule']);
     Route::post('{tournament}/locations', [TournamentController::class, 'storeTournamentLocations']);
     Route::post('{tournament}/rounds/{roundId}', [TournamentController::class, 'updateTournamentRound']);
+    Route::post('{tournament}/bracket/confirm', [BracketController::class, 'confirm']);
 
 });

@@ -24,15 +24,28 @@ class ScheduleSettingsResource extends JsonResource
             'footballType' => $this->footballType ?? null,
             'locations' => $this->locations ?? [],
             'tiebreakers' => $this->configuration->tiebreakers ?? null,
-            'phases' => $this->tournamentPhases->load('phase')->map(function ($tournamentPhase) {
+            'phases' => $this->tournamentPhases->load(['phase','rules'])->map(function ($tournamentPhase) {
                 return [
                     'id' => $tournamentPhase->phase->id,
                     'name' => $tournamentPhase->phase->name,
                     'is_active' => $tournamentPhase->is_active,
                     'is_completed' => $tournamentPhase->is_completed,
                     'tournament_id' => $this->id,
+                    'rules' => $tournamentPhase->rules ? [
+                        'round_trip' => (bool)$tournamentPhase->rules->round_trip,
+                        'away_goals' => (bool)$tournamentPhase->rules->away_goals,
+                        'extra_time' => (bool)$tournamentPhase->rules->extra_time,
+                        'penalties' => (bool)$tournamentPhase->rules->penalties,
+                        'advance_if_tie' => $tournamentPhase->rules->advance_if_tie,
+                    ] : null,
                 ];
             })->all(),
+            'group_phase' => $this->groupConfiguration ? [
+                'teams_per_group' => $this->groupConfiguration->teams_per_group,
+                'advance_top_n' => $this->groupConfiguration->advance_top_n,
+                'include_best_thirds' => (bool)$this->groupConfiguration->include_best_thirds,
+                'best_thirds_count' => $this->groupConfiguration->best_thirds_count,
+            ] : null,
         ];
     }
 

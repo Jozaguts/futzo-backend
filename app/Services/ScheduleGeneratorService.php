@@ -19,11 +19,18 @@ class ScheduleGeneratorService
     private const int GLOBAL_REST = 15;
     private const int UNEXPECTED_BUFFER = 15;
     private Tournament $tournament;
+    private bool $forceGroupStage = false;
 
 
     public function setTournament(Tournament $tournament): self
     {
         $this->tournament = $tournament;
+        return $this;
+    }
+
+    public function enableGroupStageMode(bool $enable = true): self
+    {
+        $this->forceGroupStage = $enable;
         return $this;
     }
 
@@ -51,12 +58,12 @@ class ScheduleGeneratorService
         $activePhase = $this->tournament->tournamentPhases()->where('is_active', true)->with('phase')->first();
         $activePhaseName = $activePhase?->phase?->name;
 
-        if ($formatId !== 1 && $this->tournament->groupConfiguration) {
-            if ($groupStageEnabled && $activePhaseName === 'Fase de grupos') {
-                // Liga + Eliminatoria (con grupos): generar fase de grupos
+        if ($formatId !== 1 && (\App\Models\TournamentGroupConfiguration::where('tournament_id', $this->tournament->id)->exists() || $this->forceGroupStage)) {
+            if ($groupStageEnabled || $this->forceGroupStage) {
+                // Liga + Eliminatoria con grupos activos: generar fase de grupos
                 return $this->makeGroupStageScheduleInternal($teams, $fields, $matchDuration);
             }
-            // Si no es fase de grupos, y es una fase de eliminación
+            // Si no hay grupos habilitados, y es una fase de eliminación
             if (in_array($activePhaseName, ['Octavos de Final','Cuartos de Final','Semifinales','Final'])) {
                 return $this->makeEliminationScheduleInternal($fields, $matchDuration, $activePhase);
             }
@@ -268,69 +275,88 @@ class ScheduleGeneratorService
 
     private function makeEliminationScheduleInternal($fields, int $matchDuration, $activePhase): array
     {
-        // 1) Obtener clasificados desde standings de la fase de grupos
-        $groupPhase = $this->tournament->tournamentPhases()
-            ->whereHas('phase', fn($q) => $q->where('name','Fase de grupos'))
-            ->first();
-        if (!$groupPhase) {
-            throw new RuntimeException('No existe la fase de grupos para calcular clasificados.');
-        }
+        $formatId = (int)$this->tournament->configuration->tournament_format_id;
+        $phaseName = $activePhase?->phase?->name;
+        $targetTeams = match($phaseName) {
+            'Octavos de Final' => 16,
+            'Cuartos de Final' => 8,
+            'Semifinales' => 4,
+            'Final' => 2,
+            default => 8,
+        };
 
-        $gc = $this->tournament->groupConfiguration;
-        if (!$gc) {
-            throw new RuntimeException('No hay configuración de grupos.');
-        }
-
-        $groupRows = DB::table('standings')
-            ->join('team_tournament','team_tournament.id','=','standings.team_tournament_id')
-            ->where('standings.tournament_id', $this->tournament->id)
-            ->where('standings.tournament_phase_id', $groupPhase->id)
-            ->select([
-                'standings.team_id','standings.points','standings.goal_difference','standings.goals_for','standings.rank',
-                'team_tournament.group_key'
-            ])
-            ->orderBy('team_tournament.group_key')
-            ->orderBy('standings.rank')
-            ->get();
-
-        if ($groupRows->isEmpty()) {
-            throw new RuntimeException('No hay standings de grupos calculados. Completa los partidos y recalcula.');
-        }
-
-        $groups = $groupRows->groupBy('group_key');
         $qualifiers = [];
-        $thirdCandidates = [];
-        foreach ($groups as $gk => $rows) {
-            // top N
-            $topN = $rows->sortBy('rank')->take($gc->advance_top_n)->pluck('team_id')->all();
-            array_push($qualifiers, ...$topN);
-            // terceros
-            if ($gc->include_best_thirds) {
-                $third = $rows->firstWhere('rank', $gc->advance_top_n + 1);
-                if ($third) { $thirdCandidates[] = $third; }
+        if ($formatId === 5) {
+            // Clasificados desde standings de la fase de grupos
+            $groupPhase = $this->tournament->tournamentPhases()
+                ->whereHas('phase', fn($q) => $q->where('name','Fase de grupos'))
+                ->first();
+            if (!$groupPhase) {
+                throw new RuntimeException('No existe la fase de grupos para calcular clasificados.');
             }
-        }
-        if ($gc->include_best_thirds && $gc->best_thirds_count) {
-            usort($thirdCandidates, function($a,$b){
-                return ($b->points <=> $a->points) ?: ($b->goal_difference <=> $a->goal_difference) ?: ($b->goals_for <=> $a->goals_for);
+            $gc = $this->tournament->groupConfiguration;
+            if (!$gc) {
+                throw new RuntimeException('No hay configuración de grupos.');
+            }
+
+            $groupRows = DB::table('standings')
+                ->join('team_tournament','team_tournament.id','=','standings.team_tournament_id')
+                ->where('standings.tournament_id', $this->tournament->id)
+                ->where('standings.tournament_phase_id', $groupPhase->id)
+                ->select(['standings.team_id','standings.points','standings.goal_difference','standings.goals_for','standings.rank','team_tournament.group_key'])
+                ->orderBy('team_tournament.group_key')
+                ->orderBy('standings.rank')
+                ->get();
+            if ($groupRows->isEmpty()) {
+                throw new RuntimeException('No hay standings de grupos calculados. Completa los partidos y recalcula.');
+            }
+            $groups = $groupRows->groupBy('group_key');
+            $thirdCandidates = [];
+            foreach ($groups as $rows) {
+                $topN = $rows->sortBy('rank')->take($gc->advance_top_n)->pluck('team_id')->all();
+                array_push($qualifiers, ...$topN);
+                if ($gc->include_best_thirds) {
+                    $third = $rows->firstWhere('rank', $gc->advance_top_n + 1);
+                    if ($third) { $thirdCandidates[] = $third; }
+                }
+            }
+            if ($gc->include_best_thirds && $gc->best_thirds_count) {
+                usort($thirdCandidates, function($a,$b){
+                    return ($b->points <=> $a->points) ?: ($b->goal_difference <=> $a->goal_difference) ?: ($b->goals_for <=> $a->goals_for);
+                });
+                $best = array_slice(array_map(fn($r) => $r->team_id, $thirdCandidates), 0, (int)$gc->best_thirds_count);
+                array_push($qualifiers, ...$best);
+            }
+            // Ordenación global por métricas de grupo
+            $seedMetrics = DB::table('standings')
+                ->where('tournament_id', $this->tournament->id)
+                ->where('tournament_phase_id', $groupPhase->id)
+                ->whereIn('team_id', $qualifiers)
+                ->get(['team_id','points','goal_difference','goals_for'])
+                ->keyBy('team_id');
+            usort($qualifiers, function($a,$b) use ($seedMetrics){
+                $A = $seedMetrics[$a] ?? null; $B = $seedMetrics[$b] ?? null;
+                if (!$A && !$B) return 0; if (!$A) return 1; if (!$B) return -1;
+                return ($B->points <=> $A->points) ?: ($B->goal_difference <=> $A->goal_difference) ?: ($B->goals_for <=> $A->goals_for);
             });
-            $best = array_slice(array_map(fn($r) => $r->team_id, $thirdCandidates), 0, (int)$gc->best_thirds_count);
-            array_push($qualifiers, ...$best);
+            $qualifiers = array_slice($qualifiers, 0, $targetTeams);
+        } else {
+            // Liga + Eliminatoria: tomar top N de la Tabla general
+            $tablePhase = $this->tournament->tournamentPhases()
+                ->whereHas('phase', fn($q) => $q->where('name','Tabla general'))
+                ->first();
+            if (!$tablePhase) {
+                throw new RuntimeException('No existe la fase "Tabla general" para calcular clasificados.');
+            }
+            $rows = DB::table('standings')
+                ->where('tournament_id', $this->tournament->id)
+                ->where('tournament_phase_id', $tablePhase->id)
+                ->orderBy('rank')
+                ->limit($targetTeams)
+                ->pluck('team_id')
+                ->all();
+            $qualifiers = $rows;
         }
-
-        // Sembrado: ordenar por puntos/gd/gf global para pareo 1 vs N
-        $seedMetrics = DB::table('standings')
-            ->where('tournament_id', $this->tournament->id)
-            ->where('tournament_phase_id', $groupPhase->id)
-            ->whereIn('team_id', $qualifiers)
-            ->get(['team_id','points','goal_difference','goals_for'])
-            ->keyBy('team_id');
-
-        usort($qualifiers, function($a,$b) use ($seedMetrics){
-            $A = $seedMetrics[$a] ?? null; $B = $seedMetrics[$b] ?? null;
-            if (!$A && !$B) return 0; if (!$A) return 1; if (!$B) return -1;
-            return ($B->points <=> $A->points) ?: ($B->goal_difference <=> $A->goal_difference) ?: ($B->goals_for <=> $A->goals_for);
-        });
 
         $pairs = [];
         $n = count($qualifiers);

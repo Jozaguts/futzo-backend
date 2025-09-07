@@ -155,6 +155,26 @@ class TournamentController extends Controller
         return response()->json($tournament);
     }
 
+    public function updatePhaseStatus(Request $request, Tournament $tournament, \App\Models\TournamentPhase $tournamentPhase): JsonResponse
+    {
+        abort_unless($tournamentPhase->tournament_id === $tournament->id, 404);
+        $data = $request->validate([
+            'is_active' => 'sometimes|boolean',
+            'is_completed' => 'sometimes|boolean',
+        ]);
+
+        if (array_key_exists('is_active', $data) && $data['is_active']) {
+            // hacer exclusiva la fase activa
+            $tournament->tournamentPhases()->update(['is_active' => false]);
+        }
+        $tournamentPhase->update($data);
+
+        return response()->json([
+            'phase' => $tournamentPhase->load('phase'),
+            'all' => $tournament->tournamentPhases()->with('phase')->get(),
+        ]);
+    }
+
     public function scheduleSettings(int $tournamentId): ScheduleSettingsResource
     {
         $tournament = Tournament::with(['configuration', 'format', 'footballType', 'locations'])
@@ -222,6 +242,7 @@ class TournamentController extends Controller
     {
         $service = new ScheduleGeneratorService();
         $matches = $service->setTournament($tournament)
+            ->enableGroupStageMode($request->has('group_phase'))
             ->saveConfiguration($request->validated())
             ->makeSchedule();
         $service->persistScheduleToMatchSchedules($matches);

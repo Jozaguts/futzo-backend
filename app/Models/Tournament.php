@@ -103,6 +103,11 @@ class Tournament extends Model implements HasMedia
         return $this->hasOne(TournamentConfiguration::class);
     }
 
+    public function groupConfiguration(): HasOne
+    {
+        return $this->hasOne(TournamentGroupConfiguration::class);
+    }
+
     public function format(): BelongsTo
     {
         return $this->belongsTo(TournamentFormat::class, 'tournament_format_id', 'id');

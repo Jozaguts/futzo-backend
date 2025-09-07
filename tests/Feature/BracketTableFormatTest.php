@@ -78,8 +78,8 @@ it('previews and confirms bracket using table standings for Liga + Eliminatoria'
         ]],
     ];
     $resLeague = $this->postJson("/api/v1/admin/tournaments/{$t->id}/schedule", $payloadLeague)->assertOk();
-    // 8 equipos, ida → 8*7/2 = 28
-    $resLeague->assertJsonCount(28, 'data');
+    // Con elimination_round_trip=true, la liga se genera ida y vuelta → 8*7 = 56
+    $resLeague->assertJsonCount(56, 'data');
 
     // 3) Completar juegos y generar standings globales
     $tablePhaseId = \App\Models\TournamentPhase::where('tournament_id', $t->id)
@@ -108,7 +108,7 @@ it('previews and confirms bracket using table standings for Liga + Eliminatoria'
         'is_completed' => false,
     ])->assertStatus(200);
 
-    $confirmDate = Carbon::parse($startDate)->addWeeks(4)->toDateString();
+    $confirmDate = Carbon::parse($startDate)->addWeeks(20)->toDateString();
     $times = ['09:00','11:00','13:00','15:00'];
     $matches = [];
     foreach ($preview['pairs'] as $i => $pair) {

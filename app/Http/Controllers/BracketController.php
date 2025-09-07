@@ -23,6 +23,87 @@ class BracketController extends Controller
         return response()->json($data);
     }
 
+    public function suggestions(Request $request, Tournament $tournament): JsonResponse
+    {
+        $data = $request->validate([
+            'date' => 'required|date',
+            'fields' => 'sometimes|array',
+            'fields.*' => 'integer|exists:fields,id',
+        ]);
+
+        $date = \Illuminate\Support\Carbon::parse($data['date']);
+        $dow = $date->dayOfWeek; // 0..6
+
+        $config = $tournament->configuration;
+        $matchDuration = ($config->game_time ?? 0) + ($config->time_between_games ?? 0) + 15 + 15; // minutos
+
+        // Campos del torneo (opcionalmente filtrados)
+        $tournamentFields = $tournament->tournamentFields()->pluck('field_id')->toArray();
+        if (!empty($data['fields'])) {
+            $tournamentFields = array_values(array_intersect($tournamentFields, $data['fields']));
+        }
+
+        $result = [];
+        foreach ($tournamentFields as $fieldId) {
+            // league_field
+            $leagueField = \App\Models\LeagueField::where('league_id', $tournament->league_id)
+                ->where('field_id', $fieldId)
+                ->first();
+            if (!$leagueField) { continue; }
+
+            // Reservas del torneo para ese día
+            $reservations = \DB::table('tournament_field_reservations')
+                ->where('tournament_id', $tournament->id)
+                ->where('league_field_id', $leagueField->id)
+                ->where('day_of_week', $dow)
+                ->orderBy('start_minute')
+                ->get();
+
+            if ($reservations->isEmpty()) { continue; }
+
+            // Juegos existentes en ese campo y fecha (para evitar solapes)
+            $existing = \App\Models\Game::with('tournament.configuration')
+                ->where('field_id', $fieldId)
+                ->whereDate('match_date', $date->toDateString())
+                ->get(['id','match_time','tournament_id']);
+            $busy = [];
+            foreach ($existing as $g) {
+                if (empty($g->match_time)) { continue; }
+                $start = \Illuminate\Support\Carbon::createFromFormat('H:i', substr($g->match_time,0,5));
+                $cfg = optional($g->tournament->configuration);
+                $dur = ($cfg->game_time ?? $matchDuration) + ($cfg->time_between_games ?? 0) + 15 + 15;
+                $busy[] = [ $start->hour*60 + $start->minute, $start->hour*60 + $start->minute + $dur ];
+            }
+
+            $slots = [];
+            foreach ($reservations as $res) {
+                $cursor = $date->copy()->startOfDay()->addMinutes((int)$res->start_minute);
+                $end    = $date->copy()->startOfDay()->addMinutes((int)$res->end_minute);
+                while ($cursor->copy()->addMinutes($matchDuration)->lessThanOrEqualTo($end)) {
+                    $slotStartMin = $cursor->hour*60 + $cursor->minute;
+                    $slotEndMin   = $slotStartMin + $matchDuration;
+                    $overlap = false;
+                    foreach ($busy as [$bs,$be]) {
+                        if ($slotStartMin < $be && $slotEndMin > $bs) { $overlap = true; break; }
+                    }
+                    if (!$overlap) {
+                        $slots[] = $cursor->format('H:i');
+                    }
+                    $cursor->addMinutes($matchDuration);
+                }
+            }
+
+            $result[] = [
+                'field_id' => $fieldId,
+                'field_name' => \DB::table('fields')->where('id', $fieldId)->value('name'),
+                'date' => $date->toDateString(),
+                'slots' => array_values(array_unique($slots)),
+            ];
+        }
+
+        return response()->json([ 'tournament_id' => $tournament->id, 'suggestions' => $result ]);
+    }
+
     public function confirm(Request $request, Tournament $tournament): JsonResponse
     {
         $data = $request->validate([

@@ -24,6 +24,7 @@ Route::prefix('tournaments')->group(function () {
     Route::get('{tournament}/next-games', [TournamentController::class, 'getNextGames']);
     Route::get('{tournament}/group-standings', [BracketController::class, 'groupStandings']);
     Route::get('{tournament}/bracket/preview', [BracketController::class, 'preview']);
+    Route::get('{tournament}/bracket/suggestions', [BracketController::class, 'suggestions']);
 
     Route::get('{tournament}', [TournamentController::class, 'show'])->withoutMiddleware('auth:sanctum');
 

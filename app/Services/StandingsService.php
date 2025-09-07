@@ -22,10 +22,11 @@ class StandingsService
         DB::transaction(function () use ($tournamentId, $tournamentPhaseId, $triggeringGameId) {
 
             // 1) Mapear team_tournament (team_id => team_tournament_id)
-            $teamTournamentMap = DB::table('team_tournament')
+            $teamTournamentRows = DB::table('team_tournament')
                 ->where('tournament_id', $tournamentId)
-                ->pluck('id', 'team_id') // returns [team_id => team_tournament_id]
-                ->toArray();
+                ->get(['id','team_id','group_key']);
+            $teamTournamentMap = $teamTournamentRows->pluck('id','team_id')->toArray();
+            $teamGroupMap = $teamTournamentRows->pluck('group_key','team_id')->toArray();
 
             // 2) Inicializar estructura in-memory para stats
             $stats = [];
@@ -61,12 +62,31 @@ class StandingsService
                 ->orderBy('id')
                 ->get();
 
+            // Detectar si es fase de grupos
+            $isGroupPhase = false;
+            if (!is_null($tournamentPhaseId)) {
+                $phaseName = DB::table('tournament_phases')
+                    ->join('phases','phases.id','=','tournament_phases.phase_id')
+                    ->where('tournament_phases.id', $tournamentPhaseId)
+                    ->value('phases.name');
+                $isGroupPhase = ($phaseName === 'Fase de grupos');
+            }
+
             // 4) Procesar cada juego (cronológico) y actualizar estructuras
             foreach ($games as $g) {
                 $home = (int) $g->home_team_id;
                 $away = (int) $g->away_team_id;
                 $hg = (int) $g->home_goals;
                 $ag = (int) $g->away_goals;
+
+                // En fase de grupos: contar solo partidos entre equipos del mismo grupo
+                if ($isGroupPhase) {
+                    $gkH = $teamGroupMap[$home] ?? null;
+                    $gkA = $teamGroupMap[$away] ?? null;
+                    if (empty($gkH) || empty($gkA) || $gkH !== $gkA) {
+                        continue; // ignorar partidos cruzados
+                    }
+                }
 
                 // Asegurarnos que el equipo exista en stats (por si no tenía team_tournament)
                 foreach ([$home, $away] as $teamId) {

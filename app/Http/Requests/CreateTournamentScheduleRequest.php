@@ -80,6 +80,13 @@ class CreateTournamentScheduleRequest extends FormRequest
             'elimination_phase.phases.*.is_active' => 'required|boolean',
             'elimination_phase.phases.*.is_completed' => 'required|boolean',
             'elimination_phase.phases.*.tournament_id' => 'required|integer',
+            // Reglas por fase (opcional)
+            'elimination_phase.phases.*.rules' => 'nullable|array',
+            'elimination_phase.phases.*.rules.round_trip' => 'sometimes|boolean',
+            'elimination_phase.phases.*.rules.away_goals' => 'sometimes|boolean',
+            'elimination_phase.phases.*.rules.extra_time' => 'sometimes|boolean',
+            'elimination_phase.phases.*.rules.penalties' => 'sometimes|boolean',
+            'elimination_phase.phases.*.rules.advance_if_tie' => 'sometimes|in:better_seed,none',
 
 
             'fields_phase' => 'required|array',
@@ -134,6 +141,13 @@ class CreateTournamentScheduleRequest extends FormRequest
             'fields_phase.*.availability.sunday.available_range' => 'sometimes|required|string',
             'fields_phase.*.availability.sunday.intervals' => 'sometimes|required|array',
             'fields_phase.*.availability.sunday.label' => 'sometimes|required|string',
+
+            // Configuración de fase de grupos (opcional, solo si group_stage=1)
+            'group_phase' => 'nullable|array',
+            'group_phase.teams_per_group' => 'required_with:group_phase|integer|min:2',
+            'group_phase.advance_top_n' => 'required_with:group_phase|integer|min:1',
+            'group_phase.include_best_thirds' => 'sometimes|boolean',
+            'group_phase.best_thirds_count' => 'nullable|integer|min:0',
 
         ];
     }

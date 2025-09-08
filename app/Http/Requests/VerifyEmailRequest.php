@@ -42,7 +42,13 @@ class VerifyEmailRequest extends FormRequest
                 }
             })->first();
 
-            if (!$user || ($user->verification_token !== $data['code'] && !empty($data['email']))) {
+            // Permitir OTP fijo en entornos locales/de prueba para dominios de test
+            $allowTestOtp = app()->environment(['local', 'testing', 'staging'])
+                && !empty($data['email'])
+                && str_ends_with(strtolower($data['email']), '@playwright.test')
+                && ((string)($data['code'] ?? '')) === '1111';
+
+            if (!$user || ($user->verification_token !== $data['code'] && !empty($data['email']) && !$allowTestOtp)) {
                 $validator->errors()->add('code', 'El código es inválido para este usuario.');
                 return;
             }

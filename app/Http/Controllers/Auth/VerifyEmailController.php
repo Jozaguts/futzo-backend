@@ -8,6 +8,7 @@ use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Str;
 use Twilio\Exceptions\TwilioException;
 use Twilio\Rest\Client;
 
@@ -36,8 +37,19 @@ class VerifyEmailController extends Controller
                 ]);
             $verified = $check->status === 'approved';
         } else if($email){
+            // OTP fijo para dominios de prueba en entornos locales/testing/staging
+            $allowTestOtp = app()->environment(['local','testing','staging'])
+                && Str::endsWith(Str::lower($email), '@playwright.test')
+                && ((string)$code === '1111');
+
             $verified = User::where('email', $email)
-                ->where('verification_token', $code)
+                ->where(function($q) use ($code, $allowTestOtp){
+                    $q->where('verification_token', $code);
+                    if ($allowTestOtp) {
+                        // Permitir OTP de prueba
+                        $q->orWhereNotNull('verification_token');
+                    }
+                })
                 ->exists();
         }
         if ($verified) {
@@ -48,7 +60,8 @@ class VerifyEmailController extends Controller
                     $q->where('phone', $phone);
                 }
             })->firstOrFail();
-            auth()->login($user, true);
+            // Asegurar uso del guard de sesiones para login en entorno web/tests
+            auth('web')->login($user, true);
             $request->session()->regenerate();
             $this->markEmailAsVerified($user);
             event(new Verified($user));

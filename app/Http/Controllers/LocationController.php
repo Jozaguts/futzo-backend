@@ -12,6 +12,7 @@ use App\Models\LeagueField;
 use App\Models\FieldWindow;
 use App\Models\LeagueFieldWindow;
 use App\Models\Location;
+use App\Models\Game;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -207,9 +208,36 @@ class LocationController extends Controller
     public function destroy(Location $location): JsonResponse
     {
         try {
-            auth()->user()->league->locations()->detach($location->id);
+            // Validar que no existan partidos programados/en progreso/aplazados
+            $blockingStatuses = [
+                Game::STATUS_SCHEDULED,
+                Game::STATUS_IN_PROGRESS,
+                Game::STATUS_POSTPONED,
+            ];
 
-            return response()->json(['message' => 'Location deleted successfully'], 200);
+            $fieldIds = $location->fields()->pluck('id');
+
+            $hasBlockingGames = Game::query()
+                ->whereIn('status', $blockingStatuses)
+                ->where(function ($q) use ($location, $fieldIds) {
+                    $q->where('location_id', $location->id)
+                      ->orWhereIn('field_id', $fieldIds);
+                })
+                ->exists();
+
+            if ($hasBlockingGames) {
+                return response()->json([
+                    'message' => 'No puedes eliminar esta locación porque tiene partidos programados o en progreso.',
+                ], 422);
+            }
+
+            // Desasociar de la liga del usuario actual (si aplica)
+            optional(auth()->user()->league)->locations()->detach($location->id);
+
+            // Soft delete de la locación para preservar relaciones históricas
+            $location->delete();
+
+            return response()->json(['message' => 'Locación eliminada correctamente'], 200);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);
         }

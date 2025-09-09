@@ -62,6 +62,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('checkout', CheckoutController::class)
             ->name('checkout');
     });
+
+    // Payment Intents (Stripe Elements) — no requiere billing.operational
+    Route::post('payment-intents', [\App\Http\Controllers\PaymentIntentController::class, 'store']);
 });
 
 Route::prefix('public')->group(function () {

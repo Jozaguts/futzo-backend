@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Listeners\AssignAdminRoleOnCheckoutListener;
+use App\Listeners\PaymentIntentWebhookListener;
 use App\Listeners\CreatePostCheckoutLoginListener;
 use App\Listeners\ProgramSpecialFirstMonthScheduleListener;
 use App\Listeners\SyncOwnerAndLeagueStatusListener;
@@ -27,6 +28,7 @@ class EventServiceProvider extends ServiceProvider
             CreatePostCheckoutLoginListener::class,
             ProgramSpecialFirstMonthScheduleListener::class,
             SyncOwnerAndLeagueStatusListener::class,
+            PaymentIntentWebhookListener::class,
         ],
     ];
 

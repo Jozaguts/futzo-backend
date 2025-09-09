@@ -65,6 +65,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // Payment Intents (Stripe Elements) — no requiere billing.operational
     Route::post('payment-intents', [\App\Http\Controllers\PaymentIntentController::class, 'store']);
+
+    // Subscription Payment Element flow (modo suscripción)
+    Route::post('subscriptions/intent', [\App\Http\Controllers\SubscriptionIntentController::class, 'store']);
+
+    // Billing Portal URL (Stripe) — gestionar suscripción/datos de pago
+    Route::get('subscriptions/portal', \App\Http\Controllers\BillingPortalController::class);
 });
 
 Route::prefix('public')->group(function () {

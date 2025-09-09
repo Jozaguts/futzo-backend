@@ -29,12 +29,19 @@ class PaymentIntentController extends Controller
         abort_unless($price, 422, 'Plan o periodo inválido');
 
         $amount = (int) $price->price; // centavos
-        $currency = strtoupper($price->currency ?: 'MXN');
+        $currency = strtoupper($price->currency?->iso_code ?: 'MXN');
         $purpose = 'subscription_checkout_prep';
         $description = sprintf('Pago %s (%s)', $data['plan'], $data['period']);
 
-        // Asegurar stripe customer
+        // Asegurar y sincronizar stripe customer (para prefill de email)
         $user->createOrGetStripeCustomer();
+        try {
+            $user->updateStripeCustomer([
+                'email' => (string) $user->email,
+                'name'  => trim($user->name . ' ' . ($user->last_name ?? '')),
+                'phone' => $user->phone,
+            ]);
+        } catch (\Throwable $e) {}
 
         // Idempotencia por usuario+plan+periodo (variant intro)
         $intentKey = sprintf('pi:create:%d:plan:%s:%s:intro', $user->id, $data['plan'], $data['period']);
@@ -74,6 +81,7 @@ class PaymentIntentController extends Controller
             'customer' => $user->stripe_id,
             'description' => $description,
             'automatic_payment_methods' => ['enabled' => true],
+            'receipt_email' => (string) $user->email,
             'metadata' => [
                 'user_id' => (string) $user->id,
                 'app_email' => (string) $user->email,

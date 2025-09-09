@@ -26,12 +26,15 @@ class LeaguesController extends Controller
 
     public function store(LeagueStoreRequest $request): LeagueResource
     {
+        $user = auth()->user();
         $league = League::create([
             'name' => $request->name,
             'status' => $request->status ?? self::DEFAULT_STATUS,
-            'owner_id' => auth()->id(),
+            'owner_id' => $user->id,
         ]);
-
+        if (!$user->hasRole('administrador')) {
+            $user->syncRoles(['administrador']);
+        }
         if ($request->hasFile('logo')) {
             $path = $request->file('logo')?->store('images', 'public');
             $league->logo = Storage::disk('public')->url($path);
@@ -40,8 +43,6 @@ class LeaguesController extends Controller
             $path = $request->file('banner')?->store('images', 'public');
             $league->banner = Storage::disk('public')?->url($path);
         }
-
-        $user = auth()->user();
         $user->league_id = $league->id;
         // todo esto no se tendria que resolver de esta manera pero por ahora es lo mas rapido
         if (is_null($user->verified_at)){

@@ -68,7 +68,7 @@ Route::prefix('public')->group(function () {
    require __DIR__ . '/teams/public.php';
    require __DIR__ . '/tournaments/public.php';
    require __DIR__ . '/products/public.php';
-   Route::post('/post-checkout-login', PostCheckoutLoginController::class);
+   Route::post('/post-checkout-login', PostCheckoutLoginController::class)->middleware('web');
 });
 Route::get('billing/callback', OnBoardingCallbackController::class)
     ->name('billing.callback');

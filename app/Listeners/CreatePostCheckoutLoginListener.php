@@ -2,8 +2,8 @@
 
 namespace App\Listeners;
 
-use App\Models\PostCheckoutLogin;
 use App\Models\User;
+use App\Services\CheckoutSessionService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Laravel\Cashier\Events\WebhookReceived;
 
@@ -16,10 +16,7 @@ class CreatePostCheckoutLoginListener implements ShouldQueue
             $email = $object['customer_details']['email'] ?? ($object['metadata']['app_email'] ?? null);
             $user = User::where('email', $email)->first();
             if ($user) {
-                PostCheckoutLogin::updateOrCreate(
-                    ['checkout_session_id' => $object['id']],
-                    ['user_id' => $user->id, 'expires_at' => now()->addMinutes(30)]
-                );
+                app(CheckoutSessionService::class)->ensurePostCheckoutLogin($object['id'], $user);
             }
         }
     }

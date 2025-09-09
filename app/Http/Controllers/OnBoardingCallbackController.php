@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Jobs\SendMetaCapiEventJob;
 use App\Models\PostCheckoutLogin;
 use App\Models\User;
+use App\Services\CheckoutSessionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Stripe\Exception\ApiErrorException;
@@ -69,8 +70,26 @@ class OnBoardingCallbackController extends Controller
                 consent: $request->boolean('consent', true)
             );
         }
+
+        // Promover estado del usuario y sincronizar liga de forma optimista (idempotente)
+        try { app(CheckoutSessionService::class)->promoteUserAndLeague($user, $s->subscription->status ?? null); } catch (\Throwable $e) {}
+
+        // Generar token de login de una sola vez para reestablecer sesión en el frontend
+        $token = null;
+        try {
+            $row = app(CheckoutSessionService::class)->ensurePostCheckoutLogin($sessionId, $user);
+            $token = app(CheckoutSessionService::class)->generateOneTimeLoginToken($row);
+        } catch (\Throwable $e) {}
+
+        $plan = $s->subscription->items->data[0]->plan->metadata['app_sku'];
+        $qs = http_build_query(array_filter([
+            'payment' => 'success',
+            'plan' => $plan,
+            'token' => $token,
+        ]));
+
         return redirect()->away(
-            config('app.frontend_url') . "/configuracion?payment=success&plan=kicjoff"
+            config('app.frontend_url') . "/configuracion?{$qs}"
         );
     }
 }

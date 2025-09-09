@@ -39,6 +39,41 @@ class SubscriptionIntentController extends Controller
             // si falla, continuamos; el Payment Element leerá del intent de todos modos
         }
 
+        // Limitar a una sola suscripción por cliente
+        // 1) Verificar localmente con Cashier
+        $hasLocalSub = $user->subscriptions()
+            ->whereNull('ends_at')
+            ->whereNotIn('stripe_status', ['canceled', 'incomplete_expired'])
+            ->exists();
+        // 2) Verificar en Stripe (por si aún no existe row local)
+        $hasRemoteSub = false;
+        try {
+            $remoteSubs = $user->stripe()->subscriptions->all([
+                'customer' => $user->stripe_id,
+                'status' => 'all',
+                'limit' => 10,
+            ]);
+            foreach ($remoteSubs->data as $s) {
+                if (in_array($s->status, ['trialing','active','past_due','unpaid','incomplete','paused','processing'], true)) {
+                    $hasRemoteSub = true; break;
+                }
+            }
+        } catch (\Throwable $e) {}
+
+        if ($hasLocalSub || $hasRemoteSub) {
+            // Generar URL del billing portal para gestionar su plan existente
+            $returnUrl = config('app.frontend_url') . '/configuracion';
+            $session = $user->stripe()->billingPortal->sessions->create([
+                'customer' => $user->stripe_id,
+                'return_url' => $returnUrl,
+            ]);
+            return response()->json([
+                'error' => 'already_has_subscription',
+                'message' => 'Ya tienes una suscripción activa o pendiente. Adminístrala desde el portal de facturación.',
+                'billing_portal_url' => $session->url,
+            ], 409);
+        }
+
         // Crear suscripción en estado incomplete para confirmar con Payment Element
         $stripe = $user->stripe();
         $sub = $stripe->subscriptions->create([

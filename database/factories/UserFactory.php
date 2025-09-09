@@ -14,6 +14,8 @@ use Random\RandomException;
 class UserFactory extends Factory
 {
     protected $model = User::class;
+    protected static array $reservedEmails = [];
+    protected static array $reservedPhones = [];
 
 
     /**
@@ -21,11 +23,13 @@ class UserFactory extends Factory
      */
     public function definition(): array
     {
+        $email = $this->uniqueEmail();
+        $phone  = $this->uniquePhone();
         return [
             'name' => $name = Fake::firstName(),
             'last_name' => Fake::lastName(),
-            'email' => Fake::safeEmail(),
-            'phone' => '+52 ' . Fake::numerify('322 ### ## ##'),
+            'email' => $email,
+            'phone' => $phone,
             'verified_at' => now(),
             'image' => 'https://ui-avatars.com/api/?name=' . $name,
             'verification_token' => random_int(1000, 9999),
@@ -44,5 +48,36 @@ class UserFactory extends Factory
         return $this->state(fn(array $attributes) => [
             'verified_at' => null,
         ]);
+    }
+
+    private function uniqueEmail(): string
+    {
+        // Garantiza unicidad contra BD y dentro del proceso
+        for ($i = 0; $i < 50; $i++) {
+            $email = Fake::safeEmail();
+            if (!isset(self::$reservedEmails[$email]) && !User::where('email', $email)->exists()) {
+                self::$reservedEmails[$email] = true;
+                return $email;
+            }
+        }
+        // Fallback casi imposible de colisionar
+        $email = 'user+'.Str::uuid().'@example.com';
+        self::$reservedEmails[$email] = true;
+        return $email;
+    }
+
+    private function uniquePhone(): string
+    {
+        for ($i = 0; $i < 50; $i++) {
+            $phone = '+52 ' . Fake::numerify('### ### ## ##');
+            if (!isset(self::$reservedPhones[$phone]) && !User::where('phone', $phone)->exists()) {
+                self::$reservedPhones[$phone] = true;
+                return $phone;
+            }
+        }
+        // Fallback con sufijo único
+        $phone = '+52 ' . Fake::numerify('### ### ## ##') . ' ' . substr((string) Str::uuid(), 0, 4);
+        self::$reservedPhones[$phone] = true;
+        return $phone;
     }
 }

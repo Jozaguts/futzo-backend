@@ -29,6 +29,7 @@ class League extends Model
         'location',
         'football_type_id',
         'owner_id',
+        'timezone',
     ];
     protected $casts = [
         'creation_date' => 'datetime',

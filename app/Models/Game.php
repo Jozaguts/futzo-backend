@@ -40,6 +40,8 @@ class Game extends Model
         'away_goals',
         'match_date',
         'match_time',
+        'starts_at_utc',
+        'ends_at_utc',
         'tournament_phase_id',
         'slug',
     ];
@@ -48,6 +50,8 @@ class Game extends Model
         'updated_at' => 'datetime',
         'match_date' => 'date',
         'match_time' => 'datetime:H:i:s',
+        'starts_at_utc' => 'datetime',
+        'ends_at_utc' => 'datetime',
 
     ];
 

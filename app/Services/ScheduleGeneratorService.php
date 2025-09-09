@@ -85,7 +85,8 @@ class ScheduleGeneratorService
         // 5) agrupar por semana y campo
         $startOfWeekDay = Carbon::parse($this->tournament->start_date)->dayOfWeek;
         $slotsByWeekAndField = collect($availableSlots)
-            ->groupBy(fn($slot) => Carbon::parse($slot['match_time'])
+            ->groupBy(fn($slot) => $slot['match_time']
+                ->copy()
                 ->startOfWeek($startOfWeekDay)
                 ->toDateString(),
             )->map(fn($week) => $week->groupBy('field_id'));
@@ -195,7 +196,8 @@ class ScheduleGeneratorService
         // 4) agrupar slots por semana y campo
         $startOfWeekDay = Carbon::parse($this->tournament->start_date)->dayOfWeek;
         $slotsByWeekAndField = collect($availableSlots)
-            ->groupBy(fn($slot) => Carbon::parse($slot['match_time'])
+            ->groupBy(fn($slot) => $slot['match_time']
+                ->copy()
                 ->startOfWeek($startOfWeekDay)
                 ->toDateString())
             ->map(fn($week) => $week->groupBy('field_id'));
@@ -375,7 +377,10 @@ class ScheduleGeneratorService
         $availableSlots = $this->generateAvailableSlots($fields, $this->tournament->start_date, $matchDuration, $weeksToGenerate);
         $startOfWeekDay = Carbon::parse($this->tournament->start_date)->dayOfWeek;
         $slotsByWeekAndField = collect($availableSlots)
-            ->groupBy(fn($slot) => Carbon::parse($slot['match_time'])->startOfWeek($startOfWeekDay)->toDateString())
+            ->groupBy(fn($slot) => $slot['match_time']
+                ->copy()
+                ->startOfWeek($startOfWeekDay)
+                ->toDateString())
             ->map(fn($week) => $week->groupBy('field_id'));
         $weekStart = $this->findFirstAvailableWeekStart($slotsByWeekAndField->toArray(), Carbon::parse($this->tournament->start_date));
 
@@ -474,8 +479,19 @@ class ScheduleGeneratorService
             ->where('is_active', true)
             ->first();
 
-        DB::transaction(static function () use ($matches, $phase) {
+        $leagueTz = $this->tournament->league->timezone ?? config('app.timezone', 'America/Mexico_City');
+        $config = $this->tournament->configuration;
+        $matchDuration = ($config->game_time ?? 0)
+            + self::GLOBAL_REST
+            + ($config->time_between_games ?? 0)
+            + self::UNEXPECTED_BUFFER;
+
+        DB::transaction(static function () use ($matches, $phase, $leagueTz, $matchDuration) {
             foreach ($matches as $match) {
+                // Calcular UTC a partir de fecha/hora local de liga
+                $localStart = \Carbon\Carbon::parse($match['match_date'] . ' ' . $match['match_time'], $leagueTz);
+                $startsAtUtc = $localStart->clone()->setTimezone('UTC');
+                $endsAtUtc = $startsAtUtc->clone()->addMinutes($matchDuration);
                 Game::updateOrCreate(
                     [
                         'tournament_id' => $match['tournament_id'],
@@ -489,6 +505,8 @@ class ScheduleGeneratorService
                     ],
                     array_merge($match, [
                         'tournament_phase_id' => $phase?->id,
+                        'starts_at_utc' => $startsAtUtc,
+                        'ends_at_utc' => $endsAtUtc,
                     ])
                 );
             }
@@ -547,7 +565,8 @@ class ScheduleGeneratorService
     private function generateAvailableSlots($fields, $startDate, $matchDuration, $weeksToGenerate): array
     {
         $availableSlots = [];
-        $scheduleDate = Carbon::parse($startDate);
+        $leagueTz = $this->tournament->league->timezone ?? config('app.timezone', 'America/Mexico_City');
+        $scheduleDate = Carbon::parse($startDate, $leagueTz);
         $daysToGenerate = $weeksToGenerate * 7;
         $leagueFields = LeagueField::whereIn('field_id', $fields->pluck('field_id'))
             ->where('league_id', auth()->user()->league_id)

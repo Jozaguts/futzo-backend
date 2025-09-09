@@ -31,6 +31,7 @@ class LeaguesController extends Controller
             'name' => $request->name,
             'status' => $request->status ?? self::DEFAULT_STATUS,
             'owner_id' => $user->id,
+            'timezone' => config('app.timezone', 'America/Mexico_City'),
         ]);
         if (!$user->hasRole('administrador')) {
             $user->syncRoles(['administrador']);

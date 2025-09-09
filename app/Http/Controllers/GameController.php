@@ -36,17 +36,29 @@ class GameController extends Controller
      * */
     public function update(Request $request, Game $game): GameResource
     {
+        // Soporta dos modos: nuevo (starts_at ISO‑8601 con TZ) o legado (date + selected_time.start + day)
         $data = $request->validate([
-            'date' => 'required|date',
-            'selected_time' => 'required|array',
-            'selected_time.start' => 'required|date_format:H:i',
+            'starts_at' => 'nullable|date',
+            'date' => 'nullable|date',
+            'selected_time' => 'nullable|array',
+            'selected_time.start' => 'nullable|date_format:H:i',
             'field_id' => 'required|exists:fields,id',
-            'day' => 'required|in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
+            'day' => 'nullable|in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
         ]);
 
-        $day = strtolower($data['day']);
-        $newStart = $data['selected_time']['start'];
-        $date = Carbon::parse($data['date'])->startOfDay();
+        $leagueTz = $game->tournament->league->timezone ?? config('app.timezone', 'America/Mexico_City');
+        if (!empty($data['starts_at'])) {
+            // Entrada ISO-8601 (con o sin TZ). Si no trae TZ, se asume TZ de la liga
+            $parsed = Carbon::parse($data['starts_at'], $leagueTz);
+            $day = strtolower($parsed->format('l'));
+            $newStart = $parsed->format('H:i');
+            $date = $parsed->copy()->startOfDay();
+        } else {
+            // Modo legado
+            $day = strtolower($data['day']);
+            $newStart = $data['selected_time']['start'];
+            $date = Carbon::parse($data['date'], $leagueTz)->startOfDay();
+        }
 
         $config = $game->tournament->configuration;
         $matchDuration = $config->game_time + $config->time_between_games + 15 + 15;
@@ -97,9 +109,16 @@ class GameController extends Controller
         }
 
         // Actualizar game
+        // Calcular UTC
+        $localStart = Carbon::parse($date->toDateString() . ' ' . $newStart, $leagueTz);
+        $startsAtUtc = $localStart->clone()->setTimezone('UTC');
+        $endsAtUtc = $startsAtUtc->clone()->addMinutes($matchDuration);
+
         $game->update([
             'match_date' => $date->toDateString(),
             'match_time' => $newStart . ':00',
+            'starts_at_utc' => $startsAtUtc,
+            'ends_at_utc' => $endsAtUtc,
             'field_id' => (int)$data['field_id'],
         ]);
 

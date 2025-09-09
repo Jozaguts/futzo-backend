@@ -55,39 +55,11 @@ $locations = [
         'name' => 'Unidad Deportiva Vicente Suárez',
         'address' => 'Unidad Deportiva Vicente Suárez, Morelos, Zona Urbana, Acapulco de Juárez, Gro.',
         'position' => ['lat' => 16.8722811, 'lng' => -99.9017524],
-        'created_at' => '2025-04-23 23:42:12',
-        'updated_at' => '2025-05-22 23:17:05',
-        'deleted_at' => null,
+        'place_id' => uniqid('place_id', true)
     ],
-    [
-        'id' => 2,
-        'name' => 'FUTBOL 7',
-        'address' => 'FUTBOL 7, Genaro Padilla, El Calvario, Puerto Vallarta, Jal.',
-        'position' => ['lat' => 20.6615471, 'lng' => -105.217165],
-        'created_at' => '2025-04-26 01:45:54',
-        'updated_at' => '2025-04-26 01:45:54',
-        'deleted_at' => null,
-    ],
-    [
-        'id' => 3,
-        'name' => 'Campo México 68',
-        'address' => 'Campo México 68, Calle del Río, Ciudad Renacimiento, Acapulco de Juárez, Gro.',
-        'position' => ['lat' => 16.883623, 'lng' => -99.8180192],
-        'created_at' => '2025-05-20 23:19:01',
-        'updated_at' => '2025-05-20 23:19:01',
-        'deleted_at' => null,
-    ],
-    [
-        'id' => 4,
-        'name' => 'Campo de Futbol 7',
-        'address' => 'Campo de Futbol 7, Calle 1, Colonia Centro, Acapulco de Juárez, Gro.',
-        'position' => ['lat' => 16.8531234, 'lng' => -99.823456],
-        'created_at' => null,
-        'updated_at' => null,
-        'deleted_at' => null,
-    ]
 ];
 return [
+    'leagues_seeder' => env('LEAGUES_SEEDER',1),
     'address' => $address,
     'colors' => [
         'home' => [

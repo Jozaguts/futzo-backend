@@ -17,7 +17,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->call([
+        $seeders  = [
             RolesTableSeeder::class,
             CountriesSeeder::class,
             PositionsTableSeeder::class,
@@ -28,26 +28,22 @@ class DatabaseSeeder extends Seeder
             ActionsTableSeeder::class,
             CouponsTableSeeder::class,
             PhasesTableSeeder::class,
-            LeaguesTableSeeder::class,
-            AdminUserSeeder::class,
-            LocationsTableSeeder::class,
-            FieldsTableSeeder::class,
-            // Ventanas base 24/7 por campo y por liga-campo
-            FieldWindowsSeeder::class,
-            LeagueFieldWindowsSeeder::class,
-            TournamentTableSeeder::class,
-            FormationsTableSeeder::class,
-            TeamsTableSeeder::class,
-        ]);
-//        $this->call(LeagueFieldTableSeeder::class);
-
-//        $this->call(UserSeeder::class);
-//        $this->call(TournamentTableSeeder::class);
-//        $this->call(TeamsTableSeeder::class);
-//        $this->call(PlayerSeeder::class);
-//        $this->call(GameSeeder::class);
-//        $this->call(GamePlayerSeeder::class);
-//
-
+        ];
+        if (app()->environment('local')) {
+            $seeders = [
+               ...$seeders,
+                LeaguesTableSeeder::class,
+                AdminUserSeeder::class,
+                LocationsTableSeeder::class,
+//                FieldsTableSeeder::class,
+                // Ventanas base 24/7 por campo y por liga-campo
+//                FieldWindowsSeeder::class,
+//                LeagueFieldWindowsSeeder::class,
+//                TournamentTableSeeder::class,
+//                FormationsTableSeeder::class,
+//                TeamsTableSeeder::class,
+            ];
+        }
+        $this->call($seeders);
     }
 }

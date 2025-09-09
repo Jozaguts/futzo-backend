@@ -5,18 +5,15 @@ namespace App\Console\Commands;
 use App\Models\Category;
 use App\Models\Formation;
 use App\Models\League;
-use App\Models\Location;
 use App\Models\Phase;
 use App\Models\Player;
 use App\Models\Position;
 use App\Models\Tournament;
-use App\Models\TournamentConfiguration;
 use App\Models\TournamentFormat;
 use App\Models\TournamentGroupConfiguration;
 use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class SeedLeagueTournamentsCommand extends Command

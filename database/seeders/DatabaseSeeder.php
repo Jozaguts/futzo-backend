@@ -36,8 +36,8 @@ class DatabaseSeeder extends Seeder
                ...$seeders,
                 LeaguesTableSeeder::class,
                 AdminUserSeeder::class,
-                LocationsTableSeeder::class,
-                FieldsTableSeeder::class,
+//                LocationsTableSeeder::class,
+//                FieldsTableSeeder::class,
                 // Ventanas base 24/7 por campo y por liga-campo
 //                FieldWindowsSeeder::class,
 //                LeagueFieldWindowsSeeder::class,

@@ -11,26 +11,26 @@ class ScheduleSettingsResource extends JsonResource
     {
         return [
             'round_trip' => $this->resource->configuration->round_trip,
-            'start_date' => $this->start_date?->format('Y-m-d'),
-            'end_date' => $this->end_date?->format('Y-m-d'),
-            'elimination_round_trip' => $this->configuration->elimination_round_trip ?? null,
-            'game_time' => $this->configuration->game_time ?? null,
-            'min_teams' => $this->configuration->min_teams ?? null,
-            'max_teams' => $this->configuration->max_teams ?? null,
-            'time_between_games' => $this->configuration->time_between_games ?? null,
-            'teams' => $this->teams->count(),
+            'start_date' => $this->resource->start_date?->format('Y-m-d'),
+            'end_date' => $this->resource->end_date?->format('Y-m-d'),
+            'elimination_round_trip' => $this->resource->configuration->elimination_round_trip ?? null,
+            'game_time' => $this->resource->configuration->game_time ?? null,
+            'min_teams' => $this->resource->configuration->min_teams ?? null,
+            'max_teams' => $this->resource->configuration->max_teams ?? null,
+            'time_between_games' => $this->resource->configuration->time_between_games ?? null,
+            'teams' => $this->resource->teams->count(),
             'teams_to_next_round' => $this->calculateTeamsToNextRound(),
-            'format' => $this->format ?? null,
-            'footballType' => $this->footballType ?? null,
-            'locations' => $this->locations ?? [],
-            'tiebreakers' => $this->configuration->tiebreakers ?? null,
-            'phases' => $this->tournamentPhases->load(['phase','rules'])->map(function ($tournamentPhase) {
+            'format' => $this->resource->format ?? null,
+            'footballType' => $this->resource->footballType ?? null,
+            'locations' => $this->resource->locations ?? [],
+            'tiebreakers' => $this->resource->configuration->tiebreakers ?? null,
+            'phases' => $this->resource->tournamentPhases->load(['phase','rules'])->map(function ($tournamentPhase) {
                 return [
                     'id' => $tournamentPhase->phase->id,
                     'name' => $tournamentPhase->phase->name,
                     'is_active' => $tournamentPhase->is_active,
                     'is_completed' => $tournamentPhase->is_completed,
-                    'tournament_id' => $this->id,
+                    'tournament_id' => $this->resource->id,
                     'rules' => $tournamentPhase->rules ? [
                         'round_trip' => (bool)$tournamentPhase->rules->round_trip,
                         'away_goals' => (bool)$tournamentPhase->rules->away_goals,
@@ -40,11 +40,11 @@ class ScheduleSettingsResource extends JsonResource
                     ] : null,
                 ];
             })->all(),
-            'group_phase' => $this->groupConfiguration ? [
-                'teams_per_group' => $this->groupConfiguration->teams_per_group,
-                'advance_top_n' => $this->groupConfiguration->advance_top_n,
-                'include_best_thirds' => (bool)$this->groupConfiguration->include_best_thirds,
-                'best_thirds_count' => $this->groupConfiguration->best_thirds_count,
+            'group_phase' => $this->resource->groupConfiguration ? [
+                'teams_per_group' => $this->resource->groupConfiguration->teams_per_group,
+                'advance_top_n' => $this->resource->groupConfiguration->advance_top_n,
+                'include_best_thirds' => (bool)$this->resource->groupConfiguration->include_best_thirds,
+                'best_thirds_count' => $this->resource->groupConfiguration->best_thirds_count,
             ] : null,
         ];
     }
@@ -52,10 +52,10 @@ class ScheduleSettingsResource extends JsonResource
     private function calculateTeamsToNextRound(): int
     {
         $teamsToNextRound = 0;
-        if ($this->format->name === 'Torneo de Liga') {
+        if ($this->resource->format->name === 'Torneo de Liga') {
             return 1;
         }
-        $activePhase = collect($this->phases->where('is_active', true)->all());
+        $activePhase = collect($this->resource->phases->where('is_active', true)->all());
         $roundOf16activated = $activePhase->where('name', 'Octavos de Final')->isNotEmpty();
         if ($roundOf16activated) {
             return 16;

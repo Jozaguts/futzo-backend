@@ -14,6 +14,7 @@ class Phase extends Model
         'name',
         'is_active',
         'is_completed',
+        'min_teams_for'
     ];
 
     protected function casts(): array

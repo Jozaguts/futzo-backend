@@ -13,7 +13,13 @@ class Location extends Model
 {
     use HasFactory, SoftDeletes, HasTags;
 
-    protected $fillable = ['name', 'address', 'position','place_id'];
+    protected $fillable = [
+        'name',
+        'address',
+        'position',
+        'place_id',
+        'id'
+    ];
 
     protected $casts = [
         'position' => 'json'

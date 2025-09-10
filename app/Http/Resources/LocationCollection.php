@@ -18,6 +18,15 @@ class LocationCollection extends ResourceCollection
         5 => 'fri',
         6 => 'sat',
     ];
+    private const array DOW_LABELS = [
+        0 => 'domingo',
+        1 => 'lunes',
+        2 => 'martes',
+        3 => 'miércoles',
+        4 => 'jueves',
+        5 => 'viernes',
+        6 => 'sábado',
+    ];
 
     public function toArray(Request $request): array
     {
@@ -32,6 +41,7 @@ class LocationCollection extends ResourceCollection
                         if (is_null($key)) { continue; }
                         $windows[$key] = $windows[$key] ?? [];
                         $windows[$key][] = [
+                            'label' => self::DOW_LABELS[$w->day_of_week],
                             'enabled' => (bool) $w->enabled,
                             'start' => sprintf('%02d:%02d', intdiv($w->start_minute,60), $w->start_minute%60),
                             'end' => sprintf('%02d:%02d', intdiv($w->end_minute,60), $w->end_minute%60),

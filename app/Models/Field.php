@@ -21,6 +21,7 @@ class Field extends Model
         'name',
         'type',
         'dimensions',
+        'id',
     ];
 
     protected function casts(): array

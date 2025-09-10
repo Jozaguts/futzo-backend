@@ -13,7 +13,7 @@ class LocationUpdateRequest extends FormRequest
             'address' => 'required|string',
             'tags' => 'array',
             'fields' => 'array',
-            'fields.*.id' => 'nullable|integer|exists:fields,id',
+            'fields.*.id' => 'nullable|integer',
             'fields.*.name' => 'required_with:fields|string',
             'fields.*.windows' => 'array',
             'position' => 'required|array',

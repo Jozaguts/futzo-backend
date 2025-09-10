@@ -112,29 +112,25 @@ class LocationController extends Controller
             $data = $request->safe()->except('tags');
             $fields = $request->input('fields', []);
             $league = auth()->user()->league;
-            $location->update([
-                    'name' => $data['name'],
-                    'address' => $data['address'],
-                    'position' => $data['position']
-                ]
-            );
+            $location = Location::updateOrCreate(['id' => $location->id], [
+                'name' => $data['name'],
+                'address' => $data['address'],
+                'position' => $data['position']
+            ]);
             foreach ($fields as $fieldData) {
-                $field = Field::where([
+                $field = Field::updateOrCreate([
+                    'id' => $fieldData['id'],
                     'location_id' => $location->id,
-                    'id' => $fieldData['id'] ?? 0,
-                ])->first();
-
+                ],[
+                    'name' => $fieldData['name'],
+                    'type' => Field::defaultType,
+                    'dimensions' => Field::defaultDimensions,
+                ]);
                 if ($field) {
-                    $field->update([
-                        'name' => $fieldData['name'],
-                        'type' => Field::defaultType,
-                        'dimensions' => Field::defaultDimensions,
-                    ]);
-
-                    $leagueField = LeagueField::where([
+                    $leagueField = LeagueField::updateOrCreate([
                         'league_id' => $league->id,
                         'field_id' => $field->id,
-                    ])->first();
+                    ]);
                     if ($leagueField && isset($fieldData['windows'])) {
                         // Reemplazar ventanas
                         LeagueFieldWindow::where('league_field_id', $leagueField->id)->delete();

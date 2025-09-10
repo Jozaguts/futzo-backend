@@ -28,6 +28,8 @@ class DatabaseSeeder extends Seeder
             ActionsTableSeeder::class,
             CouponsTableSeeder::class,
             PhasesTableSeeder::class,
+            FormationsTableSeeder::class,
+            TieBreakersTableSeeder::class,
         ];
         if (app()->environment('local')) {
             $seeders = [
@@ -35,12 +37,11 @@ class DatabaseSeeder extends Seeder
                 LeaguesTableSeeder::class,
                 AdminUserSeeder::class,
                 LocationsTableSeeder::class,
-//                FieldsTableSeeder::class,
+                FieldsTableSeeder::class,
                 // Ventanas base 24/7 por campo y por liga-campo
 //                FieldWindowsSeeder::class,
 //                LeagueFieldWindowsSeeder::class,
 //                TournamentTableSeeder::class,
-//                FormationsTableSeeder::class,
 //                TeamsTableSeeder::class,
             ];
         }

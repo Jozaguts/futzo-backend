@@ -97,28 +97,30 @@ return [
         ],
         [
             'id' => 2,
+            'name' => 'Grupos y Eliminatoria',
+            'description' => 'Fase de grupos seguida de eliminatoria; clasifican mejores por grupo (y terceros si aplica).',
+            'status' => 'created',
+        ],
+        [
+            'id' => 3,
             'name' => 'Liga y Eliminatoria',
             'description' => 'Fase de liga seguida de eliminatoria según la clasificación, ganadores avanzan hasta la final. ',
             'status' => 'created',
         ],
         [
-            'id' => 3,
+            'id' => 4,
             'name' => 'Eliminatoria',
             'description' => 'Partidos eliminatorios desde el inicio; ganadores avanzan hasta que se determina un campeón.',
             'status' => 'created',
         ],
-        [
-            'id' => 4,
-            'name' => 'Sistema suizo',
-            'description' => 'Equipos juegan rondas contra oponentes de rendimiento similar; el equipo con más puntos gana.',
-            'status' => 'created',
-        ],
-        [
-            'id' => 5,
-            'name' => 'Grupos y Eliminatoria',
-            'description' => 'Fase de grupos seguida de eliminatoria; clasifican mejores por grupo (y terceros si aplica).',
-            'status' => 'created',
-        ],
+
+//        [
+//            'id' => 5,
+//            'name' => 'Sistema suizo',
+//            'description' => 'Equipos juegan rondas contra oponentes de rendimiento similar; el equipo con más puntos gana.',
+//            'status' => 'created',
+//        ],
+
     ],
     'location' => $locations[0],
     'locations' => $locations,

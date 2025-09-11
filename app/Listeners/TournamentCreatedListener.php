@@ -21,7 +21,7 @@ class TournamentCreatedListener
      */
     public function handle(TournamentCreatedEvent $event): void
     {
-        $minMAx = $event->basicFields['minMax'];
+        $minMAx = $event->basicFields['min_max'];
         $substitutions_per_team = $event->basicFields['substitutions_per_team'];
         $defaultConfig = DefaultTournamentConfiguration::where([
             'tournament_format_id' => $event->tournament->tournament_format_id,

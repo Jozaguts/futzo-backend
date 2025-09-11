@@ -92,7 +92,7 @@ it('store tournament', function () {
             'category_id' => $category->first()->id,
             'start_date' => fake()->date(),
             'end_date' => fake()->date(),
-            'minMax' => json_encode([18, 32], JSON_THROW_ON_ERROR | true),
+            'min_max' => json_encode([18, 32], JSON_THROW_ON_ERROR | true),
         ],
         'details' => [
             'prize' => fake()->text(10),
@@ -149,7 +149,7 @@ it('update tournaments with filters and location', function () {
             'name' => fake()->name,
             'tournament_format_id' => $tournament->format->id,
             'category_id' => $tournament->category->id,
-            'minMax' => json_encode([18, 32], JSON_THROW_ON_ERROR | true),
+            'min_max' => json_encode([18, 32], JSON_THROW_ON_ERROR | true),
         ],
         'details' => [
             'start_date' => fake()->date('Y-m-d'),
@@ -187,7 +187,7 @@ it('get tournaments with filters and location without autocomplete', function ()
             'name' => fake()->name,
             'tournament_format_id' => $tournament->format->id,
             'category_id' => $tournament->category->id,
-            'minMax' => json_encode([18, 32], JSON_THROW_ON_ERROR | true),
+            'min_max' => json_encode([18, 32], JSON_THROW_ON_ERROR | true),
         ],
         'details' => [
             'start_date' => fake()->date('Y-m-d'),

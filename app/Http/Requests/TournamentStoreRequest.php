@@ -41,7 +41,7 @@ class TournamentStoreRequest extends FormRequest
             'basic.category_id' => 'exists:categories,id|nullable',
             'basic.start_date' => 'date|nullable',
             'basic.end_date' => 'date|nullable',
-            'basic.minMax' => 'json|required',
+            'basic.min_max' => 'json|required',
             'details.prize' => 'string|nullable',
             'details.winner' => 'string|nullable',
             'details.description' => 'string|nullable',

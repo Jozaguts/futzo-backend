@@ -92,7 +92,7 @@ function createTournamentViaApi(int $formatId = 1, int $footballTypeId = 1, ?int
             'category_id' => $category->id,
             'start_date' => now()->addDays(3)->format('Y-m-d'),
             'end_date' => now()->addDays(30)->format('Y-m-d'),
-            'minMax' => json_encode([8, 32], JSON_THROW_ON_ERROR | true),
+            'min_max' => json_encode([8, 32], JSON_THROW_ON_ERROR | true),
         ],
         'details' => [
             'prize' => 'Premio de prueba',

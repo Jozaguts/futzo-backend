@@ -37,7 +37,7 @@ class TournamentDTO
     {
         return [
             'name' => $this->basic['name'],
-            'minMax' => $this->basic['minMax'] ?? null,
+            'min_max' => $this->basic['min_max'] ?? null,
             'tournament_format_id' => $this->basic['tournament_format_id'],
             'substitutions_per_team' => $this->basic['substitutions_per_team'],
             'category_id' => $this->basic['category_id'],

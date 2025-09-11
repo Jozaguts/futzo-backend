@@ -7,7 +7,7 @@ class TournamentDTO
     public array $basic;
     public ?array $details;
     public bool $hasLocation = false;
-    public array $locationIds;
+    public array $location_ids;
 
 
     /**
@@ -18,9 +18,9 @@ class TournamentDTO
         $this->basic = $formRequest['basic'];
         if (isset($formRequest['details'])) {
             $this->details = $formRequest['details'];
-            $this->hasLocation = isset($formRequest['details']['locationIds']);
+            $this->hasLocation = isset($formRequest['details']['location_ids']);
             if ($this->hasLocation) {
-                $this->locationIds = json_decode($formRequest['details']['locationIds'], true, 512, JSON_THROW_ON_ERROR);
+                $this->location_ids = json_decode($formRequest['details']['location_ids'], true, 512, JSON_THROW_ON_ERROR);
             }
         }
     }
@@ -52,7 +52,7 @@ class TournamentDTO
 
     public function locationFields(): array
     {
-        return $this->locationIds;
+        return $this->location_ids;
     }
 
     public function getImage()

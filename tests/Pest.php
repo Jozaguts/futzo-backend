@@ -99,7 +99,7 @@ function createTournamentViaApi(int $formatId = 1, int $footballTypeId = 1, ?int
             'winner' => null,
             'description' => 'Descripción de prueba',
             'status' => null,
-            'locationIds' => json_encode([$location->id], JSON_THROW_ON_ERROR | true),
+            'location_ids' => json_encode([$location->id], JSON_THROW_ON_ERROR | true),
         ],
     ]);
 

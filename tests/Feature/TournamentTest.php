@@ -99,7 +99,7 @@ it('store tournament', function () {
             'winner' => null,
             'description' => fake()->text(),
             'status' => null,
-            'locationIds' => json_encode($locationIds, JSON_THROW_ON_ERROR | true),
+            'location_ids' => json_encode($locationIds, JSON_THROW_ON_ERROR | true),
         ],
     ]);
 

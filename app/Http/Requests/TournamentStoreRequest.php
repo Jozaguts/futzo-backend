@@ -46,7 +46,7 @@ class TournamentStoreRequest extends FormRequest
             'details.winner' => 'string|nullable',
             'details.description' => 'string|nullable',
             'details.status' => 'string|nullable',
-            'details.locationIds' => 'required|json',
+            'details.location_ids' => 'required|json',
         ];
     }
 

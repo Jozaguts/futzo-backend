@@ -59,6 +59,7 @@ class LocationCollection extends ResourceCollection
                 'name' => $location->name,
                 'address' => $location->address,
                 'fields' => $fields,
+                'place_id' => $location->place_id,
                 'fields_count' => $location->fields->count(),
                 'position' => $location->position,
                 'tags' => $location->tags->pluck('name'),

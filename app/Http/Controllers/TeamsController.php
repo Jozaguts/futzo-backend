@@ -96,8 +96,6 @@ class TeamsController extends Controller
                 'name' => $data['team']['name'],
                 'president_id' => $president?->id ?? null,
                 'coach_id' => $coach?->id ?? null,
-                'phone' => $data['team']['phone'] ?? null,
-                'email' => $data['team']['email'] ?? null,
                 'address' => $address,
                 'colors' => $colors,
             ]);
@@ -324,8 +322,6 @@ class TeamsController extends Controller
         $data = [
             'team' => [
                 'name' => $row['A'],
-                'email' => $row['B'],
-                'phone' => $row['C'],
                 'address' => $this->normalizeAddress($row['D']),
                 'colors' => json_encode([
                     'home' => [
@@ -382,8 +378,6 @@ class TeamsController extends Controller
             'name' => $data['team']['name'],
             'president_id' => $president?->id,
             'coach_id' => $coach?->id,
-            'phone' => $data['team']['phone'] ?? null,
-            'email' => $data['team']['email'] ?? null,
             'address' => json_decode($data['team']['address'], false, 512, JSON_THROW_ON_ERROR),
             'colors' => json_decode($data['team']['colors'], false, 512, JSON_THROW_ON_ERROR)
         ]);

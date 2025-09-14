@@ -25,8 +25,6 @@ class TeamCollection extends ResourceCollection
 				'name' => $team->name,
 				'address' => $team->address,
 				'slug' => $team->slug,
-				'email' => $team->email,
-				'phone' => $team->phone,
 				'description' => $team->description,
 				'image' => $team->image,
 				'president' => $team->president,

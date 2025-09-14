@@ -11,7 +11,9 @@ class CreatePhasesTable extends Migration
         Schema::create('phases', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->integer('min_teams_for');
+            $table->boolean('is_active');
+            $table->boolean('is_completed');
+            $table->integer('min_teams_for')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

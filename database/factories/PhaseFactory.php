@@ -16,6 +16,9 @@ class PhaseFactory extends Factory
         return [
             'id' => $phase['id'],
             'name' => $phase['name'],
+            'min_teams_for' => $phase['min_teams_for'],
+            'is_active' => $phase['is_active'],
+            'is_completed' => $phase['is_completed'],
         ];
     }
 }

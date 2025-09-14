@@ -1,5 +1,19 @@
 <?php
 
+enum TournamentFormatId : int
+{
+    case League = 1;
+    case LeagueAndElimination = 2;
+    case GroupAndElimination = 3;
+    case Elimination = 4;
+}
+enum FootballTypeId: int
+{
+    case TraditionalFootball = 1;
+    case SevenFootball = 2;
+    case Futsal = 3;
+}
+
 $address = [
     'description' => 'La Sabana, San José Province, San José, Sabana, Costa Rica',
     'matched_substrings' => [
@@ -113,13 +127,12 @@ return [
             'description' => 'Partidos eliminatorios desde el inicio; ganadores avanzan hasta que se determina un campeón.',
             'status' => 'created',
         ],
-
-//        [
-//            'id' => 5,
-//            'name' => 'Sistema suizo',
-//            'description' => 'Equipos juegan rondas contra oponentes de rendimiento similar; el equipo con más puntos gana.',
-//            'status' => 'created',
-//        ],
+        [
+            'id' => 5,
+            'name' => 'Sistema suizo',
+            'description' => 'Equipos juegan rondas contra oponentes de rendimiento similar; el equipo con más puntos gana.',
+            'status' => 'created',
+        ],
 
     ],
     'location' => $locations[0],
@@ -143,18 +156,11 @@ return [
             'description' => 'Técnica y precisión en interiores.',
             'status' => 'created',
         ],
-        [
-            'id' => 4,
-            'name' => 'Fútbol Playa',
-            'description' => 'Creatividad y esfuerzo en arena.',
-            'status' => 'created',
-        ],
     ],
     'default_tournament_configuration' => [
-        // Fútbol 11
         [
-            'tournament_format_id' => 1, // Torneo de Liga
-            'football_type_id' => 1, // Fútbol 11
+            'tournament_format_id' => TournamentFormatId::League,
+            'football_type_id' => FootballTypeId::TraditionalFootball,
             'max_teams' => 20,
             'min_teams' => 8,
             'substitutions_per_team' => 3,
@@ -168,38 +174,38 @@ return [
             'elimination_round_trip' => 0
         ],
         [
-            'tournament_format_id' => 2, // Liga y Eliminatoria (Tabla general + KO)
-            'football_type_id' => 1, // Fútbol 11
+            'tournament_format_id' => TournamentFormatId::League,
+            'football_type_id' => FootballTypeId::SevenFootball,
             'max_teams' => 16,
             'min_teams' => 8,
-            'substitutions_per_team' => 3,
+            'substitutions_per_team' => -1,
             'max_players_per_team' => 18,
-            'min_players_per_team' => 11,
+            'min_players_per_team' => 7,
             'max_teams_per_player' => 1,
-            'game_time' => 90,
+            'game_time' => 60,
             'time_between_games' => 0,
             'round_trip' => 0,
-            'group_stage' => 0, // diferencia clave: no usa grupos
-            'elimination_round_trip' => 1
+            'group_stage' => 0,
+            'elimination_round_trip' => 0
         ],
         [
-            'tournament_format_id' => 5, // Grupos y Eliminatoria
-            'football_type_id' => 1, // Fútbol 11
+            'tournament_format_id' => TournamentFormatId::League,
+            'football_type_id' => FootballTypeId::Futsal,
             'max_teams' => 16,
             'min_teams' => 8,
-            'substitutions_per_team' => 3,
+            'substitutions_per_team' => 5,
             'max_players_per_team' => 18,
-            'min_players_per_team' => 11,
+            'min_players_per_team' => 5,
             'max_teams_per_player' => 1,
-            'game_time' => 90,
+            'game_time' => 60,
             'time_between_games' => 0,
             'round_trip' => 0,
-            'group_stage' => 1,
-            'elimination_round_trip' => 1
+            'group_stage' => 0,
+            'elimination_round_trip' => 0
         ],
         [
-            'tournament_format_id' => 3, // Eliminatoria
-            'football_type_id' => 1, // Fútbol 11
+            'tournament_format_id' => TournamentFormatId::LeagueAndElimination, // Eliminatoria
+            'football_type_id' => FootballTypeId::TraditionalFootball, // Fútbol 11
             'max_teams' => 16,
             'min_teams' => 8,
             'substitutions_per_team' => 3,
@@ -209,16 +215,91 @@ return [
             'game_time' => 90,
             'time_between_games' => 0,
             'round_trip' => 1,
-            'group_stage' => 0,
+            'group_stage' => 1,
             'elimination_round_trip' => 1
         ],
         [
-            'tournament_format_id' => 4, // Sistema Suizo
-            'football_type_id' => 1, // Fútbol 11
+            'tournament_format_id' => TournamentFormatId::LeagueAndElimination,
+            'football_type_id' => FootballTypeId::SevenFootball,
             'max_teams' => 20,
-            'substitutions_per_team' => 3,
+            'substitutions_per_team' => -1,
             'min_teams' => 8,
             'max_players_per_team' => 18,
+            'min_players_per_team' => 11,
+            'max_teams_per_player' => 1,
+            'game_time' => 60,
+            'time_between_games' => 0,
+            'round_trip' => 1,
+            'group_stage' => 1,
+            'elimination_round_trip' => 1
+        ],
+        [
+            'tournament_format_id' => TournamentFormatId::LeagueAndElimination,
+            'football_type_id' => FootballTypeId::Futsal,
+            'max_teams' => 16,
+            'min_teams' => 8,
+            'substitutions_per_team' => -1,
+            'max_players_per_team' => 12,
+            'min_players_per_team' => 5,
+            'max_teams_per_player' => 1,
+            'game_time' => 60,
+            'time_between_games' => 0,
+            'round_trip' => 1,
+            'group_stage' => 1,
+            'elimination_round_trip' => 1
+        ],
+        [
+            'tournament_format_id' => TournamentFormatId::GroupAndElimination,
+            'football_type_id' => FootballTypeId::TraditionalFootball,
+            'max_teams' => 32,
+            'min_teams' => 8,
+            'substitutions_per_team' => 5,
+            'max_players_per_team' => 23,
+            'min_players_per_team' => 11,
+            'max_teams_per_player' => 1,
+            'game_time' => 90,
+            'time_between_games' => 0,
+            'round_trip' => 1,
+            'group_stage' => 1,
+            'elimination_round_trip' => 1
+        ],
+        [
+            'tournament_format_id' => TournamentFormatId::GroupAndElimination,
+            'football_type_id' => FootballTypeId::SevenFootball, // Fútbol 7
+            'max_teams' => 16,
+            'min_teams' => 8,
+            'substitutions_per_team' => -1,
+            'max_players_per_team' => 18,
+            'min_players_per_team' => 7,
+            'max_teams_per_player' => 1,
+            'game_time' => 60,
+            'time_between_games' => 0,
+            'round_trip' => 1,
+            'group_stage' => 1,
+            'elimination_round_trip' => 1
+        ],
+        [
+            'tournament_format_id' => TournamentFormatId::GroupAndElimination,
+            'football_type_id' => FootballTypeId::Futsal,
+            'max_teams' => 16,
+            'min_teams' => 8,
+            'substitutions_per_team' => -1,
+            'max_players_per_team' => 15,
+            'min_players_per_team' => 5,
+            'max_teams_per_player' => 1,
+            'game_time' => 60,
+            'time_between_games' => 0,
+            'round_trip' => 1,
+            'group_stage' => 1,
+            'elimination_round_trip' => 1
+        ],
+        [
+            'tournament_format_id' => TournamentFormatId::Elimination,
+            'football_type_id' => FootballTypeId::TraditionalFootball,
+            'max_teams' => 32,
+            'min_teams' => 8,
+            'substitutions_per_team' => 5,
+            'max_players_per_team' => 23,
             'min_players_per_team' => 11,
             'max_teams_per_player' => 1,
             'game_time' => 90,
@@ -227,59 +308,13 @@ return [
             'group_stage' => 0,
             'elimination_round_trip' => 0
         ],
-        // Fútbol 7
         [
-            'tournament_format_id' => 1, // Torneo de Liga
-            'football_type_id' => 2, // Fútbol 7
-            'max_teams' => 16,
+            'tournament_format_id' => TournamentFormatId::Elimination,
+            'football_type_id' => FootballTypeId::SevenFootball,
+            'max_teams' => 32,
             'min_teams' => 8,
-            'substitutions_per_team' => 5,
-            'max_players_per_team' => 12,
-            'min_players_per_team' => 7,
-            'max_teams_per_player' => 1,
-            'game_time' => 60,
-            'time_between_games' => 0,
-            'round_trip' => 1,
-            'group_stage' => 0,
-            'elimination_round_trip' => 0
-        ],
-        [
-            'tournament_format_id' => 2, // Liga y Eliminatoria
-            'football_type_id' => 2, // Fútbol 7
-            'max_teams' => 12,
-            'min_teams' => 6,
-            'substitutions_per_team' => 5,
-            'max_players_per_team' => 12,
-            'min_players_per_team' => 7,
-            'max_teams_per_player' => 1,
-            'game_time' => 60,
-            'time_between_games' => 0,
-            'round_trip' => 0,
-            'group_stage' => 1,
-            'elimination_round_trip' => 1
-        ],
-        [
-            'tournament_format_id' => 3, // Eliminatoria
-            'football_type_id' => 2, // Fútbol 7
-            'max_teams' => 12,
-            'min_teams' => 6,
-            'substitutions_per_team' => 5,
-            'max_players_per_team' => 12,
-            'min_players_per_team' => 7,
-            'max_teams_per_player' => 1,
-            'game_time' => 60,
-            'time_between_games' => 0,
-            'round_trip' => 1,
-            'group_stage' => 0,
-            'elimination_round_trip' => 1
-        ],
-        [
-            'tournament_format_id' => 4, // Sistema Suizo
-            'football_type_id' => 2, // Fútbol 7
-            'max_teams' => 10,
-            'min_teams' => 4,
-            'substitutions_per_team' => 5,
-            'max_players_per_team' => 10,
+            'substitutions_per_team' => -1,
+            'max_players_per_team' => 18,
             'min_players_per_team' => 7,
             'max_teams_per_player' => 1,
             'game_time' => 60,
@@ -288,120 +323,13 @@ return [
             'group_stage' => 0,
             'elimination_round_trip' => 0
         ],
-        // Fútbol Sala
         [
-            'tournament_format_id' => 1, // Torneo de Liga
-            'football_type_id' => 3, // Fútbol Sala
-            'max_teams' => 12,
-            'min_teams' => 6,
+            'tournament_format_id' => TournamentFormatId::Elimination,
+            'football_type_id' => FootballTypeId::Futsal,
+            'max_teams' => 32,
+            'min_teams' => 8,
             'substitutions_per_team' => -1,
-            'max_players_per_team' => 10,
-            'min_players_per_team' => 5,
-            'max_teams_per_player' => 1,
-            'game_time' => 40,
-            'time_between_games' => 0,
-            'round_trip' => 1,
-            'group_stage' => 0,
-            'elimination_round_trip' => 0
-        ],
-        [
-            'tournament_format_id' => 2, // Liga y Eliminatoria
-            'football_type_id' => 3, // Fútbol Sala
-            'max_teams' => 8,
-            'min_teams' => 4,
-            'substitutions_per_team' => -1,
-            'max_players_per_team' => 10,
-            'min_players_per_team' => 5,
-            'max_teams_per_player' => 1,
-            'game_time' => 40,
-            'time_between_games' => 0,
-            'round_trip' => 0,
-            'group_stage' => 1,
-            'elimination_round_trip' => 1
-        ],
-        [
-            'tournament_format_id' => 3, // Eliminatoria
-            'football_type_id' => 3, // Fútbol Sala
-            'max_teams' => 8,
-            'min_teams' => 4,
-            'substitutions_per_team' => -1,
-            'max_players_per_team' => 10,
-            'min_players_per_team' => 5,
-            'max_teams_per_player' => 1,
-            'game_time' => 40,
-            'time_between_games' => 0,
-            'round_trip' => 1,
-            'group_stage' => 0,
-            'elimination_round_trip' => 1
-        ],
-        [
-            'tournament_format_id' => 4, // Sistema Suizo
-            'football_type_id' => 3, // Fútbol Sala
-            'max_teams' => 10,
-            'min_teams' => 4,
-            'substitutions_per_team' => -1,
-            'max_players_per_team' => 10,
-            'min_players_per_team' => 5,
-            'max_teams_per_player' => 1,
-            'game_time' => 40,
-            'time_between_games' => 0,
-            'round_trip' => 0,
-            'group_stage' => 0,
-            'elimination_round_trip' => 0
-        ],
-        // Fútbol Playa
-        [
-            'tournament_format_id' => 1, // Torneo de Liga
-            'football_type_id' => 4, // Fútbol Playa
-            'max_teams' => 10,
-            'min_teams' => 5,
-            'substitutions_per_team' => -1,
-            'max_players_per_team' => 12,
-            'min_players_per_team' => 7,
-            'max_teams_per_player' => 1,
-            'game_time' => 60,
-            'time_between_games' => 0,
-            'round_trip' => 1,
-            'group_stage' => 0,
-            'elimination_round_trip' => 0
-        ],
-        [
-            'tournament_format_id' => 2, // Liga y Eliminatoria
-            'football_type_id' => 4, // Fútbol Playa
-            'max_teams' => 8,
-            'min_teams' => 4,
-            'substitutions_per_team' => -1,
-            'max_players_per_team' => 12,
-            'min_players_per_team' => 7,
-            'max_teams_per_player' => 1,
-            'game_time' => 60,
-            'time_between_games' => 0,
-            'round_trip' => 0,
-            'group_stage' => 1,
-            'elimination_round_trip' => 1
-        ],
-        [
-            'tournament_format_id' => 3, // Eliminatoria
-            'football_type_id' => 4, // Fútbol Playa
-            'max_teams' => 8,
-            'min_teams' => 4,
-            'substitutions_per_team' => -1,
-            'max_players_per_team' => 12,
-            'min_players_per_team' => 7,
-            'max_teams_per_player' => 1,
-            'game_time' => 60,
-            'time_between_games' => 0,
-            'round_trip' => 1,
-            'group_stage' => 0,
-            'elimination_round_trip' => 1
-        ],
-        [
-            'tournament_format_id' => 4, // Sistema Suizo
-            'football_type_id' => 4, // Fútbol Playa
-            'max_teams' => 6,
-            'min_teams' => 3,
-            'substitutions_per_team' => -1,
-            'max_players_per_team' => 10,
+            'max_players_per_team' => 18,
             'min_players_per_team' => 7,
             'max_teams_per_player' => 1,
             'game_time' => 60,
@@ -410,6 +338,7 @@ return [
             'group_stage' => 0,
             'elimination_round_trip' => 0
         ],
+
     ],
     'tiebreakers' => [
         [
@@ -449,36 +378,42 @@ return [
             'name' => 'Tabla general',
             'is_active' => true,
             'is_completed' => false,
+            'min_teams_for' => null,
         ],
         [
             'id' => 2,
             'name' => 'Fase de grupos',
             'is_active' => true,
             'is_completed' => false,
+            'min_teams_for' => null,
         ],
         [
             'id' => 3,
             'name' => 'Octavos de Final',
             'is_active' => false,
             'is_completed' => false,
+            'min_teams_for' => 16,
         ],
         [
             'id' => 4,
             'name' => 'Cuartos de Final',
             'is_active' => true,
             'is_completed' => false,
+            'min_teams_for' => 8
         ],
         [
             'id' => 5,
             'name' => 'Semifinales',
             'is_active' => true,
             'is_completed' => false,
+            'min_teams_for' => 4
         ],
         [
             'id' => 6,
             'name' => 'Final',
             'is_active' => true,
             'is_completed' => false,
+            'min_teams_for' => 2
         ],
     ],
     'availability' => [

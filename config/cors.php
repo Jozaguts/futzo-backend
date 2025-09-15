@@ -18,10 +18,10 @@ return [
     'paths' => [
         'api/*',
         'sanctum/csrf-cookie',
-        'auth/*',
         'verify',
-        'auth/*/redirect',
-        'auth/*/callback',
+        'auth/*',
+        'auth/*/redirect*',
+        'auth/*/callback*',
         'verification-code/send',
         'reset-password',
         'verify-reset-token',

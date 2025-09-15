@@ -80,22 +80,17 @@ class TeamsController extends Controller
             $president = $this->createOrUpdateUser($data['president'] ?? null, $request, 'president', 'dueño de equipo', RegisteredTeamPresident::class);
             $coach = $this->createOrUpdateUser($data['coach'] ?? null, $request, 'coach', 'entrenador', RegisteredTeamCoach::class);
             $team = $data['team'];
-            $colors = $team['colors'] ?? [];
+            $colors = $team['colors'] ?? null;
             $address = $team['address'] ?? null;
-            if (is_string($colors)) {
-                $colors = json_decode($colors, true, 512, JSON_THROW_ON_ERROR);
-            }
+
             if (is_string($address)) {
                 $address = json_decode($address, true, 512, JSON_THROW_ON_ERROR);
-            }
-            if (empty($colors)) {
-                $colors = config('constants.colors');
             }
 
             $team = Team::create([
                 'name' => $data['team']['name'],
-                'president_id' => $president?->id ?? null,
-                'coach_id' => $coach?->id ?? null,
+                'president_id' => $president?->id,
+                'coach_id' => $coach?->id,
                 'address' => $address,
                 'colors' => $colors,
             ]);
@@ -116,7 +111,7 @@ class TeamsController extends Controller
             $team->tournaments()->attach($data['team']['tournament_id']);
             $defaultFormation = Formation::first();
             $team->defaultLineup()->create([
-                'formation_id' =>$defaultFormation->id,
+                'formation_id' => $defaultFormation?->id,
             ]);
             DB::commit();
             return new TeamResource($team);

@@ -36,6 +36,9 @@ class Team extends Model implements HasMedia
         'address' => 'array',
         'colors' => 'array'
     ];
+    protected $attributes = [
+        'colors' => '{"home":{"primary":"#FFF","secondary":"#FFF"},"away":{"primary":"#FFF","secondary":"#FFF"}}',
+    ];
     protected $appends = ['rgba_color', 'register_link'];
 
     protected static function booted(): void

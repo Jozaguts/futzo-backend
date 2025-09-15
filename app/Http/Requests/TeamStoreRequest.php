@@ -32,13 +32,13 @@ class TeamStoreRequest extends FormRequest
         return
             [
                 'team.name' => 'required',
-                'team.address' => 'nullable|json',
+                'team.address' => 'nullable|array',
                 'team.image' => 'nullable|image|mimes:jpg,png,svg',
-                'team.colors' => 'nullable|json',
-                'team.colors.home' => 'nullable|json',
+                'team.colors' => 'nullable|array',
+                'team.colors.home' => 'nullable|array',
                 'team.colors.home.primary' => 'nullable|string',
                 'team.colors.home.secondary' => 'nullable|string',
-                'team.colors.away' => 'nullable|json',
+                'team.colors.away' => 'nullable|array',
                 'team.colors.away.primary' => 'nullable|string',
                 'team.colors.away.secondary' => 'nullable|string',
                 'team.email' => 'nullable|email',
@@ -108,4 +108,21 @@ class TeamStoreRequest extends FormRequest
             'coach.phone.string' => 'El teléfono del entrenador debe ser una cadena de texto',
         ];
     }
+    protected function prepareForValidation(): void
+    {
+        $team = $this->input('team', []);
+
+        if (isset($team['colors']) && is_string($team['colors'])) {
+            $team['colors'] = json_decode($team['colors'], true, 512, JSON_THROW_ON_ERROR);
+        }
+
+        if (isset($team['address']) && is_string($team['address'])) {
+            $team['address'] = json_decode($team['address'], true, 512, JSON_THROW_ON_ERROR);
+        }
+
+        $this->merge([
+            'team' => $team,
+        ]);
+    }
+
 }

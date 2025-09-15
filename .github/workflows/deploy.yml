@@ -142,6 +142,18 @@ jobs:
               echo "FRONTEND_URL=${{ vars.FRONTEND_URL }}"
               echo
               echo "SANCTUM_STATEFUL_DOMAINS=${{ vars.SANCTUM_STATEFUL_DOMAINS }}"
+              echo
+              echo "STRIPE_KEY=${{ vars.STRIPE_KEY }}"
+              echo
+              echo "STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}"
+              echo
+              echo "CASHIER_CURRENCY=${{ vars.CASHIER_CURRENCY }}"
+              echo
+              echo "CASHIER_CURRENCY_LOCALE=${{ vars.CASHIER_CURRENCY_LOCALE }}"  
+              echo
+              echo "LANDING_PAGE_URL=${{ vars.LANDING_PAGE_URL }}"  
+              echo
+              echo "BILLING_TRIAL_DAYS=${{ vars.BILLING_TRIAL_DAYS }}"
             } > .env.new
 
             # Preserve existing APP_KEY if present

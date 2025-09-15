@@ -164,8 +164,8 @@ return [
     ],
     'default_tournament_configuration' => [
         [
-            'tournament_format_id' => TournamentFormatId::League,
-            'football_type_id' => FootballTypeId::TraditionalFootball,
+            'tournament_format_id' => TournamentFormatId::League->value,
+            'football_type_id' => FootballTypeId::TraditionalFootball->value,
             'max_teams' => 20,
             'min_teams' => 8,
             'substitutions_per_team' => 3,
@@ -179,8 +179,8 @@ return [
             'elimination_round_trip' => 0
         ],
         [
-            'tournament_format_id' => TournamentFormatId::League,
-            'football_type_id' => FootballTypeId::SevenFootball,
+            'tournament_format_id' => TournamentFormatId::League->value,
+            'football_type_id' => FootballTypeId::SevenFootball->value,
             'max_teams' => 16,
             'min_teams' => 8,
             'substitutions_per_team' => -1,
@@ -194,8 +194,8 @@ return [
             'elimination_round_trip' => 0
         ],
         [
-            'tournament_format_id' => TournamentFormatId::League,
-            'football_type_id' => FootballTypeId::Futsal,
+            'tournament_format_id' => TournamentFormatId::League->value,
+            'football_type_id' => FootballTypeId::Futsal->value,
             'max_teams' => 16,
             'min_teams' => 8,
             'substitutions_per_team' => 5,
@@ -209,8 +209,8 @@ return [
             'elimination_round_trip' => 0
         ],
         [
-            'tournament_format_id' => TournamentFormatId::LeagueAndElimination, // Eliminatoria
-            'football_type_id' => FootballTypeId::TraditionalFootball, // Fútbol 11
+            'tournament_format_id' => TournamentFormatId::LeagueAndElimination->value, // Eliminatoria
+            'football_type_id' => FootballTypeId::TraditionalFootball->value, // Fútbol 11
             'max_teams' => 16,
             'min_teams' => 8,
             'substitutions_per_team' => 3,
@@ -224,8 +224,8 @@ return [
             'elimination_round_trip' => 1
         ],
         [
-            'tournament_format_id' => TournamentFormatId::LeagueAndElimination,
-            'football_type_id' => FootballTypeId::SevenFootball,
+            'tournament_format_id' => TournamentFormatId::LeagueAndElimination->value,
+            'football_type_id' => FootballTypeId::SevenFootball->value,
             'max_teams' => 20,
             'substitutions_per_team' => -1,
             'min_teams' => 8,
@@ -239,8 +239,8 @@ return [
             'elimination_round_trip' => 1
         ],
         [
-            'tournament_format_id' => TournamentFormatId::LeagueAndElimination,
-            'football_type_id' => FootballTypeId::Futsal,
+            'tournament_format_id' => TournamentFormatId::LeagueAndElimination->value,
+            'football_type_id' => FootballTypeId::Futsal->value,
             'max_teams' => 16,
             'min_teams' => 8,
             'substitutions_per_team' => -1,
@@ -254,8 +254,8 @@ return [
             'elimination_round_trip' => 1
         ],
         [
-            'tournament_format_id' => TournamentFormatId::GroupAndElimination,
-            'football_type_id' => FootballTypeId::TraditionalFootball,
+            'tournament_format_id' => TournamentFormatId::GroupAndElimination->value,
+            'football_type_id' => FootballTypeId::TraditionalFootball->value,
             'max_teams' => 32,
             'min_teams' => 8,
             'substitutions_per_team' => 5,
@@ -269,8 +269,8 @@ return [
             'elimination_round_trip' => 1
         ],
         [
-            'tournament_format_id' => TournamentFormatId::GroupAndElimination,
-            'football_type_id' => FootballTypeId::SevenFootball, // Fútbol 7
+            'tournament_format_id' => TournamentFormatId::GroupAndElimination->value,
+            'football_type_id' => FootballTypeId::SevenFootball->value, // Fútbol 7
             'max_teams' => 16,
             'min_teams' => 8,
             'substitutions_per_team' => -1,
@@ -284,8 +284,8 @@ return [
             'elimination_round_trip' => 1
         ],
         [
-            'tournament_format_id' => TournamentFormatId::GroupAndElimination,
-            'football_type_id' => FootballTypeId::Futsal,
+            'tournament_format_id' => TournamentFormatId::GroupAndElimination->value,
+            'football_type_id' => FootballTypeId::Futsal->value,
             'max_teams' => 16,
             'min_teams' => 8,
             'substitutions_per_team' => -1,
@@ -299,8 +299,8 @@ return [
             'elimination_round_trip' => 1
         ],
         [
-            'tournament_format_id' => TournamentFormatId::Elimination,
-            'football_type_id' => FootballTypeId::TraditionalFootball,
+            'tournament_format_id' => TournamentFormatId::Elimination->value,
+            'football_type_id' => FootballTypeId::TraditionalFootball->value,
             'max_teams' => 32,
             'min_teams' => 8,
             'substitutions_per_team' => 5,
@@ -314,8 +314,8 @@ return [
             'elimination_round_trip' => 0
         ],
         [
-            'tournament_format_id' => TournamentFormatId::Elimination,
-            'football_type_id' => FootballTypeId::SevenFootball,
+            'tournament_format_id' => TournamentFormatId::Elimination->value,
+            'football_type_id' => FootballTypeId::SevenFootball->value,
             'max_teams' => 32,
             'min_teams' => 8,
             'substitutions_per_team' => -1,
@@ -329,8 +329,8 @@ return [
             'elimination_round_trip' => 0
         ],
         [
-            'tournament_format_id' => TournamentFormatId::Elimination,
-            'football_type_id' => FootballTypeId::Futsal,
+            'tournament_format_id' => TournamentFormatId::Elimination->value,
+            'football_type_id' => FootballTypeId::Futsal->value,
             'max_teams' => 32,
             'min_teams' => 8,
             'substitutions_per_team' => -1,
@@ -344,8 +344,8 @@ return [
             'elimination_round_trip' => 0
         ],
         [
-            'tournament_format_id' => TournamentFormatId::Swiss,
-            'football_type_id' => FootballTypeId::TraditionalFootball,
+            'tournament_format_id' => TournamentFormatId::Swiss->value,
+            'football_type_id' => FootballTypeId::TraditionalFootball->value,
             'max_teams' => 32,
             'min_teams' => 8,
             'substitutions_per_team' => 5,
@@ -359,8 +359,8 @@ return [
             'elimination_round_trip' => 1
         ],
         [
-            'tournament_format_id' => TournamentFormatId::Swiss,
-            'football_type_id' => FootballTypeId::SevenFootball,
+            'tournament_format_id' => TournamentFormatId::Swiss->value,
+            'football_type_id' => FootballTypeId::SevenFootball->value,
             'max_teams' => 16,
             'min_teams' => 8,
             'substitutions_per_team' => -1,
@@ -374,8 +374,8 @@ return [
             'elimination_round_trip' => 1
         ],
         [
-            'tournament_format_id' => TournamentFormatId::Swiss,
-            'football_type_id' => FootballTypeId::Futsal,
+            'tournament_format_id' => TournamentFormatId::Swiss->value,
+            'football_type_id' => FootballTypeId::Futsal->value,
             'max_teams' => 16,
             'min_teams' => 8,
             'substitutions_per_team' => -1,

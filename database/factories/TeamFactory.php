@@ -23,8 +23,6 @@ class TeamFactory extends Factory
         return [
             'name' => $name = Fake::domainWord() . ' FC',
             'address' => config('constants.address'),
-            'email' => Fake::safeEmail(),
-            'phone' => Fake::phoneNumber(),
             'description' => Fake::sentence(10),
             'image' => 'https://ui-avatars.com/api/?name=' . $name,
             'colors' => config('constants.colors'),

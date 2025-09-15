@@ -1,17 +1,22 @@
 <?php
 
-enum TournamentFormatId : int
-{
-    case League = 1;
-    case LeagueAndElimination = 2;
-    case GroupAndElimination = 3;
-    case Elimination = 4;
+if (!enum_exists('TournamentFormatId')) {
+    enum TournamentFormatId : int
+    {
+        case League = 1;
+        case LeagueAndElimination = 2;
+        case GroupAndElimination = 3;
+        case Elimination = 4;
+        case Swiss = 5;
+    }
 }
-enum FootballTypeId: int
-{
-    case TraditionalFootball = 1;
-    case SevenFootball = 2;
-    case Futsal = 3;
+if (!enum_exists('FootballTypeId')) {
+    enum FootballTypeId: int
+    {
+        case TraditionalFootball = 1;
+        case SevenFootball = 2;
+        case Futsal = 3;
+    }
 }
 
 $address = [
@@ -337,6 +342,51 @@ return [
             'round_trip' => 0,
             'group_stage' => 0,
             'elimination_round_trip' => 0
+        ],
+        [
+            'tournament_format_id' => TournamentFormatId::Swiss,
+            'football_type_id' => FootballTypeId::TraditionalFootball,
+            'max_teams' => 32,
+            'min_teams' => 8,
+            'substitutions_per_team' => 5,
+            'max_players_per_team' => 23,
+            'min_players_per_team' => 11,
+            'max_teams_per_player' => 1,
+            'game_time' => 90,
+            'time_between_games' => 0,
+            'round_trip' => 1,
+            'group_stage' => 1,
+            'elimination_round_trip' => 1
+        ],
+        [
+            'tournament_format_id' => TournamentFormatId::Swiss,
+            'football_type_id' => FootballTypeId::SevenFootball,
+            'max_teams' => 16,
+            'min_teams' => 8,
+            'substitutions_per_team' => -1,
+            'max_players_per_team' => 18,
+            'min_players_per_team' => 7,
+            'max_teams_per_player' => 1,
+            'game_time' => 60,
+            'time_between_games' => 0,
+            'round_trip' => 1,
+            'group_stage' => 1,
+            'elimination_round_trip' => 1
+        ],
+        [
+            'tournament_format_id' => TournamentFormatId::Swiss,
+            'football_type_id' => FootballTypeId::Futsal,
+            'max_teams' => 16,
+            'min_teams' => 8,
+            'substitutions_per_team' => -1,
+            'max_players_per_team' => 15,
+            'min_players_per_team' => 5,
+            'max_teams_per_player' => 1,
+            'game_time' => 60,
+            'time_between_games' => 0,
+            'round_trip' => 1,
+            'group_stage' => 1,
+            'elimination_round_trip' => 1
         ],
 
     ],

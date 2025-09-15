@@ -31,18 +31,18 @@ class DatabaseSeeder extends Seeder
             FormationsTableSeeder::class,
             TieBreakersTableSeeder::class,
         ];
-        if (app()->environment('local')) {
+        if (app()->environment('local') || app()->environment('testing')) {
             $seeders = [
                ...$seeders,
                 LeaguesTableSeeder::class,
                 AdminUserSeeder::class,
-//                LocationsTableSeeder::class,
-//                FieldsTableSeeder::class,
+                LocationsTableSeeder::class,
+                FieldsTableSeeder::class,
                 // Ventanas base 24/7 por campo y por liga-campo
-//                FieldWindowsSeeder::class,
-//                LeagueFieldWindowsSeeder::class,
-//                TournamentTableSeeder::class,
-//                TeamsTableSeeder::class,
+                FieldWindowsSeeder::class,
+                LeagueFieldWindowsSeeder::class,
+                TournamentTableSeeder::class,
+                TeamsTableSeeder::class,
             ];
         }
         $this->call($seeders);

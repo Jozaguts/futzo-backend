@@ -42,6 +42,7 @@ uses(
             ->make(PermissionRegistrar::class)
             ->forgetCachedPermissions();
     })
+    ->use( \Tests\InitUser::class)
     ->in('Feature');
 
 /*

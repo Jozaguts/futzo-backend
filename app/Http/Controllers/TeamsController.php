@@ -267,6 +267,9 @@ class TeamsController extends Controller
             }
             DB::beginTransaction();
             foreach ($teamsData as $row) {
+                if (!$row['A']){
+                    continue;
+                }
                 $this->storeTeamFromRow($row, $tournament);
             }
             DB::commit();
@@ -342,7 +345,7 @@ class TeamsController extends Controller
                 'email' => $row['N'],
             ],
         ];
-
+        logger('data' ,$data);
         $formRequest = TeamStoreRequest::create('', 'POST', $data);
         $formRequest->setContainer(app())->setRedirector(app('redirect'));
         $formRequest->validateResolved();

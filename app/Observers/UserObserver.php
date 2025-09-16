@@ -3,7 +3,7 @@
 namespace App\Observers;
 
 use App\Models\User;
-use App\Notifications\SendOTPNotification;
+use App\Notifications\NewUserRegisteredNotification;
 use App\Notifications\SendOTPViaTwilioVerifyNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
@@ -28,6 +28,9 @@ class UserObserver
             );
             $user->notify(new SendOTPViaTwilioVerifyNotification($phoneNumber, $token));
         }
+
+        Notification::route('mail', 'sagit@futzo.io')
+            ->notify(new NewUserRegisteredNotification($user));
     }
 
     /**

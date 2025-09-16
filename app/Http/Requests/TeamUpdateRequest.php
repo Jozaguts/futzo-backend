@@ -42,11 +42,13 @@ class TeamUpdateRequest extends FormRequest
             'team.category_id' => 'required|exists:categories,id',
             'team.tournament_id' => 'required|exists:tournaments,id',
 
-            'president.name' => 'required|string',
+            'president.name' => 'nullable|string',
             'president.image' => ['nullable', new IsImageOrUrl],
+            'president.email' => ['nullable', 'string', 'email'],
 
-            'coach.name' => 'required|string',
+            'coach.name' => 'nullable|string',
             'coach.image' => ['nullable', new IsImageOrUrl],
+            'coach.email' => ['nullable', 'string', 'email'],
 
         ];
     }

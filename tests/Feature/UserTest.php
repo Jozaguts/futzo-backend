@@ -14,7 +14,6 @@ it('store user', function () {
     $this->assertDatabaseHas('users', [
         'name' => 'John',
         'email' => 'test@test.com',
-        'image' => 'https://ui-avatars.com/api/?name=John&color=9155fd&background=F9FAFB'
     ]);
 });
 

@@ -7,7 +7,7 @@ use Illuminate\Support\Carbon;
 
 it('suggests free slots for bracket scheduling and reflects conflicts', function () {
     // Torneo Grupos+Eliminatoria, 8 equipos, con ventanas viernes/sábado
-    [$t, $location] = createTournamentViaApi(5, 1, null, null);
+    [$t, $location] = createTournamentViaApi(TournamentFormatId::GroupAndElimination->value, 1, null, null);
     attachTeamsToTournament($t, 8);
     $field = $location->fields()->first();
     $startDate = Carbon::now()->next(CarbonInterface::FRIDAY)->startOfDay()->toIso8601String();
@@ -16,7 +16,7 @@ it('suggests free slots for bracket scheduling and reflects conflicts', function
     $payload = [
         'general' => [
             'tournament_id' => $t->id,
-            'tournament_format_id' => 5,
+            'tournament_format_id' => TournamentFormatId::GroupAndElimination->value,
             'football_type_id' => 1,
             'start_date' => $startDate,
             'game_time' => 90,
@@ -119,4 +119,3 @@ it('suggests free slots for bracket scheduling and reflects conflicts', function
     $koGames = Game::where('tournament_id', $t->id)->where('tournament_phase_id', $koPhaseId)->count();
     expect($koGames)->toBe(0);
 });
-

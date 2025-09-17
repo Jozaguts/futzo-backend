@@ -7,7 +7,7 @@ use Illuminate\Support\Carbon;
 
 it('previews and confirms bracket using table standings for Liga + Eliminatoria', function () {
     // 1) Torneo Liga + Eliminatoria con 8 equipos
-    [$t, $location] = createTournamentViaApi(2, 1, null, null);
+    [$t, $location] = createTournamentViaApi(TournamentFormatId::LeagueAndElimination->value, 1, null, null);
     $t = $t->refresh();
     attachTeamsToTournament($t, 8);
     $field = $location->fields()->first();
@@ -18,7 +18,7 @@ it('previews and confirms bracket using table standings for Liga + Eliminatoria'
     $payloadLeague = [
         'general' => [
             'tournament_id' => $t->id,
-            'tournament_format_id' => 2,
+            'tournament_format_id' => TournamentFormatId::LeagueAndElimination->value,
             'football_type_id' => 1,
             'start_date' => $startDate,
             'game_time' => 90,

@@ -8,13 +8,13 @@ use Illuminate\Support\Facades\DB;
 
 it('genera un calendario para 16 equipos en liga ida y vuelta', function () {
     // Crear torneo de Liga con 16 equipos
-    [$tournament, $location] = createTournamentViaApi(1, 1, null, null);
+    [$tournament, $location] = createTournamentViaApi(TournamentFormatId::League->value, 1, null, null);
     attachTeamsToTournament($tournament, 16);
     $fields = $location->fields()->take(1)->get();
     $payload = [
         'general' => [
             'tournament_id' => $tournament->id,
-            'tournament_format_id' => 1,
+            'tournament_format_id' => TournamentFormatId::League->value,
             'football_type_id' => 1,
             'start_date' => Carbon::now()->next(CarbonInterface::FRIDAY)->startOfDay()->toIso8601String(),
             'game_time' => 90,
@@ -103,7 +103,7 @@ it('genera un calendario para 16 equipos en liga ida y vuelta', function () {
 });
 it('no permite reservar horas solapadas para otro torneo', function () {
     // 1) Genera reservas para el Torneo A
-    [$tournamentA, $location] = createTournamentViaApi(1, 1, null, null);
+    [$tournamentA, $location] = createTournamentViaApi(TournamentFormatId::League->value, 1, null, null);
     attachTeamsToTournament($tournamentA, 8);
     $fields = $location->fields()->take(1)->get();
     $startDateString = Carbon::now()->next(CarbonInterface::FRIDAY)->startOfDay()->toIso8601String();
@@ -111,7 +111,7 @@ it('no permite reservar horas solapadas para otro torneo', function () {
     $payloadA = [
         'general' => [
             'tournament_id' => $tournamentA->id,
-            'tournament_format_id' => 1,
+            'tournament_format_id' => TournamentFormatId::League->value,
             'football_type_id' => 1,
             'start_date' => $startDateString,
             'game_time' => 90,
@@ -159,7 +159,7 @@ it('no permite reservar horas solapadas para otro torneo', function () {
     $this->postJson("/api/v1/admin/tournaments/{$tournamentA->id}/schedule", $payloadA)->assertOk();
 
     // 2) Intentar reservar las mismas horas para el Torneo B (misma liga)
-    [$tournamentB, $locationB] = createTournamentViaApi(1, 1, null, $location->id);
+    [$tournamentB, $locationB] = createTournamentViaApi(TournamentFormatId::League->value, 1, null, $location->id);
     attachTeamsToTournament($tournamentB, 8);
     $payloadB = $payloadA;
     $payloadB['general']['tournament_id'] = $tournamentB->id;
@@ -180,7 +180,7 @@ it('no permite reservar horas solapadas para otro torneo', function () {
 });
 it('genera fase de grupos y luego elimina con reglas por fase', function () {
     // Crear torneo Liga + Eliminatoria desde cero con 16 equipos
-    [$t, $location] = createTournamentViaApi(5, 1, null, null);
+    [$t, $location] = createTournamentViaApi(TournamentFormatId::GroupAndElimination->value, 1, null, null);
     attachTeamsToTournament($t, 16);
     $field = $location->fields()->first();
     $startDate = Carbon::now()->next(CarbonInterface::FRIDAY)->startOfDay()->toIso8601String();
@@ -190,7 +190,7 @@ it('genera fase de grupos y luego elimina con reglas por fase', function () {
     $payloadGroups = [
         'general' => [
             'tournament_id' => $t->id,
-            'tournament_format_id' => 5,
+            'tournament_format_id' => TournamentFormatId::GroupAndElimination->value,
             'football_type_id' => 1,
             'start_date' => $startDate,
             'game_time' => 90,

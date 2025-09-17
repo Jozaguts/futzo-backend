@@ -13,6 +13,7 @@ use App\Models\TournamentTiebreaker;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
+use TournamentFormatId;
 
 class ScheduleGeneratorService
 {
@@ -46,9 +47,8 @@ class ScheduleGeneratorService
         $teams = $this->tournament->teams()->pluck('teams.id')->toArray();
         $fields = TournamentField::where('tournament_id', $this->tournament->id)->get();
 
-        // 1) elegir ida y vuelta según fase
-        // asumiendo que el formato "liga" es tournament_format_id = 1
-        $useRoundTrip = $config->tournament_format_id === 1
+        // 1) elegir ida y vuelta según fase (liga usa TournamentFormatId::League)
+        $useRoundTrip = (int)$config->tournament_format_id === TournamentFormatId::League->value
             ? $config->round_trip    // liga: usar ida y vuelta según este flag
             : $config->elimination_round_trip;  // otros formatos (elim.): usar este
 
@@ -58,7 +58,7 @@ class ScheduleGeneratorService
         $activePhase = $this->tournament->tournamentPhases()->where('is_active', true)->with('phase')->first();
         $activePhaseName = $activePhase?->phase?->name;
 
-        if ($formatId !== 1 && (\App\Models\TournamentGroupConfiguration::where('tournament_id', $this->tournament->id)->exists() || $this->forceGroupStage)) {
+        if ($formatId !== TournamentFormatId::League->value && (\App\Models\TournamentGroupConfiguration::where('tournament_id', $this->tournament->id)->exists() || $this->forceGroupStage)) {
             if ($groupStageEnabled || $this->forceGroupStage) {
                 // Liga + Eliminatoria con grupos activos: generar fase de grupos
                 return $this->makeGroupStageScheduleInternal($teams, $fields, $matchDuration);
@@ -288,7 +288,7 @@ class ScheduleGeneratorService
         };
 
         $qualifiers = [];
-        if ($formatId === 5) {
+        if ($formatId === TournamentFormatId::GroupAndElimination->value) {
             // Clasificados desde standings de la fase de grupos
             $groupPhase = $this->tournament->tournamentPhases()
                 ->whereHas('phase', fn($q) => $q->where('name','Fase de grupos'))

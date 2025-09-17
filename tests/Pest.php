@@ -74,7 +74,7 @@ expect()->extend('toBeOne', function () {
 /**
  * @throws JsonException
  */
-function createTournamentViaApi(int $formatId = 1, int $footballTypeId = 1, ?int $categoryId = null, ?int $locationId = null): array
+function createTournamentViaApi(int $formatId = TournamentFormatId::League->value, int $footballTypeId = 1, ?int $categoryId = null, ?int $locationId = null): array
 {
     $formats = array_map(function (array $format) { return TournamentFormat::updateOrcreate(['id' => $format['id']], $format); }, config('constants.tournament_formats'));
     $footballTypes = array_map(function (array $type) { return FootballType::updateOrcreate(['id' => $type['id']], $type); }, config('constants.football_types'));
@@ -82,7 +82,12 @@ function createTournamentViaApi(int $formatId = 1, int $footballTypeId = 1, ?int
     $location = $locationId ? Location::findOrFail($locationId) : Location::firstOrFail();
 
     $image = UploadedFile::fake()->image('logo-test.jpg')->mimeType('image/jpeg');
-    $name = 'Torneo ' . ($formatId === 2 ? 'Liga+Elim' : 'Liga') . ' ' . uniqid('', true);
+    $name = 'Torneo ' . match ($formatId) {
+            TournamentFormatId::LeagueAndElimination->value => 'Liga+Elim',
+            TournamentFormatId::GroupAndElimination->value => 'Grupos+Elim',
+            TournamentFormatId::Elimination->value => 'Eliminación',
+            default => 'Liga',
+        } . ' ' . uniqid('', true);
     $response = test()->postJson('/api/v1/admin/tournaments', [
         'basic' => [
             'name' => $name,

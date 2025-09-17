@@ -109,31 +109,31 @@ return [
     ],
     'tournament_formats' => [
         [
-            'id' => 1,
+            'id' => TournamentFormatId::League->value,
             'name' => 'Torneo de Liga',
             'description' => 'Equipos compiten y acumulan puntos a lo largo de la temporada; el equipo con más puntos es campeón.',
             'status' => 'created',
         ],
         [
-            'id' => 2,
+            'id' => TournamentFormatId::LeagueAndElimination->value,
+            'name' => 'Liga y Eliminatoria',
+            'description' => 'Fase de liga seguida de eliminatoria según la clasificación, ganadores avanzan hasta la final.',
+            'status' => 'created',
+        ],
+        [
+            'id' => TournamentFormatId::GroupAndElimination->value,
             'name' => 'Grupos y Eliminatoria',
             'description' => 'Fase de grupos seguida de eliminatoria; clasifican mejores por grupo (y terceros si aplica).',
             'status' => 'created',
         ],
         [
-            'id' => 3,
-            'name' => 'Liga y Eliminatoria',
-            'description' => 'Fase de liga seguida de eliminatoria según la clasificación, ganadores avanzan hasta la final. ',
-            'status' => 'created',
-        ],
-        [
-            'id' => 4,
+            'id' => TournamentFormatId::Elimination->value,
             'name' => 'Eliminatoria',
             'description' => 'Partidos eliminatorios desde el inicio; ganadores avanzan hasta que se determina un campeón.',
             'status' => 'created',
         ],
         [
-            'id' => 5,
+            'id' => TournamentFormatId::Swiss->value,
             'name' => 'Sistema suizo',
             'description' => 'Equipos juegan rondas contra oponentes de rendimiento similar; el equipo con más puntos gana.',
             'status' => 'created',

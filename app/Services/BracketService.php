@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Tournament;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
+use TournamentFormatId;
 
 class BracketService
 {
@@ -74,7 +75,7 @@ class BracketService
 
         $qualifiers = [];
         $meta = [];
-        if ($formatId === 5) { // Grupos y Eliminatoria
+        if ($formatId === TournamentFormatId::GroupAndElimination->value) { // Grupos y Eliminatoria
             $groupPhaseId = DB::table('tournament_phases')
                 ->join('phases','phases.id','=','tournament_phases.phase_id')
                 ->where('tournament_phases.tournament_id', $tournament->id)
@@ -124,7 +125,7 @@ class BracketService
             });
             $qualifiers = array_slice($qualifiers, 0, $targetTeams);
             $meta['source'] = 'group_standings';
-        } elseif ($formatId === 2) { // Liga + Eliminatoria
+        } elseif ($formatId === TournamentFormatId::LeagueAndElimination->value) { // Liga + Eliminatoria
             $tablePhaseId = DB::table('tournament_phases')
                 ->join('phases','phases.id','=','tournament_phases.phase_id')
                 ->where('tournament_phases.tournament_id', $tournament->id)
@@ -181,4 +182,3 @@ class BracketService
         ];
     }
 }
-

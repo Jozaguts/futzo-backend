@@ -15,6 +15,7 @@ use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use TournamentFormatId;
 
 class SeedLeagueTournamentsCommand extends Command
 {
@@ -64,9 +65,9 @@ class SeedLeagueTournamentsCommand extends Command
         }
 
         $formats = [
-            ['id' => 1, 'name' => 'Torneo de Liga', 'label' => 'Liga'],
-            ['id' => 2, 'name' => 'Liga y Eliminatoria', 'label' => 'Liga+Elim'],
-            ['id' => 5, 'name' => 'Grupos y Eliminatoria', 'label' => 'Grupos+Elim'],
+            ['id' => TournamentFormatId::League->value, 'name' => 'Torneo de Liga', 'label' => 'Liga'],
+            ['id' => TournamentFormatId::LeagueAndElimination->value, 'name' => 'Liga y Eliminatoria', 'label' => 'Liga+Elim'],
+            ['id' => TournamentFormatId::GroupAndElimination->value, 'name' => 'Grupos y Eliminatoria', 'label' => 'Grupos+Elim'],
         ];
 
         foreach ($formats as $fmt) {
@@ -119,12 +120,12 @@ class SeedLeagueTournamentsCommand extends Command
                     'substitutions_per_team' => $def->substitutions_per_team ?? 3,
                     'max_teams' => $def->max_teams ?? $teamsPerTournament,
                     'min_teams' => $def->min_teams ?? min(8, $teamsPerTournament),
-                    'round_trip' => (bool) ($def->round_trip ?? ($format->id === 1)),
-                    'group_stage' => (bool) ($def->group_stage ?? ($format->id === 5)),
+                    'round_trip' => (bool) ($def->round_trip ?? ($format->id === TournamentFormatId::League->value)),
+                    'group_stage' => (bool) ($def->group_stage ?? ($format->id === TournamentFormatId::GroupAndElimination->value)),
                     'max_players_per_team' => $def->max_players_per_team ?? max($playersMax, 18),
                     'min_players_per_team' => $def->min_players_per_team ?? min($playersMin, 11),
                     'max_teams_per_player' => $def->max_teams_per_player ?? 1,
-                    'elimination_round_trip' => (bool) ($def->elimination_round_trip ?? ($format->id !== 1)),
+                    'elimination_round_trip' => (bool) ($def->elimination_round_trip ?? ($format->id !== TournamentFormatId::League->value)),
                 ];
                 $tournament->configuration()->create($cfg);
 
@@ -151,7 +152,7 @@ class SeedLeagueTournamentsCommand extends Command
                 }
 
                 // 4) Config de grupos (si aplica)
-                if ($format->id === 5) { // Grupos y Eliminatoria
+                if ($format->id === TournamentFormatId::GroupAndElimination->value) { // Grupos y Eliminatoria
                     TournamentGroupConfiguration::updateOrCreate(
                         ['tournament_id' => $tournament->id],
                         [

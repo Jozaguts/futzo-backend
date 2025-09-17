@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 
 it('exposes group standings and bracket preview, and confirms bracket scheduling', function () {
     // 1) Crear torneo formato Grupos y Eliminatoria y 16 equipos
-    [$t, $location] = createTournamentViaApi(5, 1, null, null);
+    [$t, $location] = createTournamentViaApi(TournamentFormatId::GroupAndElimination->value, 1, null, null);
     attachTeamsToTournament($t, 8);
     $field = $location->fields()->first();
     $startDate = Carbon::now()->next(CarbonInterface::FRIDAY)->startOfDay()->toIso8601String();
@@ -18,7 +18,7 @@ it('exposes group standings and bracket preview, and confirms bracket scheduling
     $payloadGroups = [
         'general' => [
             'tournament_id' => $t->id,
-            'tournament_format_id' => 5,
+            'tournament_format_id' => TournamentFormatId::GroupAndElimination->value,
             'football_type_id' => 1,
             'start_date' => $startDate,
             'game_time' => 90,
@@ -146,7 +146,7 @@ it('exposes group standings and bracket preview, and confirms bracket scheduling
 });
 
 it('rejects bracket confirm when rest time or field-time duplicates are invalid', function () {
-    [$t, $location] = createTournamentViaApi(5, 1, null, null);
+    [$t, $location] = createTournamentViaApi(TournamentFormatId::GroupAndElimination->value, 1, null, null);
     attachTeamsToTournament($t, 8);
     $field = $location->fields()->first();
     $startDate = Carbon::now()->next(CarbonInterface::FRIDAY)->startOfDay()->toIso8601String();
@@ -156,7 +156,7 @@ it('rejects bracket confirm when rest time or field-time duplicates are invalid'
     $payloadGroups = [
         'general' => [
             'tournament_id' => $t->id,
-            'tournament_format_id' => 5,
+            'tournament_format_id' => TournamentFormatId::GroupAndElimination->value,
             'football_type_id' => 1,
             'start_date' => $startDate,
             'game_time' => 90,

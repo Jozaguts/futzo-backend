@@ -10,6 +10,7 @@ use App\Models\TournamentFormat;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use JsonException;
+use TournamentFormatId;
 
 it('get tournaments', function () {
 
@@ -121,19 +122,19 @@ it('store tournament', function () {
 });
 
 it('store tournament Liga y Eliminatoria fully configured', function () {
-    [$tournament, $location] = createTournamentViaApi(2, 1, null, null);
+    [$tournament, $location] = createTournamentViaApi(TournamentFormatId::LeagueAndElimination->value, 1, null, null);
     attachTeamsToTournament($tournament, 16);
     expect($tournament->teams()->count())->toBe(16);
 });
 
 it('store tournament Liga fully configured', function () {
-    [$tournament, $location] = createTournamentViaApi(1, 1, null, null);
+    [$tournament, $location] = createTournamentViaApi(TournamentFormatId::League->value, 1, null, null);
     attachTeamsToTournament($tournament, 16);
     expect($tournament->teams()->count())->toBe(16);
 });
 
 it('store tournament Grupos y Eliminatoria fully configured', function () {
-    [$tournament, $location] = createTournamentViaApi(5, 1, null, null);
+    [$tournament, $location] = createTournamentViaApi(TournamentFormatId::GroupAndElimination->value, 1, null, null);
     attachTeamsToTournament($tournament, 16);
     expect($tournament->teams()->count())->toBe(16);
 });

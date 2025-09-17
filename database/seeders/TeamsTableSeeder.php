@@ -8,10 +8,12 @@ use App\Models\League;
 use App\Models\Team;
 use App\Models\Tournament;
 use App\Models\User;
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class TeamsTableSeeder extends Seeder
 {
+    use WithoutModelEvents;
     /**
      * Run the database seeds.
      */

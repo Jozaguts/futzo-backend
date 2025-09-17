@@ -14,7 +14,7 @@ it('previews and confirms bracket using table standings for Liga + Eliminatoria'
     $startDate = Carbon::now()->next(CarbonInterface::FRIDAY)->startOfDay()->toIso8601String();
 
     // 2) Generar "Tabla general" (todos contra todos)
-    $phases = Phase::whereIn('name', ['Tabla general','Cuartos de Final','Semifinales','Final'])->get()->keyBy('name');
+    $phases = Phase::whereIn('name', ['Tabla general','Fase de grupos','Octavos de Final','Cuartos de Final','Semifinales','Final'])->get()->keyBy('name');
     $payloadLeague = [
         'general' => [
             'tournament_id' => $t->id,
@@ -38,6 +38,8 @@ it('previews and confirms bracket using table standings for Liga + Eliminatoria'
             'round_trip' => true,
             'phases' => [
                 ['id' => $phases['Tabla general']->id, 'name' => 'Tabla general', 'is_active' => true, 'is_completed' => false, 'tournament_id' => $t->id],
+                ['id' => $phases['Fase de grupos']->id, 'name' => 'Fase de grupos', 'is_active' => false, 'is_completed' => false, 'tournament_id' => $t->id],
+                ['id' => $phases['Octavos de Final']->id, 'name' => 'Octavos de Final', 'is_active' => false, 'is_completed' => false, 'tournament_id' => $t->id],
                 ['id' => $phases['Cuartos de Final']->id, 'name' => 'Cuartos de Final', 'is_active' => false, 'is_completed' => false, 'tournament_id' => $t->id],
                 ['id' => $phases['Semifinales']->id, 'name' => 'Semifinales', 'is_active' => false, 'is_completed' => false, 'tournament_id' => $t->id],
                 ['id' => $phases['Final']->id, 'name' => 'Final', 'is_active' => false, 'is_completed' => false, 'tournament_id' => $t->id],

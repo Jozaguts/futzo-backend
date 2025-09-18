@@ -12,7 +12,7 @@ it('suggests free slots for bracket scheduling and reflects conflicts', function
     $field = $location->fields()->first();
     $startDate = Carbon::now()->next(CarbonInterface::FRIDAY)->startOfDay()->toIso8601String();
 
-    $phases = Phase::whereIn('name', ['Tabla general','Fase de grupos','Cuartos de Final'])->get()->keyBy('name');
+    $phases = Phase::whereIn('name', ['Fase de grupos','Octavos de Final','Cuartos de Final','Semifinales','Final'])->get()->keyBy('name');
     $payload = [
         'general' => [
             'tournament_id' => $t->id,
@@ -41,9 +41,11 @@ it('suggests free slots for bracket scheduling and reflects conflicts', function
             'teams_to_next_round' => 8,
             'round_trip' => true,
             'phases' => [
-                ['id' => $phases['Tabla general']->id, 'name' => 'Tabla general', 'is_active' => false, 'is_completed' => false, 'tournament_id' => $t->id],
                 ['id' => $phases['Fase de grupos']->id, 'name' => 'Fase de grupos', 'is_active' => true, 'is_completed' => false, 'tournament_id' => $t->id],
+                ['id' => $phases['Octavos de Final']->id, 'name' => 'Octavos de Final', 'is_active' => false, 'is_completed' => false, 'tournament_id' => $t->id],
                 ['id' => $phases['Cuartos de Final']->id, 'name' => 'Cuartos de Final', 'is_active' => false, 'is_completed' => false, 'tournament_id' => $t->id],
+                ['id' => $phases['Semifinales']->id, 'name' => 'Semifinales', 'is_active' => false, 'is_completed' => false, 'tournament_id' => $t->id],
+                ['id' => $phases['Final']->id, 'name' => 'Final', 'is_active' => false, 'is_completed' => false, 'tournament_id' => $t->id],
             ],
         ],
         'fields_phase' => [[

@@ -14,7 +14,7 @@ it('exposes group standings and bracket preview, and confirms bracket scheduling
     $startDate = Carbon::now()->next(CarbonInterface::FRIDAY)->startOfDay()->toIso8601String();
 
     // 2) Generar Fase de Grupos (4x4, top2)
-    $phases = Phase::whereIn('name', ['Tabla general','Fase de grupos','Cuartos de Final'])->get()->keyBy('name');
+    $phases = Phase::whereIn('name', ['Fase de grupos','Octavos de Final','Cuartos de Final','Semifinales','Final'])->get()->keyBy('name');
     $payloadGroups = [
         'general' => [
             'tournament_id' => $t->id,
@@ -43,9 +43,11 @@ it('exposes group standings and bracket preview, and confirms bracket scheduling
             'teams_to_next_round' => 8,
             'round_trip' => true,
             'phases' => [
-                ['id' => $phases['Tabla general']->id, 'name' => 'Tabla general', 'is_active' => false, 'is_completed' => false, 'tournament_id' => $t->id],
                 ['id' => $phases['Fase de grupos']->id, 'name' => 'Fase de grupos', 'is_active' => true, 'is_completed' => false, 'tournament_id' => $t->id],
+                ['id' => $phases['Octavos de Final']->id, 'name' => 'Octavos de Final', 'is_active' => false, 'is_completed' => false, 'tournament_id' => $t->id],
                 ['id' => $phases['Cuartos de Final']->id, 'name' => 'Cuartos de Final', 'is_active' => false, 'is_completed' => false, 'tournament_id' => $t->id],
+                ['id' => $phases['Semifinales']->id, 'name' => 'Semifinales', 'is_active' => false, 'is_completed' => false, 'tournament_id' => $t->id],
+                ['id' => $phases['Final']->id, 'name' => 'Final', 'is_active' => false, 'is_completed' => false, 'tournament_id' => $t->id],
             ],
         ],
         'fields_phase' => [[
@@ -152,7 +154,7 @@ it('rejects bracket confirm when rest time or field-time duplicates are invalid'
     $startDate = Carbon::now()->next(CarbonInterface::FRIDAY)->startOfDay()->toIso8601String();
 
     // Generar grupos mínimos (solo para tener equipos y contexto)
-    $phases = Phase::whereIn('name', ['Tabla general','Fase de grupos','Cuartos de Final'])->get()->keyBy('name');
+    $phases = Phase::whereIn('name', ['Fase de grupos','Octavos de Final','Cuartos de Final','Semifinales','Final'])->get()->keyBy('name');
     $payloadGroups = [
         'general' => [
             'tournament_id' => $t->id,
@@ -181,9 +183,11 @@ it('rejects bracket confirm when rest time or field-time duplicates are invalid'
             'teams_to_next_round' => 8,
             'round_trip' => true,
             'phases' => [
-                ['id' => $phases['Tabla general']->id, 'name' => 'Tabla general', 'is_active' => false, 'is_completed' => false, 'tournament_id' => $t->id],
                 ['id' => $phases['Fase de grupos']->id, 'name' => 'Fase de grupos', 'is_active' => true, 'is_completed' => false, 'tournament_id' => $t->id],
+                ['id' => $phases['Octavos de Final']->id, 'name' => 'Octavos de Final', 'is_active' => false, 'is_completed' => false, 'tournament_id' => $t->id],
                 ['id' => $phases['Cuartos de Final']->id, 'name' => 'Cuartos de Final', 'is_active' => false, 'is_completed' => false, 'tournament_id' => $t->id],
+                ['id' => $phases['Semifinales']->id, 'name' => 'Semifinales', 'is_active' => false, 'is_completed' => false, 'tournament_id' => $t->id],
+                ['id' => $phases['Final']->id, 'name' => 'Final', 'is_active' => false, 'is_completed' => false, 'tournament_id' => $t->id],
             ],
         ],
         'fields_phase' => [[

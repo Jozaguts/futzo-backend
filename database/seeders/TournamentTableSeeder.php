@@ -11,10 +11,18 @@ use App\Models\TournamentFormat;
 use App\Models\FootballType;
 use App\Models\DefaultTournamentConfiguration;
 use Illuminate\Database\Seeder;
+use TournamentFormatId;
 
 class TournamentTableSeeder extends Seeder
 {
-    private const FORMAT_WITHOUT_PHASES = 'Torneo de Liga';
+    private const FALLBACK_PHASE = 'Tabla general';
+    private const FORMAT_PHASES = [
+        TournamentFormatId::League->value => ['Tabla general'],
+        TournamentFormatId::LeagueAndElimination->value => ['Tabla general', 'Octavos de Final', 'Cuartos de Final', 'Semifinales', 'Final'],
+        TournamentFormatId::GroupAndElimination->value => ['Fase de grupos', 'Octavos de Final', 'Cuartos de Final', 'Semifinales', 'Final'],
+        TournamentFormatId::Elimination->value => ['Octavos de Final', 'Cuartos de Final', 'Semifinales', 'Final'],
+        TournamentFormatId::Swiss->value => ['Tabla general'],
+    ];
 
     public function run(): void
     {
@@ -67,30 +75,22 @@ class TournamentTableSeeder extends Seeder
                     ]));
             });
 
-            // Insertamos fases según el formato
-            $allPhases = Phase::all();
-            if ($tournament->format->name === self::FORMAT_WITHOUT_PHASES) {
-                // Solo "Tabla general"
-                $phase = $allPhases->where('name', 'Tabla general')->first();
-                $tournament->tournamentPhases()->create(
+            $phaseNames = collect(self::FORMAT_PHASES[$tournament->tournament_format_id] ?? [self::FALLBACK_PHASE]);
+            $phases = Phase::whereIn('name', $phaseNames)->get()->keyBy('name');
+            $phaseNames->each(function (string $phaseName, int $index) use ($phases, $tournament) {
+                $phase = $phases->get($phaseName);
+                if (!$phase) {
+                    return;
+                }
+
+                $tournament->tournamentPhases()->firstOrCreate(
+                    ['phase_id' => $phase->id],
                     [
-                        'phase_id' => $phase->id,
-                        'is_active' => true,
+                        'is_active' => $index === 0,
                         'is_completed' => false,
                     ]
                 );
-            } else {
-                // Todas menos "Tabla general"
-                $allPhases
-                    ->reject(fn($p) => $p['name'] === 'Tabla general')
-                    ->each(fn($p) => $tournament->tournamentPhases()->create(
-                        [
-                            'phase_id' => $p->id,
-                            'is_active' => false,
-                            'is_completed' => false,
-                        ]
-                    ));
-            }
+            });
         }
 
     }

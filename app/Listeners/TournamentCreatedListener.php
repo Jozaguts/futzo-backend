@@ -7,10 +7,18 @@ use App\Models\DefaultTournamentConfiguration;
 use App\Models\Phase;
 use App\Models\Tournament;
 use App\Models\TournamentConfiguration;
+use TournamentFormatId;
 
 class TournamentCreatedListener
 {
-    private string $TOURNAMENT_WITHOUT_PHASES = 'Torneo de Liga';
+    private const FALLBACK_PHASE = 'Tabla general';
+    private const FORMAT_PHASES = [
+        TournamentFormatId::League->value => ['Tabla general'],
+        TournamentFormatId::LeagueAndElimination->value => ['Tabla general', 'Octavos de Final', 'Cuartos de Final', 'Semifinales', 'Final'],
+        TournamentFormatId::GroupAndElimination->value => ['Fase de grupos', 'Octavos de Final', 'Cuartos de Final', 'Semifinales', 'Final'],
+        TournamentFormatId::Elimination->value => ['Octavos de Final', 'Cuartos de Final', 'Semifinales', 'Final'],
+        TournamentFormatId::Swiss->value => ['Tabla general'],
+    ];
 
     public function __construct()
     {
@@ -48,25 +56,28 @@ class TournamentCreatedListener
             $tieBreaker['tournament_configuration_id'] = $event->tournament->configuration->id;
             $event->tournament->configuration->tiebreakers()->create($tieBreaker);
         }
-        if ($event->tournament->format->name === $this->TOURNAMENT_WITHOUT_PHASES) {
-            $phase = Phase::first('name', $this->TOURNAMENT_WITHOUT_PHASES)->first();
-            $event->tournament->tournamentPhases()->create([
-                'phase_id' => $phase->id,
-                'tournament_id' => $event->tournament->id,
-                'is_active' => true,
-                'is_completed' => false,
-            ]);
-        } else {
-            $phasesWithoutGeneralTablePhase = Phase::whereNot('name', $this->TOURNAMENT_WITHOUT_PHASES)->get();
-            foreach ($phasesWithoutGeneralTablePhase as $phase) {
-                $event->tournament->tournamentPhases()->create([
-                    'phase_id' => $phase->id,
-                    'tournament_id' => $event->tournament->id,
-                    'is_active' => true,
-                    'is_completed' => false,
-                ]);
-            }
-        }
+        $this->assignPhases($event->tournament);
+    }
 
+    private function assignPhases(Tournament $tournament): void
+    {
+        $phaseNames = collect(self::FORMAT_PHASES[$tournament->tournament_format_id] ?? [self::FALLBACK_PHASE]);
+        $phases = Phase::whereIn('name', $phaseNames)->get()->keyBy('name');
+
+        $phaseNames->each(function (string $phaseName, int $index) use ($phases, $tournament) {
+            /** @var Phase|null $phase */
+            $phase = $phases->get($phaseName);
+            if (!$phase) {
+                return;
+            }
+
+            $tournament->tournamentPhases()->firstOrCreate(
+                ['phase_id' => $phase->id],
+                [
+                    'is_active' => $index === 0,
+                    'is_completed' => false,
+                ]
+            );
+        });
     }
 }

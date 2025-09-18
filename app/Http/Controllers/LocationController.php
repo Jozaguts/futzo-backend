@@ -13,6 +13,7 @@ use App\Models\FieldWindow;
 use App\Models\LeagueFieldWindow;
 use App\Models\Location;
 use App\Models\Game;
+use App\Models\Tournament;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -246,8 +247,35 @@ class LocationController extends Controller
 
     public function fields(Request $request): LocationFieldCollection
     {
-        $locationIds = explode(',', $request->query('location_ids'));
-        return new LocationFieldCollection(Field::whereIn('location_id', $locationIds)->get());
+        $tournamentId = $request->query('tournament_id');
+        abort_unless($tournamentId, 422, 'Parámetro tournament_id es requerido.');
+
+        $tournament = Tournament::with('locations:id')->findOrFail($tournamentId);
+        abort_unless($tournament->league_id === auth()->user()->league_id, 403, 'El torneo no pertenece a tu liga.');
+
+        $requestLocationIds = collect(explode(',', (string)$request->query('location_ids', '')))
+            ->map(fn(string $value) => (int) trim($value))
+            ->filter(fn(int $id) => $id > 0)
+            ->values();
+
+        $tournamentLocationIds = $tournament->locations()->pluck('locations.id');
+
+        if ($requestLocationIds->isEmpty()) {
+            $locationIds = $tournamentLocationIds->values();
+        } else {
+            $locationIds = $requestLocationIds->intersect($tournamentLocationIds)->values();
+        }
+
+        if ($locationIds->isEmpty()) {
+            return new LocationFieldCollection(collect());
+        }
+
+        $fields = Field::query()
+            ->whereIn('location_id', $locationIds->all())
+            ->whereHas('leaguesFields', fn($query) => $query->where('league_id', $tournament->league_id))
+            ->get();
+
+        return new LocationFieldCollection($fields);
     }
 
 }

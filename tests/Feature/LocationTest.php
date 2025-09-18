@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use TournamentFormatId;
 
 it('stores a location correctly', function () {
     $response = $this->postJson('/api/v1/admin/locations', [
@@ -55,4 +56,20 @@ it('stores a location correctly', function () {
     ]
     ]);
     $response->assertCreated();
+});
+
+it('lists location fields for tournament when no specific location filter is provided', function () {
+    [$tournament, $location] = createTournamentViaApi(TournamentFormatId::League->value, 1, null, null);
+
+    $response = $this->getJson(
+        sprintf('/api/v1/admin/locations/fields?location_ids=&tournament_id=%d', $tournament->id)
+    );
+
+    $response->assertOk();
+
+    $payload = $response->json();
+    expect($payload)->toBeArray();
+    expect($payload)->not->toBeEmpty();
+    expect($payload[0])->toHaveKeys(['field_id', 'field_name', 'location_id', 'availability']);
+    expect(collect($payload)->pluck('location_id')->unique())->toContain($location->id);
 });

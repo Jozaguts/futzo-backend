@@ -70,6 +70,14 @@ class SeedLeagueTournamentsCommand extends Command
             ['id' => TournamentFormatId::GroupAndElimination->value, 'name' => 'Grupos y Eliminatoria', 'label' => 'Grupos+Elim'],
         ];
 
+        $formatPhases = [
+            TournamentFormatId::League->value => ['Tabla general'],
+            TournamentFormatId::LeagueAndElimination->value => ['Tabla general', 'Octavos de Final', 'Cuartos de Final', 'Semifinales', 'Final'],
+            TournamentFormatId::GroupAndElimination->value => ['Fase de grupos', 'Octavos de Final', 'Cuartos de Final', 'Semifinales', 'Final'],
+            TournamentFormatId::Elimination->value => ['Octavos de Final', 'Cuartos de Final', 'Semifinales', 'Final'],
+            TournamentFormatId::Swiss->value => ['Tabla general'],
+        ];
+
         foreach ($formats as $fmt) {
             $this->info("Generando torneo: {$fmt['label']} ({$fmt['name']})");
             $bar = $this->output->createProgressBar($teamsPerTournament);
@@ -130,26 +138,22 @@ class SeedLeagueTournamentsCommand extends Command
                 $tournament->configuration()->create($cfg);
 
                 // 3) Fases
-                $phases = Phase::all();
-                if ($format->name === 'Torneo de Liga') {
-                    $phase = $phases->firstWhere('name', 'Tabla general');
-                    if ($phase) {
-                        $tournament->tournamentPhases()->create([
-                            'phase_id' => $phase->id,
-                            'is_active' => true,
-                            'is_completed' => false,
-                        ]);
+                $phaseNames = collect($formatPhases[$format->id] ?? ['Tabla general']);
+                $phases = Phase::whereIn('name', $phaseNames)->get()->keyBy('name');
+                $phaseNames->each(function (string $phaseName, int $index) use ($phases, $tournament) {
+                    $phase = $phases->get($phaseName);
+                    if (!$phase) {
+                        return;
                     }
-                } else {
-                    $phases->reject(fn($p) => $p->name === 'Tabla general')
-                        ->each(function ($p) use ($tournament) {
-                            $tournament->tournamentPhases()->create([
-                                'phase_id' => $p->id,
-                                'is_active' => false,
-                                'is_completed' => false,
-                            ]);
-                        });
-                }
+
+                    $tournament->tournamentPhases()->firstOrCreate(
+                        ['phase_id' => $phase->id],
+                        [
+                            'is_active' => $index === 0,
+                            'is_completed' => false,
+                        ]
+                    );
+                });
 
                 // 4) Config de grupos (si aplica)
                 if ($format->id === TournamentFormatId::GroupAndElimination->value) { // Grupos y Eliminatoria

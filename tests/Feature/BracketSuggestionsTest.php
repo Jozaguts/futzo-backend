@@ -27,7 +27,7 @@ it('suggests free slots for bracket scheduling and reflects conflicts', function
             'elimination_round_trip' => true,
             'locations' => [['id' => $location->id, 'name' => $location->name]],
         ],
-        'regular_phase' => [
+        'rules_phase' => [
             'round_trip' => false,
             'tiebreakers' => $t->refresh()->configuration->tiebreakers->toArray(),
         ],
@@ -39,7 +39,7 @@ it('suggests free slots for bracket scheduling and reflects conflicts', function
         ],
         'elimination_phase' => [
             'teams_to_next_round' => 8,
-            'round_trip' => true,
+            'elimination_round_trip' => true,
             'phases' => [
                 ['id' => $phases['Fase de grupos']->id, 'name' => 'Fase de grupos', 'is_active' => true, 'is_completed' => false, 'tournament_id' => $t->id],
                 ['id' => $phases['Octavos de Final']->id, 'name' => 'Octavos de Final', 'is_active' => false, 'is_completed' => false, 'tournament_id' => $t->id],

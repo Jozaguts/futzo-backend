@@ -29,13 +29,13 @@ it('previews and confirms bracket using table standings for Liga + Eliminatoria'
             'elimination_round_trip' => true,
             'locations' => [['id' => $location->id, 'name' => $location->name]],
         ],
-        'regular_phase' => [
+        'rules_phase' => [
             'round_trip' => false,
             'tiebreakers' => $t->configuration->tiebreakers->toArray(),
         ],
         'elimination_phase' => [
             'teams_to_next_round' => 8,
-            'round_trip' => true,
+            'elimination_round_trip' => true,
             'phases' => [
                 ['id' => $phases['Tabla general']->id, 'name' => 'Tabla general', 'is_active' => true, 'is_completed' => false, 'tournament_id' => $t->id],
                 ['id' => $phases['Octavos de Final']->id, 'name' => 'Octavos de Final', 'is_active' => false, 'is_completed' => false, 'tournament_id' => $t->id],

@@ -22,13 +22,13 @@ it('genera un calendario para 16 equipos en liga ida y vuelta', function () {
             'total_teams' => 16,
             'locations' => [['id' => $location->id, 'name' => $location->name]],
         ],
-        'regular_phase' => [
+        'rules_phase' => [
             'round_trip' => true,
             'tiebreakers' => $tournament->configuration->tiebreakers->toArray(),
         ],
         'elimination_phase' => [
             'teams_to_next_round' => 8,
-            'round_trip' => false,
+            'elimination_round_trip' => false,
             'phases' => $tournament->tournamentPhases->load('phase')->map(function ($tournamentPhase) use ($tournament) {
                 return [
                     'tournament_id' => $tournament->id,
@@ -119,13 +119,13 @@ it('no permite reservar horas solapadas para otro torneo', function () {
             'total_teams' => 8,
             'locations' => [['id' => $location->id, 'name' => $location->name]],
         ],
-        'regular_phase' => [
+        'rules_phase' => [
             'round_trip' => true,
             'tiebreakers' => $tournamentA->configuration->tiebreakers->toArray(),
         ],
         'elimination_phase' => [
             'teams_to_next_round' => 8,
-            'round_trip' => false,
+            'elimination_round_trip' => false,
             'phases' => $tournamentA->tournamentPhases->load('phase')->map(function ($tournamentPhase) use ($tournamentA) {
                 return [
                     'tournament_id' => $tournamentA->id,
@@ -201,7 +201,7 @@ it('genera fase de grupos y luego elimina con reglas por fase', function () {
             'elimination_round_trip' => true,
             'locations' => [['id' => $location->id, 'name' => $location->name]],
         ],
-        'regular_phase' => [
+        'rules_phase' => [
             'round_trip' => false,
             'tiebreakers' => $t->configuration->tiebreakers->toArray(),
         ],
@@ -213,7 +213,7 @@ it('genera fase de grupos y luego elimina con reglas por fase', function () {
         ],
         'elimination_phase' => [
             'teams_to_next_round' => 8,
-            'round_trip' => true,
+            'elimination_round_trip' => true,
             'phases' => [
                 ['id' => $phases['Fase de grupos']->id, 'name' => 'Fase de grupos', 'is_active' => true, 'is_completed' => false, 'tournament_id' => $t->id],
                 ['id' => $phases['Octavos de Final']->id, 'name' => 'Octavos de Final', 'is_active' => false, 'is_completed' => false, 'tournament_id' => $t->id],

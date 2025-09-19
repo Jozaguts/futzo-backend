@@ -29,7 +29,7 @@ it('exposes group standings and bracket preview, and confirms bracket scheduling
             'elimination_round_trip' => true,
             'locations' => [['id' => $location->id, 'name' => $location->name]],
         ],
-        'regular_phase' => [
+        'rules_phase' => [
             'round_trip' => false,
             'tiebreakers' => $t->configuration->tiebreakers->toArray(),
         ],
@@ -41,7 +41,7 @@ it('exposes group standings and bracket preview, and confirms bracket scheduling
         ],
         'elimination_phase' => [
             'teams_to_next_round' => 8,
-            'round_trip' => true,
+            'elimination_round_trip' => true,
             'phases' => [
                 ['id' => $phases['Fase de grupos']->id, 'name' => 'Fase de grupos', 'is_active' => true, 'is_completed' => false, 'tournament_id' => $t->id],
                 ['id' => $phases['Octavos de Final']->id, 'name' => 'Octavos de Final', 'is_active' => false, 'is_completed' => false, 'tournament_id' => $t->id],
@@ -169,7 +169,7 @@ it('rejects bracket confirm when rest time or field-time duplicates are invalid'
             'elimination_round_trip' => true,
             'locations' => [['id' => $location->id, 'name' => $location->name]],
         ],
-        'regular_phase' => [
+        'rules_phase' => [
             'round_trip' => false,
             'tiebreakers' => $t->configuration->tiebreakers->toArray(),
         ],
@@ -181,7 +181,7 @@ it('rejects bracket confirm when rest time or field-time duplicates are invalid'
         ],
         'elimination_phase' => [
             'teams_to_next_round' => 8,
-            'round_trip' => true,
+            'elimination_round_trip' => true,
             'phases' => [
                 ['id' => $phases['Fase de grupos']->id, 'name' => 'Fase de grupos', 'is_active' => true, 'is_completed' => false, 'tournament_id' => $t->id],
                 ['id' => $phases['Octavos de Final']->id, 'name' => 'Octavos de Final', 'is_active' => false, 'is_completed' => false, 'tournament_id' => $t->id],

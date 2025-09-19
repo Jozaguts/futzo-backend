@@ -60,20 +60,20 @@ class CreateTournamentScheduleRequest extends FormRequest
             ],
             'general.locations.*.name' => 'required|string',
 
-            // Validación de "regular_phase"
-            'regular_phase' => 'required|array',
-            'regular_phase.round_trip' => 'required|boolean',
-            'regular_phase.tiebreakers' => 'required|array',
-            'regular_phase.tiebreakers.*.id' => 'required|integer',
-            'regular_phase.tiebreakers.*.rule' => 'required|string',
-            'regular_phase.tiebreakers.*.priority' => 'required|integer',
-            'regular_phase.tiebreakers.*.is_active' => 'required|boolean',
-            'regular_phase.tiebreakers.*.tournament_configuration_id' => 'required|integer',
+            // Validación de "rules_phase"
+            'rules_phase' => 'required|array',
+            'rules_phase.round_trip' => 'required|boolean',
+            'rules_phase.tiebreakers' => 'required|array',
+            'rules_phase.tiebreakers.*.id' => 'required|integer',
+            'rules_phase.tiebreakers.*.rule' => 'required|string',
+            'rules_phase.tiebreakers.*.priority' => 'required|integer',
+            'rules_phase.tiebreakers.*.is_active' => 'required|boolean',
+            'rules_phase.tiebreakers.*.tournament_configuration_id' => 'required|integer',
 
             // Validación de "elimination_phase"
             'elimination_phase' => 'required|array',
             'elimination_phase.teams_to_next_round' => 'required|integer',
-            'elimination_phase.round_trip' => 'required|boolean',
+            'elimination_phase.elimination_round_trip' => 'required|boolean',
             'elimination_phase.phases' => 'required|array',
             'elimination_phase.phases.*.id' => 'required|integer',
             'elimination_phase.phases.*.name' => 'required|string|exists:phases,name',

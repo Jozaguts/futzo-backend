@@ -615,11 +615,11 @@ class ScheduleGeneratorService
     public function saveConfiguration($data): self
     {
         $this->saveTournamentConfiguration(array_merge($data['general'], [
-            'round_trip' => $data['regular_phase']['round_trip'],
-            'group_stage' => $data['regular_phase']['group_stage'] ?? false,
-            'elimination_round_trip' => $data['elimination_phase']['round_trip']
+            'round_trip' => $data['rules_phase']['round_trip'],
+            'group_stage' => $data['rules_phase']['group_stage'] ?? false,
+            'elimination_round_trip' => $data['elimination_phase']['elimination_round_trip']
         ]));
-        $this->saveTiebreakers($data['regular_phase']['tiebreakers']);
+        $this->saveTiebreakers($data['rules_phase']['tiebreakers']);
         $this->saveEliminationPhase($data['elimination_phase']);
         if (!empty($data['group_phase'])) {
             $this->saveGroupPhaseConfiguration($data['group_phase']);

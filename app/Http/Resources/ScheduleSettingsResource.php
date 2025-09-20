@@ -10,6 +10,7 @@ class ScheduleSettingsResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
+            'tournament_id' => $this->resource->id,
             'round_trip' => $this->resource->configuration->round_trip,
             'start_date' => $this->resource->start_date?->format('Y-m-d'),
             'end_date' => $this->resource->end_date?->format('Y-m-d'),

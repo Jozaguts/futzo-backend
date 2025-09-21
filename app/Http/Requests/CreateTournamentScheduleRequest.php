@@ -154,7 +154,7 @@ class CreateTournamentScheduleRequest extends FormRequest
             'group_phase.option_id' => 'sometimes|nullable|string',
             'group_phase.selected_option' => 'sometimes',
             'group_phase.option' => 'sometimes',
-            'group_phase.teams_per_group' => 'nullable|integer|min:2',
+            'group_phase.teams_per_group' => 'nullable|integer|min:3|max:6',
             'group_phase.advance_top_n' => 'nullable|integer|min:1',
             'group_phase.include_best_thirds' => 'sometimes|boolean',
             'group_phase.best_thirds_count' => 'nullable|integer|min:0',
@@ -215,8 +215,10 @@ class CreateTournamentScheduleRequest extends FormRequest
                 ? ($groupPhase['group_sizes'] ?? null)
                 : $this->input('group_phase.group_sizes');
 
-            if (is_array($groupSizes) && count($groupSizes) > 0) {
-                $totalTeams = (int) $this->input('general.total_teams');
+            $totalTeams = (int) $this->input('general.total_teams');
+            $hasGroupSizes = is_array($groupSizes) && count($groupSizes) > 0;
+
+            if ($hasGroupSizes) {
                 $configuredSizes = array_values(array_map('intval', $groupSizes));
                 $configuredTotal = array_sum($configuredSizes);
 
@@ -232,6 +234,19 @@ class CreateTournamentScheduleRequest extends FormRequest
                         'group_phase.group_sizes',
                         'Debe configurar al menos dos grupos distintos para la fase de grupos.'
                     );
+                }
+            }
+
+            if (!$hasGroupSizes) {
+                $teamsPerGroup = $this->input('group_phase.teams_per_group');
+                if ($teamsPerGroup !== null && $teamsPerGroup !== '') {
+                    $teamsPerGroup = (int) $teamsPerGroup;
+                    if ($teamsPerGroup === $totalTeams) {
+                        $validator->errors()->add(
+                            'group_phase.teams_per_group',
+                            'Debe configurar al menos dos grupos distintos para la fase de grupos.'
+                        );
+                    }
                 }
             }
 

@@ -172,7 +172,6 @@ class ScheduleGeneratorService
     private function makeGroupStageScheduleInternal(array $teams, $fields, int $matchDuration): array
     {
         $gc = $this->tournament->groupConfiguration;
-        $teamsPerGroup = max(2, (int)$gc->teams_per_group);
         $groupSizes = null;
         if ($gc && is_array($gc->group_sizes) && !empty($gc->group_sizes)) {
             $normalized = array_values(array_filter(
@@ -182,6 +181,11 @@ class ScheduleGeneratorService
             if (!empty($normalized)) {
                 $groupSizes = $normalized;
             }
+        }
+
+        $teamsPerGroup = (int)($gc?->teams_per_group ?? 0);
+        if ($teamsPerGroup <= 0 && $groupSizes) {
+            $teamsPerGroup = max($groupSizes);
         }
         // 1) Asignar grupos y persistir en pivot team_tournament.group_key
         $groups = $this->assignGroups($teams, $teamsPerGroup, $groupSizes);
@@ -474,7 +478,15 @@ class ScheduleGeneratorService
             $assignedTeams = 0;
             $totalTeams = count($teams);
 
+            if (count($normalizedSizes) === 1 && $normalizedSizes[0] === $totalTeams) {
+                throw new RuntimeException('La configuración de grupos es inválida: debe haber al menos dos grupos.');
+            }
+
             foreach ($normalizedSizes as $size) {
+                if ($size < 3 || $size > 6) {
+                    throw new RuntimeException('La configuración de grupos es inválida: cada grupo debe tener entre 3 y 6 equipos.');
+                }
+
                 $letter = $letters[$groupIndex] ?? ('G' . ($groupIndex + 1));
                 $slice = array_slice($teams, $assignedTeams, $size);
 
@@ -492,6 +504,15 @@ class ScheduleGeneratorService
             }
 
             return $groups; // ['A'=>[...], 'B'=>[...]]
+        }
+
+        if ($teamsPerGroup < 3 || $teamsPerGroup > 6) {
+            throw new RuntimeException('La configuración de grupos es inválida: debe haber entre 3 y 6 equipos por grupo.');
+        }
+
+        $totalTeams = count($teams);
+        if ($teamsPerGroup === $totalTeams) {
+            throw new RuntimeException('La configuración de grupos es inválida: debe haber al menos dos grupos.');
         }
 
         $i = 0;

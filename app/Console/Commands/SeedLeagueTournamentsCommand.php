@@ -72,9 +72,9 @@ class SeedLeagueTournamentsCommand extends Command
 
         $formatPhases = [
             TournamentFormatId::League->value => ['Tabla general'],
-            TournamentFormatId::LeagueAndElimination->value => ['Tabla general', 'Octavos de Final', 'Cuartos de Final', 'Semifinales', 'Final'],
-            TournamentFormatId::GroupAndElimination->value => ['Fase de grupos', 'Octavos de Final', 'Cuartos de Final', 'Semifinales', 'Final'],
-            TournamentFormatId::Elimination->value => ['Octavos de Final', 'Cuartos de Final', 'Semifinales', 'Final'],
+            TournamentFormatId::LeagueAndElimination->value => ['Tabla general', 'Dieciseisavos de Final', 'Octavos de Final', 'Cuartos de Final', 'Semifinales', 'Final'],
+            TournamentFormatId::GroupAndElimination->value => ['Fase de grupos', 'Dieciseisavos de Final', 'Octavos de Final', 'Cuartos de Final', 'Semifinales', 'Final'],
+            TournamentFormatId::Elimination->value => ['Dieciseisavos de Final', 'Octavos de Final', 'Cuartos de Final', 'Semifinales', 'Final'],
             TournamentFormatId::Swiss->value => ['Tabla general'],
         ];
 

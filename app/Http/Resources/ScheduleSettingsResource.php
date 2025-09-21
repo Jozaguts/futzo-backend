@@ -95,6 +95,10 @@ class ScheduleSettingsResource extends JsonResource
             return 1;
         }
         $activePhase = collect($this->resource->phases->where('is_active', true)->all());
+        $roundOf32Activated = $activePhase->where('name', 'Dieciseisavos de Final')->isNotEmpty();
+        if ($roundOf32Activated) {
+            return 32;
+        }
         $roundOf16activated = $activePhase->where('name', 'Octavos de Final')->isNotEmpty();
         if ($roundOf16activated) {
             return 16;

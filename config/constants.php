@@ -256,7 +256,7 @@ return [
         [
             'tournament_format_id' => TournamentFormatId::GroupAndElimination->value,
             'football_type_id' => FootballTypeId::TraditionalFootball->value,
-            'max_teams' => 32,
+            'max_teams' => 36,
             'min_teams' => 8,
             'substitutions_per_team' => 5,
             'max_players_per_team' => 23,
@@ -301,7 +301,7 @@ return [
         [
             'tournament_format_id' => TournamentFormatId::Elimination->value,
             'football_type_id' => FootballTypeId::TraditionalFootball->value,
-            'max_teams' => 32,
+            'max_teams' => 36,
             'min_teams' => 8,
             'substitutions_per_team' => 5,
             'max_players_per_team' => 23,
@@ -316,7 +316,7 @@ return [
         [
             'tournament_format_id' => TournamentFormatId::Elimination->value,
             'football_type_id' => FootballTypeId::SevenFootball->value,
-            'max_teams' => 32,
+            'max_teams' => 36,
             'min_teams' => 8,
             'substitutions_per_team' => -1,
             'max_players_per_team' => 18,
@@ -331,7 +331,7 @@ return [
         [
             'tournament_format_id' => TournamentFormatId::Elimination->value,
             'football_type_id' => FootballTypeId::Futsal->value,
-            'max_teams' => 32,
+            'max_teams' => 36,
             'min_teams' => 8,
             'substitutions_per_team' => -1,
             'max_players_per_team' => 18,
@@ -346,7 +346,7 @@ return [
         [
             'tournament_format_id' => TournamentFormatId::Swiss->value,
             'football_type_id' => FootballTypeId::TraditionalFootball->value,
-            'max_teams' => 32,
+            'max_teams' => 36,
             'min_teams' => 8,
             'substitutions_per_team' => 5,
             'max_players_per_team' => 23,
@@ -439,27 +439,34 @@ return [
         ],
         [
             'id' => 3,
+            'name' => 'Dieciseisavos de Final',
+            'is_active' => false,
+            'is_completed' => false,
+            'min_teams_for' => 32,
+        ],
+        [
+            'id' => 4,
             'name' => 'Octavos de Final',
             'is_active' => false,
             'is_completed' => false,
             'min_teams_for' => 16,
         ],
         [
-            'id' => 4,
+            'id' => 5,
             'name' => 'Cuartos de Final',
             'is_active' => true,
             'is_completed' => false,
             'min_teams_for' => 8
         ],
         [
-            'id' => 5,
+            'id' => 6,
             'name' => 'Semifinales',
             'is_active' => true,
             'is_completed' => false,
             'min_teams_for' => 4
         ],
         [
-            'id' => 6,
+            'id' => 7,
             'name' => 'Final',
             'is_active' => true,
             'is_completed' => false,

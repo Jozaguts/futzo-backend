@@ -66,6 +66,7 @@ class BracketService
     {
         $formatId = (int)$tournament->configuration->tournament_format_id;
         $targetTeams = match($phaseName) {
+            'Dieciseisavos de Final' => 32,
             'Octavos de Final' => 16,
             'Cuartos de Final' => 8,
             'Semifinales' => 4,

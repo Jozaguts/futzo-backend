@@ -6,6 +6,7 @@ use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use TournamentFormatId;
 
 class CreateTournamentScheduleRequest extends FormRequest
 {
@@ -17,6 +18,7 @@ class CreateTournamentScheduleRequest extends FormRequest
     public function rules(): array
     {
         $tournamentId = $this->input('general.tournament_id');
+        $formatId = (int) $this->input('general.tournament_format_id');
 
         $config = DB::table('tournament_configurations')
             ->where('tournament_id', $tournamentId)
@@ -24,6 +26,10 @@ class CreateTournamentScheduleRequest extends FormRequest
 
         $minTeams = $config->min_teams ?? 8;
         $maxTeams = $config->max_teams ?? 40;
+
+        if ($formatId === TournamentFormatId::GroupAndElimination->value) {
+            $maxTeams = min($maxTeams, 36);
+        }
         return [
             // Validación de "general"
             'general' => 'required|array',
@@ -49,12 +55,12 @@ class CreateTournamentScheduleRequest extends FormRequest
                 'required',
                 'integer',
                 'exists:locations,id',
-                Rule::exists('location_tournament', 'location_id')->where(function ($query) {
-                    return $query->where('tournament_id', request('general.tournament_id'));
+                Rule::exists('location_tournament', 'location_id')->where(function ($query) use ($tournamentId) {
+                    return $query->where('tournament_id', $tournamentId);
                 }),
-                Rule::exists('league_location', 'location_id')->where(function ($query) {
-                    return $query->whereIn('league_id', function ($subQuery) {
-                        $subQuery->select('league_id')->from('tournaments')->where('id', request('general.tournament_id'));
+                Rule::exists('league_location', 'location_id')->where(function ($query) use ($tournamentId) {
+                    return $query->whereIn('league_id', function ($subQuery) use ($tournamentId) {
+                        $subQuery->select('league_id')->from('tournaments')->where('id', $tournamentId);
                     });
                 }),
             ],
@@ -149,7 +155,7 @@ class CreateTournamentScheduleRequest extends FormRequest
             'group_phase.include_best_thirds' => 'sometimes|boolean',
             'group_phase.best_thirds_count' => 'nullable|integer|min:0',
             'group_phase.group_sizes' => 'nullable|array',
-            'group_phase.group_sizes.*' => 'integer|min:2',
+            'group_phase.group_sizes.*' => 'integer|min:3|max:6',
 
         ];
     }
@@ -159,8 +165,9 @@ class CreateTournamentScheduleRequest extends FormRequest
         $validator->after(function ($validator) {
             $groupSizes = $this->input('group_phase.group_sizes');
             if (is_array($groupSizes) && count($groupSizes) > 0) {
-                $totalTeams = (int)$this->input('general.total_teams');
-                $configuredTotal = array_sum(array_map('intval', $groupSizes));
+                $totalTeams = (int) $this->input('general.total_teams');
+                $configuredSizes = array_values(array_map('intval', $groupSizes));
+                $configuredTotal = array_sum($configuredSizes);
 
                 if ($configuredTotal !== $totalTeams) {
                     $validator->errors()->add(
@@ -168,6 +175,27 @@ class CreateTournamentScheduleRequest extends FormRequest
                         'La suma de los tamaños de grupo debe coincidir con el total de equipos (' . $totalTeams . ').'
                     );
                 }
+
+                if (count($configuredSizes) === 1 && $configuredSizes[0] === $totalTeams) {
+                    $validator->errors()->add(
+                        'group_phase.group_sizes',
+                        'Debe configurar al menos dos grupos distintos para la fase de grupos.'
+                    );
+                }
+            }
+
+            $formatId = (int) $this->input('general.tournament_format_id');
+            $totalTeams = (int) $this->input('general.total_teams');
+
+            if (
+                $formatId === TournamentFormatId::GroupAndElimination->value
+                && $totalTeams % 2 === 1
+                && $totalTeams > 36
+            ) {
+                $validator->errors()->add(
+                    'general.total_teams',
+                    'Los torneos con fase de grupos admiten un máximo de 36 equipos cuando el total es impar.'
+                );
             }
         });
     }

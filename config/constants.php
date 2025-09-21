@@ -256,7 +256,7 @@ return [
         [
             'tournament_format_id' => TournamentFormatId::GroupAndElimination->value,
             'football_type_id' => FootballTypeId::TraditionalFootball->value,
-            'max_teams' => 32,
+            'max_teams' => 36,
             'min_teams' => 8,
             'substitutions_per_team' => 5,
             'max_players_per_team' => 23,
@@ -271,7 +271,7 @@ return [
         [
             'tournament_format_id' => TournamentFormatId::GroupAndElimination->value,
             'football_type_id' => FootballTypeId::SevenFootball->value, // Fútbol 7
-            'max_teams' => 16,
+            'max_teams' => 36,
             'min_teams' => 8,
             'substitutions_per_team' => -1,
             'max_players_per_team' => 18,
@@ -286,7 +286,7 @@ return [
         [
             'tournament_format_id' => TournamentFormatId::GroupAndElimination->value,
             'football_type_id' => FootballTypeId::Futsal->value,
-            'max_teams' => 16,
+            'max_teams' => 36,
             'min_teams' => 8,
             'substitutions_per_team' => -1,
             'max_players_per_team' => 15,

@@ -306,3 +306,215 @@ it('genera fase de grupos y luego elimina con reglas por fase', function () {
     // Esperados: 8 partidos (8 clasificados → 4 llaves, ida y vuelta)
     $resKO->assertJsonCount(8, 'data');
 });
+
+it('respeta tamaños de grupo personalizados 6-6-5', function () {
+    [$t, $location] = createTournamentViaApi(TournamentFormatId::GroupAndElimination->value, 1, null, null);
+    attachTeamsToTournament($t, 17);
+    $field = $location->fields()->first();
+    $startDate = Carbon::now()->next(CarbonInterface::FRIDAY)->startOfDay()->toIso8601String();
+
+    $phases = Phase::whereIn('name', ['Fase de grupos', 'Octavos de Final', 'Cuartos de Final', 'Semifinales', 'Final'])
+        ->get()
+        ->keyBy('name');
+
+    $payload = [
+        'general' => [
+            'tournament_id' => $t->id,
+            'tournament_format_id' => TournamentFormatId::GroupAndElimination->value,
+            'football_type_id' => 1,
+            'start_date' => $startDate,
+            'game_time' => 90,
+            'time_between_games' => 0,
+            'total_teams' => 17,
+            'round_trip' => false,
+            'group_stage' => true,
+            'elimination_round_trip' => true,
+            'locations' => [['id' => $location->id, 'name' => $location->name]],
+        ],
+        'rules_phase' => [
+            'round_trip' => false,
+            'tiebreakers' => $t->configuration->tiebreakers->toArray(),
+        ],
+        'group_phase' => [
+            'teams_per_group' => 4,
+            'advance_top_n' => 2,
+            'include_best_thirds' => false,
+            'best_thirds_count' => null,
+            'group_sizes' => [6, 6, 5],
+        ],
+        'elimination_phase' => [
+            'teams_to_next_round' => 8,
+            'elimination_round_trip' => true,
+            'phases' => [
+                ['id' => $phases['Fase de grupos']->id, 'name' => 'Fase de grupos', 'is_active' => true, 'is_completed' => false, 'tournament_id' => $t->id],
+                ['id' => $phases['Octavos de Final']->id, 'name' => 'Octavos de Final', 'is_active' => false, 'is_completed' => false, 'tournament_id' => $t->id],
+                ['id' => $phases['Cuartos de Final']->id, 'name' => 'Cuartos de Final', 'is_active' => false, 'is_completed' => false, 'tournament_id' => $t->id],
+                ['id' => $phases['Semifinales']->id, 'name' => 'Semifinales', 'is_active' => false, 'is_completed' => false, 'tournament_id' => $t->id],
+                ['id' => $phases['Final']->id, 'name' => 'Final', 'is_active' => false, 'is_completed' => false, 'tournament_id' => $t->id],
+            ],
+        ],
+        'fields_phase' => [[
+            'field_id' => $field->id,
+            'step' => 1,
+            'field_name' => $field->name,
+            'location_id' => $location->id,
+            'location_name' => $location->name,
+            'disabled' => false,
+            'availability' => [
+                'friday' => [
+                    'enabled' => true,
+                    'available_range' => '09:00 a 17:00',
+                    'intervals' => [
+                        ['value' => '09:00', 'text' => '09:00', 'selected' => true, 'disabled' => false],
+                        ['value' => '11:00', 'text' => '11:00', 'selected' => true, 'disabled' => false],
+                        ['value' => '13:00', 'text' => '13:00', 'selected' => true, 'disabled' => false],
+                        ['value' => '15:00', 'text' => '15:00', 'selected' => true, 'disabled' => false],
+                    ],
+                    'label' => 'Viernes',
+                ],
+                'saturday' => [
+                    'enabled' => true,
+                    'available_range' => '09:00 a 17:00',
+                    'intervals' => [
+                        ['value' => '09:00', 'text' => '09:00', 'selected' => true, 'disabled' => false],
+                        ['value' => '11:00', 'text' => '11:00', 'selected' => true, 'disabled' => false],
+                        ['value' => '13:00', 'text' => '13:00', 'selected' => true, 'disabled' => false],
+                        ['value' => '15:00', 'text' => '15:00', 'selected' => true, 'disabled' => false],
+                    ],
+                    'label' => 'Sábado',
+                ],
+                'isCompleted' => true,
+            ],
+        ]],
+    ];
+
+    $response = $this->postJson("/api/v1/admin/tournaments/{$t->id}/schedule", $payload)
+        ->assertOk();
+
+    $response->assertJsonCount(40, 'data');
+
+    $groupCounts = DB::table('team_tournament')
+        ->select('group_key', DB::raw('COUNT(*) as total'))
+        ->where('tournament_id', $t->id)
+        ->whereNotNull('group_key')
+        ->groupBy('group_key')
+        ->orderBy('group_key')
+        ->pluck('total', 'group_key')
+        ->toArray();
+
+    expect($groupCounts)->toBe([
+        'A' => 6,
+        'B' => 6,
+        'C' => 5,
+    ]);
+
+    $config = $t->fresh()->groupConfiguration;
+    expect($config->group_sizes)->toBe([6, 6, 5]);
+
+    $this->getJson("/api/v1/admin/tournaments/{$t->id}/schedule/settings")
+        ->assertOk()
+        ->assertJsonPath('group_phase.group_sizes', [6, 6, 5]);
+});
+
+it('respeta tamaños de grupo personalizados 9-8', function () {
+    [$t, $location] = createTournamentViaApi(TournamentFormatId::GroupAndElimination->value, 1, null, null);
+    attachTeamsToTournament($t, 17);
+    $field = $location->fields()->first();
+    $startDate = Carbon::now()->next(CarbonInterface::FRIDAY)->startOfDay()->toIso8601String();
+
+    $phases = Phase::whereIn('name', ['Fase de grupos', 'Octavos de Final', 'Cuartos de Final', 'Semifinales', 'Final'])
+        ->get()
+        ->keyBy('name');
+
+    $payload = [
+        'general' => [
+            'tournament_id' => $t->id,
+            'tournament_format_id' => TournamentFormatId::GroupAndElimination->value,
+            'football_type_id' => 1,
+            'start_date' => $startDate,
+            'game_time' => 90,
+            'time_between_games' => 0,
+            'total_teams' => 17,
+            'round_trip' => false,
+            'group_stage' => true,
+            'elimination_round_trip' => true,
+            'locations' => [['id' => $location->id, 'name' => $location->name]],
+        ],
+        'rules_phase' => [
+            'round_trip' => false,
+            'tiebreakers' => $t->configuration->tiebreakers->toArray(),
+        ],
+        'group_phase' => [
+            'teams_per_group' => 4,
+            'advance_top_n' => 2,
+            'include_best_thirds' => false,
+            'best_thirds_count' => null,
+            'group_sizes' => [9, 8],
+        ],
+        'elimination_phase' => [
+            'teams_to_next_round' => 8,
+            'elimination_round_trip' => true,
+            'phases' => [
+                ['id' => $phases['Fase de grupos']->id, 'name' => 'Fase de grupos', 'is_active' => true, 'is_completed' => false, 'tournament_id' => $t->id],
+                ['id' => $phases['Octavos de Final']->id, 'name' => 'Octavos de Final', 'is_active' => false, 'is_completed' => false, 'tournament_id' => $t->id],
+                ['id' => $phases['Cuartos de Final']->id, 'name' => 'Cuartos de Final', 'is_active' => false, 'is_completed' => false, 'tournament_id' => $t->id],
+                ['id' => $phases['Semifinales']->id, 'name' => 'Semifinales', 'is_active' => false, 'is_completed' => false, 'tournament_id' => $t->id],
+                ['id' => $phases['Final']->id, 'name' => 'Final', 'is_active' => false, 'is_completed' => false, 'tournament_id' => $t->id],
+            ],
+        ],
+        'fields_phase' => [[
+            'field_id' => $field->id,
+            'step' => 1,
+            'field_name' => $field->name,
+            'location_id' => $location->id,
+            'location_name' => $location->name,
+            'disabled' => false,
+            'availability' => [
+                'friday' => [
+                    'enabled' => true,
+                    'available_range' => '09:00 a 17:00',
+                    'intervals' => [
+                        ['value' => '09:00', 'text' => '09:00', 'selected' => true, 'disabled' => false],
+                        ['value' => '11:00', 'text' => '11:00', 'selected' => true, 'disabled' => false],
+                        ['value' => '13:00', 'text' => '13:00', 'selected' => true, 'disabled' => false],
+                        ['value' => '15:00', 'text' => '15:00', 'selected' => true, 'disabled' => false],
+                    ],
+                    'label' => 'Viernes',
+                ],
+                'saturday' => [
+                    'enabled' => true,
+                    'available_range' => '09:00 a 17:00',
+                    'intervals' => [
+                        ['value' => '09:00', 'text' => '09:00', 'selected' => true, 'disabled' => false],
+                        ['value' => '11:00', 'text' => '11:00', 'selected' => true, 'disabled' => false],
+                        ['value' => '13:00', 'text' => '13:00', 'selected' => true, 'disabled' => false],
+                        ['value' => '15:00', 'text' => '15:00', 'selected' => true, 'disabled' => false],
+                    ],
+                    'label' => 'Sábado',
+                ],
+                'isCompleted' => true,
+            ],
+        ]],
+    ];
+
+    $response = $this->postJson("/api/v1/admin/tournaments/{$t->id}/schedule", $payload)
+        ->assertOk();
+
+    $response->assertJsonCount(64, 'data');
+
+    $groupCounts = DB::table('team_tournament')
+        ->select('group_key', DB::raw('COUNT(*) as total'))
+        ->where('tournament_id', $t->id)
+        ->whereNotNull('group_key')
+        ->groupBy('group_key')
+        ->orderBy('group_key')
+        ->pluck('total', 'group_key')
+        ->toArray();
+
+    expect($groupCounts)->toBe([
+        'A' => 9,
+        'B' => 8,
+    ]);
+
+    expect($t->fresh()->groupConfiguration->group_sizes)->toBe([9, 8]);
+});

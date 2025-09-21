@@ -45,6 +45,9 @@ class ScheduleSettingsResource extends JsonResource
                 'advance_top_n' => $this->resource->groupConfiguration->advance_top_n,
                 'include_best_thirds' => (bool)$this->resource->groupConfiguration->include_best_thirds,
                 'best_thirds_count' => $this->resource->groupConfiguration->best_thirds_count,
+                'group_sizes' => $this->resource->groupConfiguration->group_sizes
+                    ? array_map('intval', $this->resource->groupConfiguration->group_sizes)
+                    : null,
             ] : null,
         ];
     }

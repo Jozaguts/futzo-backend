@@ -11,6 +11,7 @@ class TournamentGroupConfiguration extends Model
     protected $fillable = [
         'tournament_id',
         'teams_per_group',
+        'group_sizes',
         'advance_top_n',
         'include_best_thirds',
         'best_thirds_count',
@@ -18,6 +19,7 @@ class TournamentGroupConfiguration extends Model
 
     protected $casts = [
         'include_best_thirds' => 'boolean',
+        'group_sizes' => 'array',
     ];
 
     public function tournament(): BelongsTo

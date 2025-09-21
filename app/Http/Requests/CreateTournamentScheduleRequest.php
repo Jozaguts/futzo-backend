@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests;
 
-use App\Models\TournamentConfiguration;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -148,8 +148,28 @@ class CreateTournamentScheduleRequest extends FormRequest
             'group_phase.advance_top_n' => 'required_with:group_phase|integer|min:1',
             'group_phase.include_best_thirds' => 'sometimes|boolean',
             'group_phase.best_thirds_count' => 'nullable|integer|min:0',
+            'group_phase.group_sizes' => 'nullable|array',
+            'group_phase.group_sizes.*' => 'integer|min:2',
 
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function ($validator) {
+            $groupSizes = $this->input('group_phase.group_sizes');
+            if (is_array($groupSizes) && count($groupSizes) > 0) {
+                $totalTeams = (int)$this->input('general.total_teams');
+                $configuredTotal = array_sum(array_map('intval', $groupSizes));
+
+                if ($configuredTotal !== $totalTeams) {
+                    $validator->errors()->add(
+                        'group_phase.group_sizes',
+                        'La suma de los tamaños de grupo debe coincidir con el total de equipos (' . $totalTeams . ').'
+                    );
+                }
+            }
+        });
     }
     public function messages(): array
     {

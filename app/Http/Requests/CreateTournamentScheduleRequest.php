@@ -25,7 +25,7 @@ class CreateTournamentScheduleRequest extends FormRequest
             ->first(['min_teams', 'max_teams']);
 
         $minTeams = $config->min_teams ?? 8;
-        $maxTeams = $config->max_teams ?? 40;
+        $maxTeams = $config->max_teams ?? 36;
 
         if ($formatId === TournamentFormatId::GroupAndElimination->value) {
             $maxTeams = min($maxTeams, 36);
@@ -167,7 +167,7 @@ class CreateTournamentScheduleRequest extends FormRequest
     {
         $validator->after(function ($validator) {
             $groupPhase = $this->input('group_phase');
-
+          
             if (is_array($groupPhase)) {
                 $optionId = $groupPhase['option_id'] ?? null;
 
@@ -213,7 +213,7 @@ class CreateTournamentScheduleRequest extends FormRequest
             $groupSizes = is_array($groupPhase)
                 ? ($groupPhase['group_sizes'] ?? null)
                 : $this->input('group_phase.group_sizes');
-
+          
             if (is_array($groupSizes) && count($groupSizes) > 0) {
                 $totalTeams = (int) $this->input('general.total_teams');
                 $configuredSizes = array_values(array_map('intval', $groupSizes));
@@ -247,6 +247,7 @@ class CreateTournamentScheduleRequest extends FormRequest
                     'Los torneos con fase de grupos admiten un máximo de 36 equipos cuando el total es impar.'
                 );
             }
+       
         });
     }
     public function messages(): array

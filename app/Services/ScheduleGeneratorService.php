@@ -10,6 +10,7 @@ use App\Models\TournamentConfiguration;
 use App\Models\TournamentField;
 use App\Models\TournamentPhase;
 use App\Models\TournamentTiebreaker;
+use App\Services\GroupConfigurationOptionService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -666,7 +667,10 @@ class ScheduleGeneratorService
         $this->saveTiebreakers($data['rules_phase']['tiebreakers']);
         $this->saveEliminationPhase($data['elimination_phase']);
         if (!empty($data['group_phase'])) {
-            $this->saveGroupPhaseConfiguration($data['group_phase']);
+            $this->saveGroupPhaseConfiguration(
+                $data['group_phase'],
+                (int)$data['general']['total_teams']
+            );
         }
         $this->saveFieldsPhase($data['fields_phase']);
         return $this;
@@ -758,26 +762,61 @@ class ScheduleGeneratorService
         }
     }
 
-    private function saveGroupPhaseConfiguration(array $data): void
+    private function saveGroupPhaseConfiguration(array $data, int $totalTeams): void
     {
+        $optionId = $data['option_id'] ?? null;
+        if (!$optionId && isset($data['selected_option'])) {
+            $optionId = is_array($data['selected_option'])
+                ? ($data['selected_option']['id'] ?? null)
+                : $data['selected_option'];
+        }
+        if (!$optionId && isset($data['option']) && !is_array($data['option'])) {
+            $optionId = $data['option'];
+        }
+
+        $payload = null;
+        if ($optionId) {
+            $service = new GroupConfigurationOptionService();
+            $options = $service->buildOptions($totalTeams);
+            $matched = collect($options)->firstWhere('id', $optionId);
+            if (!$matched) {
+                throw new RuntimeException('La opción de grupos seleccionada no es válida para el total de equipos.');
+            }
+            $payload = $matched['group_phase'];
+        } else {
+            $payload = [
+                'teams_per_group' => $data['teams_per_group'] ?? null,
+                'advance_top_n' => $data['advance_top_n'] ?? null,
+                'include_best_thirds' => $data['include_best_thirds'] ?? false,
+                'best_thirds_count' => $data['best_thirds_count'] ?? null,
+                'group_sizes' => $data['group_sizes'] ?? null,
+            ];
+        }
+
+        if (!isset($payload['teams_per_group'], $payload['advance_top_n'])) {
+            throw new RuntimeException('La configuración de grupos es inválida.');
+        }
+
         $groupSizes = null;
-        if (isset($data['group_sizes']) && is_array($data['group_sizes'])) {
+        if (isset($payload['group_sizes']) && is_array($payload['group_sizes'])) {
             $normalized = array_values(array_filter(
-                array_map('intval', $data['group_sizes']),
+                array_map('intval', $payload['group_sizes']),
                 static fn($size) => $size > 0
             ));
             if (!empty($normalized)) {
                 $groupSizes = $normalized;
             }
         }
-        // Guardar configuración de grupos, ligada al torneo
+
         \App\Models\TournamentGroupConfiguration::updateOrCreate(
             ['tournament_id' => $this->tournament->id],
             [
-                'teams_per_group' => (int)$data['teams_per_group'],
-                'advance_top_n' => (int)$data['advance_top_n'],
-                'include_best_thirds' => (bool)($data['include_best_thirds'] ?? false),
-                'best_thirds_count' => $data['best_thirds_count'] ?? null,
+                'teams_per_group' => (int)$payload['teams_per_group'],
+                'advance_top_n' => (int)$payload['advance_top_n'],
+                'include_best_thirds' => (bool)($payload['include_best_thirds'] ?? false),
+                'best_thirds_count' => isset($payload['best_thirds_count']) && $payload['best_thirds_count'] !== null
+                    ? (int)$payload['best_thirds_count']
+                    : null,
                 'group_sizes' => $groupSizes,
             ]
         );

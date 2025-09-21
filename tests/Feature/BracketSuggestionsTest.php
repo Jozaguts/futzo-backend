@@ -12,7 +12,7 @@ it('suggests free slots for bracket scheduling and reflects conflicts', function
     $field = $location->fields()->first();
     $startDate = Carbon::now()->next(CarbonInterface::FRIDAY)->startOfDay()->toIso8601String();
 
-    $phases = Phase::whereIn('name', ['Fase de grupos','Octavos de Final','Cuartos de Final','Semifinales','Final'])->get()->keyBy('name');
+    $phases = Phase::whereIn('name', ['Fase de grupos','Dieciseisavos de Final','Octavos de Final','Cuartos de Final','Semifinales','Final'])->get()->keyBy('name');
     $payload = [
         'general' => [
             'tournament_id' => $t->id,

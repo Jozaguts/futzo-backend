@@ -14,7 +14,7 @@ it('previews and confirms bracket using table standings for Liga + Eliminatoria'
     $startDate = Carbon::now()->next(CarbonInterface::FRIDAY)->startOfDay()->toIso8601String();
 
     // 2) Generar "Tabla general" (todos contra todos)
-    $phases = Phase::whereIn('name', ['Tabla general','Octavos de Final','Cuartos de Final','Semifinales','Final'])->get()->keyBy('name');
+    $phases = Phase::whereIn('name', ['Tabla general','Dieciseisavos de Final','Octavos de Final','Cuartos de Final','Semifinales','Final'])->get()->keyBy('name');
     $payloadLeague = [
         'general' => [
             'tournament_id' => $t->id,

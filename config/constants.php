@@ -438,6 +438,13 @@ return [
             'min_teams_for' => null,
         ],
         [
+            'id' => 7,
+            'name' => 'Dieciseisavos de Final',
+            'is_active' => false,
+            'is_completed' => false,
+            'min_teams_for' => 32,
+        ],
+        [
             'id' => 3,
             'name' => 'Octavos de Final',
             'is_active' => false,

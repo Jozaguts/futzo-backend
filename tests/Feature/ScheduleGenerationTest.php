@@ -1,7 +1,10 @@
 <?php
 
+use App\Models\Game;
 use App\Models\Phase;
+use App\Models\Standing;
 use App\Models\Tournament;
+use App\Models\TournamentGroupConfiguration;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -186,7 +189,7 @@ it('genera fase de grupos y luego elimina con reglas por fase', function () {
     $startDate = Carbon::now()->next(CarbonInterface::FRIDAY)->startOfDay()->toIso8601String();
 
     // 1) Generar fase de grupos (4x4, top2)
-    $phases = Phase::whereIn('name', ['Fase de grupos','Octavos de Final','Cuartos de Final','Semifinales','Final'])->get()->keyBy('name');
+    $phases = Phase::whereIn('name', ['Fase de grupos','Dieciseisavos de Final','Octavos de Final','Cuartos de Final','Semifinales','Final'])->get()->keyBy('name');
     $payloadGroups = [
         'general' => [
             'tournament_id' => $t->id,
@@ -307,13 +310,190 @@ it('genera fase de grupos y luego elimina con reglas por fase', function () {
     $resKO->assertJsonCount(8, 'data');
 });
 
+it('genera y expone dieciseisavos de final con 32 equipos', function () {
+    [$t, $location] = createTournamentViaApi(TournamentFormatId::GroupAndElimination->value, 1, null, null);
+    attachTeamsToTournament($t, 32);
+    $t = $t->refresh();
+    $fields = $location->fields()->take(2)->get();
+    expect($fields)->toHaveCount(2);
+
+    $startDate = Carbon::now()->next(CarbonInterface::FRIDAY)->startOfDay()->toIso8601String();
+
+    TournamentGroupConfiguration::updateOrCreate(
+        ['tournament_id' => $t->id],
+        [
+            'teams_per_group' => 4,
+            'advance_top_n' => 4,
+            'include_best_thirds' => false,
+            'best_thirds_count' => null,
+            'group_sizes' => null,
+        ]
+    );
+
+    $teamTournamentRows = DB::table('team_tournament')
+        ->where('tournament_id', $t->id)
+        ->orderBy('team_id')
+        ->get();
+
+    expect($teamTournamentRows)->toHaveCount(32);
+
+    $groupPhaseId = DB::table('tournament_phases')
+        ->join('phases', 'phases.id', '=', 'tournament_phases.phase_id')
+        ->where('tournament_phases.tournament_id', $t->id)
+        ->where('phases.name', 'Fase de grupos')
+        ->value('tournament_phases.id');
+
+    expect($groupPhaseId)->not->toBeNull();
+
+    $primaryField = $fields->first();
+    $teamsForDummyGame = $t->teams()->orderBy('teams.id')->take(2)->get();
+
+    $dummyGame = Game::create([
+        'tournament_id' => $t->id,
+        'league_id' => $t->league_id,
+        'home_team_id' => $teamsForDummyGame[0]->id,
+        'away_team_id' => $teamsForDummyGame[1]->id,
+        'field_id' => $primaryField->id,
+        'location_id' => $location->id,
+        'match_date' => Carbon::parse($startDate)->toDateString(),
+        'match_time' => '09:00:00',
+        'status' => Game::STATUS_COMPLETED,
+        'round' => 1,
+        'home_goals' => 1,
+        'away_goals' => 0,
+        'tournament_phase_id' => $groupPhaseId,
+    ]);
+
+    $letters = range('A', 'H');
+    $teamTournamentRows->chunk(4)->values()->each(function ($chunk, $groupIndex) use ($letters, $groupPhaseId, $dummyGame, $t) {
+        $letter = $letters[$groupIndex];
+        $chunk->values()->each(function ($row, $rankIndex) use ($letter, $groupPhaseId, $dummyGame, $t) {
+            DB::table('team_tournament')
+                ->where('id', $row->id)
+                ->update(['group_key' => $letter, 'updated_at' => now()]);
+
+            Standing::create([
+                'team_id' => $row->team_id,
+                'team_tournament_id' => $row->id,
+                'updated_after_game_id' => $dummyGame->id,
+                'tournament_phase_id' => $groupPhaseId,
+                'matches_played' => 3,
+                'tournament_id' => $t->id,
+                'league_id' => $t->league_id,
+                'wins' => max(0, 3 - $rankIndex),
+                'draws' => 0,
+                'losses' => $rankIndex,
+                'goals_for' => 12 - $rankIndex,
+                'goals_against' => $rankIndex,
+                'goal_difference' => (12 - $rankIndex) - $rankIndex,
+                'points' => 100 - ($groupIndex * 4 + $rankIndex),
+                'fair_play_points' => 0,
+                'last_5' => 'WWWWW',
+                'rank' => $rankIndex + 1,
+            ]);
+        });
+    });
+
+    $phases = Phase::whereIn('name', ['Fase de grupos', 'Dieciseisavos de Final', 'Octavos de Final', 'Cuartos de Final', 'Semifinales', 'Final'])
+        ->get()
+        ->keyBy('name');
+
+    $intervals = ['09:00', '11:00', '13:00', '15:00'];
+    $fieldsPhase = $fields->values()->map(function ($field, $index) use ($location, $intervals) {
+        $mapIntervals = fn(array $hours) => array_map(static fn($hour) => [
+            'value' => $hour,
+            'text' => $hour,
+            'selected' => true,
+            'disabled' => false,
+        ], $hours);
+
+        return [
+            'field_id' => $field->id,
+            'step' => $index + 1,
+            'field_name' => $field->name,
+            'location_id' => $location->id,
+            'location_name' => $location->name,
+            'disabled' => false,
+            'availability' => [
+                'friday' => [
+                    'enabled' => true,
+                    'available_range' => '09:00 a 17:00',
+                    'intervals' => $mapIntervals($intervals),
+                    'label' => 'Viernes',
+                ],
+                'saturday' => [
+                    'enabled' => true,
+                    'available_range' => '09:00 a 17:00',
+                    'intervals' => $mapIntervals($intervals),
+                    'label' => 'Sábado',
+                ],
+                'isCompleted' => true,
+            ],
+        ];
+    })->toArray();
+
+    $payload = [
+        'general' => [
+            'tournament_id' => $t->id,
+            'tournament_format_id' => TournamentFormatId::GroupAndElimination->value,
+            'football_type_id' => 1,
+            'start_date' => Carbon::parse($startDate)->addWeeks(5)->toIso8601String(),
+            'game_time' => 90,
+            'time_between_games' => 0,
+            'total_teams' => 32,
+            'round_trip' => false,
+            'group_stage' => false,
+            'elimination_round_trip' => false,
+            'locations' => [['id' => $location->id, 'name' => $location->name]],
+        ],
+        'rules_phase' => [
+            'round_trip' => false,
+            'tiebreakers' => $t->configuration->tiebreakers->toArray(),
+        ],
+        'elimination_phase' => [
+            'teams_to_next_round' => 32,
+            'elimination_round_trip' => false,
+            'phases' => [
+                ['id' => $phases['Fase de grupos']->id, 'name' => 'Fase de grupos', 'is_active' => false, 'is_completed' => true, 'tournament_id' => $t->id],
+                ['id' => $phases['Dieciseisavos de Final']->id, 'name' => 'Dieciseisavos de Final', 'is_active' => true, 'is_completed' => false, 'tournament_id' => $t->id,
+                    'rules' => ['round_trip' => false, 'away_goals' => false, 'extra_time' => true, 'penalties' => true, 'advance_if_tie' => 'better_seed']],
+                ['id' => $phases['Octavos de Final']->id, 'name' => 'Octavos de Final', 'is_active' => false, 'is_completed' => false, 'tournament_id' => $t->id],
+                ['id' => $phases['Cuartos de Final']->id, 'name' => 'Cuartos de Final', 'is_active' => false, 'is_completed' => false, 'tournament_id' => $t->id],
+                ['id' => $phases['Semifinales']->id, 'name' => 'Semifinales', 'is_active' => false, 'is_completed' => false, 'tournament_id' => $t->id],
+                ['id' => $phases['Final']->id, 'name' => 'Final', 'is_active' => false, 'is_completed' => false, 'tournament_id' => $t->id],
+            ],
+        ],
+        'fields_phase' => $fieldsPhase,
+    ];
+
+    $response = $this->postJson("/api/v1/admin/tournaments/{$t->id}/schedule", $payload)
+        ->assertOk();
+
+    $response->assertJsonCount(16, 'data');
+
+    $this->getJson("/api/v1/admin/tournaments/{$t->id}/schedule/settings")
+        ->assertOk()
+        ->assertJsonPath('teams_to_next_round', 32);
+
+    $preview = $this->json('GET', "/api/v1/admin/tournaments/{$t->id}/bracket/preview?phase=Dieciseisavos de Final")
+        ->assertStatus(200)
+        ->json();
+
+    expect($preview['phase'])->toBe('Dieciseisavos de Final');
+    expect($preview['source'])->toBe('group_standings');
+    expect($preview['target_teams'])->toBe(32);
+    expect(count($preview['pairs']))->toBe(16);
+    expect($preview['pairs'][0]['home_seed'])->toBe(1);
+    expect($preview['pairs'][0]['away_seed'])->toBe(32);
+});
+
 it('respeta tamaños de grupo personalizados 6-6-5', function () {
     [$t, $location] = createTournamentViaApi(TournamentFormatId::GroupAndElimination->value, 1, null, null);
     attachTeamsToTournament($t, 17);
     $field = $location->fields()->first();
     $startDate = Carbon::now()->next(CarbonInterface::FRIDAY)->startOfDay()->toIso8601String();
 
-    $phases = Phase::whereIn('name', ['Fase de grupos', 'Octavos de Final', 'Cuartos de Final', 'Semifinales', 'Final'])
+    $phases = Phase::whereIn('name', ['Fase de grupos', 'Dieciseisavos de Final', 'Octavos de Final', 'Cuartos de Final', 'Semifinales', 'Final'])
         ->get()
         ->keyBy('name');
 
@@ -422,7 +602,7 @@ it('respeta tamaños de grupo personalizados 9-8', function () {
     $field = $location->fields()->first();
     $startDate = Carbon::now()->next(CarbonInterface::FRIDAY)->startOfDay()->toIso8601String();
 
-    $phases = Phase::whereIn('name', ['Fase de grupos', 'Octavos de Final', 'Cuartos de Final', 'Semifinales', 'Final'])
+    $phases = Phase::whereIn('name', ['Fase de grupos', 'Dieciseisavos de Final', 'Octavos de Final', 'Cuartos de Final', 'Semifinales', 'Final'])
         ->get()
         ->keyBy('name');
 

@@ -64,7 +64,7 @@ class ScheduleGeneratorService
                 return $this->makeGroupStageScheduleInternal($teams, $fields, $matchDuration);
             }
             // Si no hay grupos habilitados, y es una fase de eliminación
-            if (in_array($activePhaseName, ['Octavos de Final','Cuartos de Final','Semifinales','Final'])) {
+            if (in_array($activePhaseName, ['Dieciseisavos de Final','Octavos de Final','Cuartos de Final','Semifinales','Final'])) {
                 return $this->makeEliminationScheduleInternal($fields, $matchDuration, $activePhase);
             }
         }
@@ -290,6 +290,7 @@ class ScheduleGeneratorService
         $formatId = (int)$this->tournament->configuration->tournament_format_id;
         $phaseName = $activePhase?->phase?->name;
         $targetTeams = match($phaseName) {
+            'Dieciseisavos de Final' => 32,
             'Octavos de Final' => 16,
             'Cuartos de Final' => 8,
             'Semifinales' => 4,

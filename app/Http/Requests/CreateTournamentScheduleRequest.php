@@ -150,8 +150,11 @@ class CreateTournamentScheduleRequest extends FormRequest
 
             // Configuración de fase de grupos (opcional, solo si group_stage=1)
             'group_phase' => 'nullable|array',
-            'group_phase.teams_per_group' => 'required_with:group_phase|integer|min:2',
-            'group_phase.advance_top_n' => 'required_with:group_phase|integer|min:1',
+            'group_phase.option_id' => 'sometimes|nullable|string',
+            'group_phase.selected_option' => 'sometimes',
+            'group_phase.option' => 'sometimes',
+            'group_phase.teams_per_group' => 'nullable|integer|min:2',
+            'group_phase.advance_top_n' => 'nullable|integer|min:1',
             'group_phase.include_best_thirds' => 'sometimes|boolean',
             'group_phase.best_thirds_count' => 'nullable|integer|min:0',
             'group_phase.group_sizes' => 'nullable|array',
@@ -166,14 +169,44 @@ class CreateTournamentScheduleRequest extends FormRequest
             $groupPhase = $this->input('group_phase');
 
             if (is_array($groupPhase)) {
-                if (!array_key_exists('advance_top_n', $groupPhase)
-                    || $groupPhase['advance_top_n'] === null
-                    || $groupPhase['advance_top_n'] === ''
-                ) {
-                    $validator->errors()->add(
-                        'group_phase.advance_top_n',
-                        'El campo group phase.advance top n es obligatorio cuando no se selecciona una opción predefinida.'
-                    );
+                $optionId = $groupPhase['option_id'] ?? null;
+
+                if ($optionId === null || $optionId === '') {
+                    $selectedOption = $groupPhase['selected_option'] ?? null;
+                    if (is_array($selectedOption)) {
+                        $optionId = $selectedOption['id'] ?? null;
+                    } elseif (is_string($selectedOption) || is_int($selectedOption)) {
+                        $optionId = $selectedOption;
+                    }
+                }
+
+                if ($optionId === null || $optionId === '') {
+                    $option = $groupPhase['option'] ?? null;
+                    if (is_string($option) || is_int($option)) {
+                        $optionId = $option;
+                    }
+                }
+
+                if ($optionId === null || $optionId === '') {
+                    if (!array_key_exists('teams_per_group', $groupPhase)
+                        || $groupPhase['teams_per_group'] === null
+                        || $groupPhase['teams_per_group'] === ''
+                    ) {
+                        $validator->errors()->add(
+                            'group_phase.teams_per_group',
+                            'El campo group phase.teams per group es obligatorio cuando no se selecciona una opción predefinida.'
+                        );
+                    }
+
+                    if (!array_key_exists('advance_top_n', $groupPhase)
+                        || $groupPhase['advance_top_n'] === null
+                        || $groupPhase['advance_top_n'] === ''
+                    ) {
+                        $validator->errors()->add(
+                            'group_phase.advance_top_n',
+                            'El campo group phase.advance top n es obligatorio cuando no se selecciona una opción predefinida.'
+                        );
+                    }
                 }
             }
 

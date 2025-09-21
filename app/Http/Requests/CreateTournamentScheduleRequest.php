@@ -163,7 +163,24 @@ class CreateTournamentScheduleRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function ($validator) {
-            $groupSizes = $this->input('group_phase.group_sizes');
+            $groupPhase = $this->input('group_phase');
+
+            if (is_array($groupPhase)) {
+                if (!array_key_exists('advance_top_n', $groupPhase)
+                    || $groupPhase['advance_top_n'] === null
+                    || $groupPhase['advance_top_n'] === ''
+                ) {
+                    $validator->errors()->add(
+                        'group_phase.advance_top_n',
+                        'El campo group phase.advance top n es obligatorio cuando no se selecciona una opción predefinida.'
+                    );
+                }
+            }
+
+            $groupSizes = is_array($groupPhase)
+                ? ($groupPhase['group_sizes'] ?? null)
+                : $this->input('group_phase.group_sizes');
+
             if (is_array($groupSizes) && count($groupSizes) > 0) {
                 $totalTeams = (int) $this->input('general.total_teams');
                 $configuredSizes = array_values(array_map('intval', $groupSizes));

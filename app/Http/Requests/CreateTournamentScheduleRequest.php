@@ -144,11 +144,11 @@ class CreateTournamentScheduleRequest extends FormRequest
 
             // Configuración de fase de grupos (opcional, solo si group_stage=1)
             'group_phase' => 'nullable|array',
-            'group_phase.option_id' => 'sometimes|string',
+            'group_phase.option_id' => 'sometimes|nullable|string',
             'group_phase.selected_option' => 'sometimes',
             'group_phase.option' => 'sometimes',
-            'group_phase.teams_per_group' => 'required_without:group_phase.option_id|integer|min:2',
-            'group_phase.advance_top_n' => 'required_without:group_phase.option_id|integer|min:1',
+            'group_phase.teams_per_group' => 'nullable|integer|min:2',
+            'group_phase.advance_top_n' => 'nullable|integer|min:1',
             'group_phase.include_best_thirds' => 'sometimes|boolean',
             'group_phase.best_thirds_count' => 'nullable|integer|min:0',
             'group_phase.group_sizes' => 'nullable|array',
@@ -160,36 +160,62 @@ class CreateTournamentScheduleRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function ($validator) {
-            $optionId = $this->input('group_phase.option_id');
+            $groupPhase = $this->input('group_phase');
+
+            if (!is_array($groupPhase)) {
+                return;
+            }
+
+            $optionId = $groupPhase['option_id'] ?? null;
+
             if (!$optionId) {
-                $selectedOption = $this->input('group_phase.selected_option');
+                $selectedOption = $groupPhase['selected_option'] ?? null;
                 if (is_array($selectedOption)) {
                     $optionId = $selectedOption['id'] ?? null;
                 } elseif (is_string($selectedOption)) {
                     $optionId = $selectedOption;
                 }
             }
+
             if (!$optionId) {
-                $option = $this->input('group_phase.option');
+                $option = $groupPhase['option'] ?? null;
                 if (is_string($option)) {
                     $optionId = $option;
                 }
             }
 
-            if ($optionId) {
-                return;
-            }
-
-            $groupSizes = $this->input('group_phase.group_sizes');
-            if (is_array($groupSizes) && count($groupSizes) > 0) {
-                $totalTeams = (int)$this->input('general.total_teams');
-                $configuredTotal = array_sum(array_map('intval', $groupSizes));
-
-                if ($configuredTotal !== $totalTeams) {
+            if (!$optionId) {
+                if (!array_key_exists('teams_per_group', $groupPhase)
+                    || $groupPhase['teams_per_group'] === null
+                    || $groupPhase['teams_per_group'] === ''
+                ) {
                     $validator->errors()->add(
-                        'group_phase.group_sizes',
-                        'La suma de los tamaños de grupo debe coincidir con el total de equipos (' . $totalTeams . ').'
+                        'group_phase.teams_per_group',
+                        'El campo group phase.teams per group es obligatorio cuando no se selecciona una opción predefinida.'
                     );
+                }
+
+                if (!array_key_exists('advance_top_n', $groupPhase)
+                    || $groupPhase['advance_top_n'] === null
+                    || $groupPhase['advance_top_n'] === ''
+                ) {
+                    $validator->errors()->add(
+                        'group_phase.advance_top_n',
+                        'El campo group phase.advance top n es obligatorio cuando no se selecciona una opción predefinida.'
+                    );
+                }
+
+                $groupSizes = $groupPhase['group_sizes'] ?? null;
+                if (is_array($groupSizes) && count($groupSizes) > 0) {
+                    $totalTeams = (int)$this->input('general.total_teams');
+                    $configuredTotal = array_sum(array_map('intval', $groupSizes));
+
+                    if ($configuredTotal !== $totalTeams) {
+                        $validator->errors()->add(
+                            'group_phase.group_sizes',
+                            'La suma de los tamaños de grupo debe coincidir con el total de equipos (' . $totalTeams . ').'
+                        );
+                    }
                 }
             }
         });

@@ -144,8 +144,11 @@ class CreateTournamentScheduleRequest extends FormRequest
 
             // Configuración de fase de grupos (opcional, solo si group_stage=1)
             'group_phase' => 'nullable|array',
-            'group_phase.teams_per_group' => 'required_with:group_phase|integer|min:2',
-            'group_phase.advance_top_n' => 'required_with:group_phase|integer|min:1',
+            'group_phase.option_id' => 'sometimes|string',
+            'group_phase.selected_option' => 'sometimes',
+            'group_phase.option' => 'sometimes',
+            'group_phase.teams_per_group' => 'required_without:group_phase.option_id|integer|min:2',
+            'group_phase.advance_top_n' => 'required_without:group_phase.option_id|integer|min:1',
             'group_phase.include_best_thirds' => 'sometimes|boolean',
             'group_phase.best_thirds_count' => 'nullable|integer|min:0',
             'group_phase.group_sizes' => 'nullable|array',
@@ -157,6 +160,26 @@ class CreateTournamentScheduleRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function ($validator) {
+            $optionId = $this->input('group_phase.option_id');
+            if (!$optionId) {
+                $selectedOption = $this->input('group_phase.selected_option');
+                if (is_array($selectedOption)) {
+                    $optionId = $selectedOption['id'] ?? null;
+                } elseif (is_string($selectedOption)) {
+                    $optionId = $selectedOption;
+                }
+            }
+            if (!$optionId) {
+                $option = $this->input('group_phase.option');
+                if (is_string($option)) {
+                    $optionId = $option;
+                }
+            }
+
+            if ($optionId) {
+                return;
+            }
+
             $groupSizes = $this->input('group_phase.group_sizes');
             if (is_array($groupSizes) && count($groupSizes) > 0) {
                 $totalTeams = (int)$this->input('general.total_teams');

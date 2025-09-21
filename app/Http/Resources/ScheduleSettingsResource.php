@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Services\GroupConfigurationOptionService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -9,6 +10,38 @@ class ScheduleSettingsResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $teamCount = $this->resource->teams->count();
+        $optionsService = new GroupConfigurationOptionService();
+        $groupOptions = $optionsService->buildOptions($teamCount);
+
+        $selectedOptionId = null;
+        $groupConfiguration = $this->resource->groupConfiguration;
+        if ($groupConfiguration && !empty($groupOptions) && is_array($groupConfiguration->group_sizes)) {
+            $storedSizes = array_map('intval', $groupConfiguration->group_sizes);
+            rsort($storedSizes, SORT_NUMERIC);
+            $advanceTopN = (int)$groupConfiguration->advance_top_n;
+            $includeBestThirds = (bool)$groupConfiguration->include_best_thirds;
+            $bestThirdsCount = $groupConfiguration->best_thirds_count;
+
+            $matched = collect($groupOptions)->first(function (array $option) use (
+                $storedSizes,
+                $advanceTopN,
+                $includeBestThirds,
+                $bestThirdsCount
+            ) {
+                $payload = $option['group_phase'];
+
+                return $payload['group_sizes'] === $storedSizes
+                    && (int)$payload['advance_top_n'] === $advanceTopN
+                    && (bool)$payload['include_best_thirds'] === $includeBestThirds
+                    && (int)($payload['best_thirds_count'] ?? 0) === (int)($bestThirdsCount ?? 0);
+            });
+
+            if ($matched) {
+                $selectedOptionId = $matched['id'];
+            }
+        }
+
         return [
             'round_trip' => $this->resource->configuration->round_trip,
             'start_date' => $this->resource->start_date?->format('Y-m-d'),
@@ -49,6 +82,8 @@ class ScheduleSettingsResource extends JsonResource
                     ? array_map('intval', $this->resource->groupConfiguration->group_sizes)
                     : null,
             ] : null,
+            'group_phase_option_id' => $selectedOptionId,
+            'group_configuration_options' => $groupOptions,
         ];
     }
 

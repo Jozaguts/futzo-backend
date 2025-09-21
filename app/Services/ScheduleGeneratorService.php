@@ -172,8 +172,18 @@ class ScheduleGeneratorService
     {
         $gc = $this->tournament->groupConfiguration;
         $teamsPerGroup = max(2, (int)$gc->teams_per_group);
+        $groupSizes = null;
+        if ($gc && is_array($gc->group_sizes) && !empty($gc->group_sizes)) {
+            $normalized = array_values(array_filter(
+                array_map('intval', $gc->group_sizes ?? []),
+                static fn($size) => $size > 0
+            ));
+            if (!empty($normalized)) {
+                $groupSizes = $normalized;
+            }
+        }
         // 1) Asignar grupos y persistir en pivot team_tournament.group_key
-        $groups = $this->assignGroups($teams, $teamsPerGroup);
+        $groups = $this->assignGroups($teams, $teamsPerGroup, $groupSizes);
         $this->persistGroups($groups);
 
         // 2) Generar fixtures por grupo (una vuelta por defecto)
@@ -446,18 +456,52 @@ class ScheduleGeneratorService
         return $matches;
     }
 
-    private function assignGroups(array $teams, int $teamsPerGroup): array
+    private function assignGroups(array $teams, int $teamsPerGroup, ?array $groupSizes = null): array
     {
         sort($teams); // orden estable
         $groups = [];
         $letters = range('A', 'Z');
-        $g = 0; $i = 0;
+        $groupIndex = 0;
+
+        if (is_array($groupSizes) && !empty($groupSizes)) {
+            $normalizedSizes = array_values(array_filter(
+                array_map('intval', $groupSizes),
+                static fn($size) => $size > 0
+            ));
+
+            $assignedTeams = 0;
+            $totalTeams = count($teams);
+
+            foreach ($normalizedSizes as $size) {
+                $letter = $letters[$groupIndex] ?? ('G' . ($groupIndex + 1));
+                $slice = array_slice($teams, $assignedTeams, $size);
+
+                if (count($slice) !== $size) {
+                    throw new RuntimeException('No hay suficientes equipos para llenar los grupos configurados.');
+                }
+
+                $groups[$letter] = $slice;
+                $assignedTeams += $size;
+                $groupIndex++;
+            }
+
+            if ($assignedTeams !== $totalTeams) {
+                throw new RuntimeException('La suma de los tamaños de grupo no coincide con el total de equipos.');
+            }
+
+            return $groups; // ['A'=>[...], 'B'=>[...]]
+        }
+
+        $i = 0;
         foreach ($teams as $teamId) {
-            $letter = $letters[$g] ?? ('G' . ($g+1));
+            $letter = $letters[$groupIndex] ?? ('G' . ($groupIndex + 1));
             $groups[$letter][] = $teamId;
             $i++;
-            if ($i % $teamsPerGroup === 0) { $g++; }
+            if ($i % $teamsPerGroup === 0) {
+                $groupIndex++;
+            }
         }
+
         return $groups; // ['A'=>[...], 'B'=>[...]]
     }
 
@@ -716,6 +760,16 @@ class ScheduleGeneratorService
 
     private function saveGroupPhaseConfiguration(array $data): void
     {
+        $groupSizes = null;
+        if (isset($data['group_sizes']) && is_array($data['group_sizes'])) {
+            $normalized = array_values(array_filter(
+                array_map('intval', $data['group_sizes']),
+                static fn($size) => $size > 0
+            ));
+            if (!empty($normalized)) {
+                $groupSizes = $normalized;
+            }
+        }
         // Guardar configuración de grupos, ligada al torneo
         \App\Models\TournamentGroupConfiguration::updateOrCreate(
             ['tournament_id' => $this->tournament->id],
@@ -724,6 +778,7 @@ class ScheduleGeneratorService
                 'advance_top_n' => (int)$data['advance_top_n'],
                 'include_best_thirds' => (bool)($data['include_best_thirds'] ?? false),
                 'best_thirds_count' => $data['best_thirds_count'] ?? null,
+                'group_sizes' => $groupSizes,
             ]
         );
     }

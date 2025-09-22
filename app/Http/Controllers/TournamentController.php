@@ -178,11 +178,28 @@ class TournamentController extends Controller
         ]);
     }
 
-    public function scheduleSettings(int $tournamentId): ScheduleSettingsResource
+    public function scheduleSettings(Tournament $tournament): ScheduleSettingsResource
     {
-        $tournament = Tournament::with(['configuration', 'format', 'footballType', 'locations'])
-            ->findOrFail($tournamentId);
-        return new ScheduleSettingsResource($tournament);
+        $formatName = $tournament->format->name;
+        $teamsCount = $tournament->teams->count();
+
+        $resource = $tournament->load([
+            'configuration',
+            'format',
+            'footballType',
+            'locations',
+            'tournamentPhases.phase' => function ($query) use ($formatName, $teamsCount) {
+                $query->when(
+                $formatName === 'Grupos y Eliminatoria',
+                fn($q) => $q->where('phases.min_teams_for', '<=', $teamsCount)
+                    ->orWhere('phases.name' , 'Fase de grupos')
+                );
+                },
+                'tournamentPhases.rules'
+                ]
+        );
+
+        return new ScheduleSettingsResource($resource);
     }
 
     public function getTournamentLocations(int $tournamentId): JsonResponse

@@ -61,7 +61,9 @@ class ScheduleSettingsResource extends JsonResource
             'footballType' => $this->resource->footballType ?? null,
             'locations' => $this->resource->locations ?? [],
             'tiebreakers' => $this->resource->configuration->tiebreakers ?? null,
-            'phases' => $this->resource->tournamentPhases->load(['phase','rules'])->map(function ($tournamentPhase) use ($defaultRoundTrip) {
+            'phases' => $this->resource->tournamentPhases
+                ->filter(fn($tp) => $tp->phase !== null)
+                ->map(function ($tournamentPhase) use ($defaultRoundTrip) {
                 $rulesModel = $tournamentPhase->rules;
 
                 $roundTrip = $rulesModel?->round_trip;

@@ -90,31 +90,29 @@ class ScheduleSettingsResource extends JsonResource
 
     private function calculateTeamsToNextRound(): int
     {
-        $teamsToNextRound = 0;
         if ($this->resource->format->name === 'Torneo de Liga') {
             return 1;
         }
-        $activePhase = collect($this->resource->phases->where('is_active', true)->all());
-        $roundOf32Activated = $activePhase->where('name', 'Dieciseisavos de Final')->isNotEmpty();
-        if ($roundOf32Activated) {
-            return 32;
+
+        $tournamentPhases = $this->resource->tournamentPhases;
+
+        if ($tournamentPhases instanceof \Illuminate\Database\Eloquent\Collection) {
+            $tournamentPhases->loadMissing('phase');
         }
-        $roundOf16activated = $activePhase->where('name', 'Octavos de Final')->isNotEmpty();
-        if ($roundOf16activated) {
-            return 16;
+
+        $activeTournamentPhase = $tournamentPhases?->firstWhere('is_active', true);
+
+        if (!$activeTournamentPhase || !$activeTournamentPhase->phase) {
+            return 0;
         }
-        $quarterFinalsActivated = $activePhase->where('name', 'Cuartos de Final')->isNotEmpty();
-        if ($quarterFinalsActivated) {
-            return 8;
-        }
-        $semiFinalsActivated = $activePhase->where('name', 'Semifinales')->isNotEmpty();
-        if ($semiFinalsActivated) {
-            return 4;
-        }
-        $finalActivated = $activePhase->where('name', 'Final')->isNotEmpty();
-        if ($finalActivated) {
-            return 2;
-        }
-        return $teamsToNextRound;
+
+        return match ($activeTournamentPhase->phase->name) {
+            'Dieciseisavos de Final' => 32,
+            'Octavos de Final' => 16,
+            'Cuartos de Final' => 8,
+            'Semifinales' => 4,
+            'Final' => 2,
+            default => 0,
+        };
     }
 }

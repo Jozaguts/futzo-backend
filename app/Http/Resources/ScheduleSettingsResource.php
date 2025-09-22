@@ -42,6 +42,9 @@ class ScheduleSettingsResource extends JsonResource
             }
         }
 
+        $configuration = $this->resource->configuration;
+        $defaultRoundTrip = (bool)($configuration?->elimination_round_trip ?? false);
+
         return [
             'tournament_id' => $this->resource->id,
             'round_trip' => $this->resource->configuration->round_trip,
@@ -58,20 +61,44 @@ class ScheduleSettingsResource extends JsonResource
             'footballType' => $this->resource->footballType ?? null,
             'locations' => $this->resource->locations ?? [],
             'tiebreakers' => $this->resource->configuration->tiebreakers ?? null,
-            'phases' => $this->resource->tournamentPhases->load(['phase','rules'])->map(function ($tournamentPhase) {
+            'phases' => $this->resource->tournamentPhases->load(['phase','rules'])->map(function ($tournamentPhase) use ($defaultRoundTrip) {
+                $rulesModel = $tournamentPhase->rules;
+
+                $roundTrip = $rulesModel?->round_trip;
+                if ($roundTrip === null) {
+                    $roundTrip = $defaultRoundTrip;
+                }
+
+                $awayGoals = $rulesModel?->away_goals;
+                if ($awayGoals === null) {
+                    $awayGoals = false;
+                }
+
+                $extraTime = $rulesModel?->extra_time;
+                if ($extraTime === null) {
+                    $extraTime = true;
+                }
+
+                $penalties = $rulesModel?->penalties;
+                if ($penalties === null) {
+                    $penalties = true;
+                }
+
+                $advanceIfTie = $rulesModel?->advance_if_tie ?? 'better_seed';
+
                 return [
                     'id' => $tournamentPhase->phase->id,
                     'name' => $tournamentPhase->phase->name,
                     'is_active' => $tournamentPhase->is_active,
                     'is_completed' => $tournamentPhase->is_completed,
                     'tournament_id' => $this->resource->id,
-                    'rules' => $tournamentPhase->rules ? [
-                        'round_trip' => (bool)$tournamentPhase->rules->round_trip,
-                        'away_goals' => (bool)$tournamentPhase->rules->away_goals,
-                        'extra_time' => (bool)$tournamentPhase->rules->extra_time,
-                        'penalties' => (bool)$tournamentPhase->rules->penalties,
-                        'advance_if_tie' => $tournamentPhase->rules->advance_if_tie,
-                    ] : null,
+                    'rules' => [
+                        'round_trip' => (bool)$roundTrip,
+                        'away_goals' => (bool)$awayGoals,
+                        'extra_time' => (bool)$extraTime,
+                        'penalties' => (bool)$penalties,
+                        'advance_if_tie' => $advanceIfTie,
+                    ],
                 ];
             })->all(),
             'group_phase' => $this->resource->groupConfiguration ? [

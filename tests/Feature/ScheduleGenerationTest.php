@@ -329,6 +329,12 @@ it('genera y expone dieciseisavos de final con 32 equipos', function () {
         ]
     );
 
+    $preEliminationSettings = $this->getJson("/api/v1/admin/tournaments/{$t->id}/schedule/settings")
+        ->assertOk()
+        ->json();
+
+    expect($preEliminationSettings['teams_to_next_round'])->toBe(32);
+
     $teamTournamentRows = DB::table('team_tournament')
         ->where('tournament_id', $t->id)
         ->orderBy('team_id')

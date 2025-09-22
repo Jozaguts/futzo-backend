@@ -8,7 +8,7 @@ class GroupConfigurationOptionService
     private const MAX_GROUP_SIZE = 6;
     private const MIN_GROUPS = 2;
     private const MAX_TOTAL_TEAMS = 36;
-
+    private const MAX_OPTIONS = 3;
     private const ELIMINATION_STAGES = [
         [
             'teams' => 4,
@@ -53,6 +53,12 @@ class GroupConfigurationOptionService
         }
 
         usort($options, function (array $a, array $b) {
+            $diffA = $this->calculateSizeGap($a['group_sizes']);
+            $diffB = $this->calculateSizeGap($b['group_sizes']);
+            if ($diffA !== $diffB) {
+                return $diffA <=> $diffB;
+            }
+
             $countComparison = count($a['group_sizes']) <=> count($b['group_sizes']);
             if ($countComparison !== 0) {
                 return $countComparison;
@@ -73,7 +79,7 @@ class GroupConfigurationOptionService
             return count($sizesA) <=> count($sizesB);
         });
 
-        return $options;
+        return array_slice($options, 0, self::MAX_OPTIONS);
     }
 
     private function generateCombinations(int $remaining, int $maxSize, array $current, array &$results): void
@@ -105,6 +111,9 @@ class GroupConfigurationOptionService
     private function buildOptionPayload(array $groupSizes): ?array
     {
         rsort($groupSizes, SORT_NUMERIC);
+        if (! $this->passesHomogeneityRules($groupSizes)) {
+            return null;
+        }
         $groups = count($groupSizes);
         $advanceTopN = 2;
         $baseQualifiers = $groups * $advanceTopN;
@@ -162,4 +171,25 @@ class GroupConfigurationOptionService
     {
         return implode('-', $groupSizes) . '|' . $stageTeams;
     }
+    private function passesHomogeneityRules(array $groupSizes): bool
+    {
+        if ($groupSizes === []) {
+            return false;
+        }
+
+        $max = max($groupSizes);
+        $min = min($groupSizes);
+
+        return ($max - $min) <= 1;
+    }
+
+    private function calculateSizeGap(array $groupSizes): int
+    {
+        if ($groupSizes === []) {
+            return PHP_INT_MAX;
+        }
+
+        return max($groupSizes) - min($groupSizes);
+    }
+
 }

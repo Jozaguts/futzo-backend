@@ -32,11 +32,26 @@ it('exposes suggested group configuration options for odd totals', function (
         expect($option['group_phase']['best_thirds_count'])->toBeNull();
     }
 })->with([
+    '15 equipos' => [15, [5, 5, 5], 'Cuartos', true, 2],
     '17 equipos' => [17, [6, 6, 5], 'Cuartos', true, 2],
     '21 equipos' => [21, [6, 5, 5, 5], 'Cuartos', false, null],
     '35 equipos' => [35, [6, 6, 6, 6, 6, 5], 'Octavos', true, 4],
 ]);
+it('only exposes homogeneous group configurations', function () {
+    [$tournament, $location] = createTournamentViaApi(TournamentFormatId::GroupAndElimination->value, 1, null, null);
+    attachTeamsToTournament($tournament, 15);
 
+    $response = $this->getJson("/api/v1/admin/tournaments/{$tournament->id}/schedule/settings")
+        ->assertOk()
+        ->json();
+
+    expect($response['group_configuration_options'])->toHaveCount(2);
+    expect(collect($response['group_configuration_options'])->pluck('group_sizes')->all())
+        ->toBe([
+            [5, 5, 5],
+            [4, 4, 4, 3],
+        ]);
+});
 it('persists group configuration when selecting a precomputed option', function () {
     [$tournament, $location] = createTournamentViaApi(TournamentFormatId::GroupAndElimination->value, 1, null, null);
     attachTeamsToTournament($tournament, 17);

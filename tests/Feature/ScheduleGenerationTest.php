@@ -993,3 +993,120 @@ it('lanza una excepción controlada cuando la configuración de grupos persiste 
             'La configuración de grupos es inválida: debe haber entre 3 y 6 equipos por grupo.'
         );
 });
+
+it('persiste reglas predeterminadas de eliminatoria cuando no se envían en la solicitud', function () {
+    [$tournament, $location] = createTournamentViaApi(TournamentFormatId::Elimination->value, 1, null, null);
+    attachTeamsToTournament($tournament, 8);
+    $fields = $location->fields()->take(1)->get();
+    $startDate = Carbon::now()->next(CarbonInterface::FRIDAY)->startOfDay()->toIso8601String();
+
+    $payload = [
+        'general' => [
+            'tournament_id' => $tournament->id,
+            'tournament_format_id' => TournamentFormatId::Elimination->value,
+            'football_type_id' => 1,
+            'start_date' => $startDate,
+            'game_time' => 90,
+            'time_between_games' => 0,
+            'total_teams' => 8,
+            'locations' => [['id' => $location->id, 'name' => $location->name]],
+        ],
+        'rules_phase' => [
+            'round_trip' => false,
+            'tiebreakers' => $tournament->configuration->tiebreakers->toArray(),
+        ],
+        'elimination_phase' => [
+            'teams_to_next_round' => 8,
+            'elimination_round_trip' => true,
+            'phases' => $tournament->tournamentPhases->load('phase')->map(function ($tournamentPhase) use ($tournament) {
+                return [
+                    'tournament_id' => $tournament->id,
+                    'id' => $tournamentPhase->phase->id,
+                    'name' => $tournamentPhase->phase->name,
+                    'is_active' => $tournamentPhase->is_active,
+                    'is_completed' => $tournamentPhase->is_completed,
+                ];
+            })->all(),
+        ],
+        'fields_phase' => array_map(fn($f, $i) => [
+            'field_id' => $f['id'],
+            'step' => $i + 1,
+            'field_name' => $f['name'],
+            'location_id' => $location->id,
+            'location_name' => $location->name,
+            'disabled' => false,
+            'availability' => [
+                'friday' => [
+                    'enabled' => true,
+                    'available_range' => '09:00 a 17:00',
+                    'intervals' => array_map(fn($h) => [
+                        'value' => $h,
+                        'text' => $h,
+                        'selected' => $i === 0,
+                        'disabled' => false,
+                        'in_use' => $i === 0,
+                    ], ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00']),
+                    'label' => 'Viernes',
+                ],
+                'saturday' => [
+                    'enabled' => true,
+                    'available_range' => '09:00 a 17:00',
+                    'intervals' => array_map(fn($h) => [
+                        'value' => $h,
+                        'text' => $h,
+                        'selected' => $i === 0,
+                        'disabled' => false,
+                        'in_use' => $i === 0,
+                    ], ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00']),
+                    'label' => 'Sábado',
+                ],
+                'sunday' => [
+                    'enabled' => true,
+                    'available_range' => '09:00 a 17:00',
+                    'intervals' => array_map(fn($h) => [
+                        'value' => $h,
+                        'text' => $h,
+                        'selected' => $i === 0,
+                        'disabled' => false,
+                        'in_use' => $i === 0,
+                    ], ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00']),
+                    'label' => 'Domingo',
+                ],
+                'isCompleted' => true,
+            ],
+        ], $fields->toArray(), array_keys($fields->toArray())),
+    ];
+
+    $this->postJson("/api/v1/admin/tournaments/{$tournament->id}/schedule", $payload)
+        ->assertOk();
+
+    $firstPhase = $tournament->fresh()->tournamentPhases()->first();
+    expect($firstPhase)->not->toBeNull();
+
+    $this->assertDatabaseHas('tournament_phase_rules', [
+        'tournament_phase_id' => $firstPhase->id,
+        'round_trip' => true,
+        'away_goals' => false,
+        'extra_time' => true,
+        'penalties' => true,
+        'advance_if_tie' => 'better_seed',
+    ]);
+
+    $settingsResponse = $this->getJson("/api/v1/admin/tournaments/{$tournament->id}/schedule/settings")
+        ->assertOk()
+        ->json();
+
+    $phases = $settingsResponse['phases'] ?? null;
+    expect($phases)->not->toBeNull();
+
+    collect($phases)->each(function (array $phase) {
+        expect($phase['rules'] ?? null)->not->toBeNull();
+        expect($phase['rules'])->toMatchArray([
+            'round_trip' => true,
+            'away_goals' => false,
+            'extra_time' => true,
+            'penalties' => true,
+            'advance_if_tie' => 'better_seed',
+        ]);
+    });
+});

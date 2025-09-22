@@ -753,6 +753,7 @@ class ScheduleGeneratorService
 
     private function saveEliminationPhase($data): void
     {
+        $this->tournament->loadMissing('configuration');
         unset($data['teams_to_next_round'], $data['round_trip']);
         foreach ($data['phases'] as $eliminationPhase) {
             $tp = TournamentPhase::updateOrCreate(
@@ -762,20 +763,40 @@ class ScheduleGeneratorService
                     'is_completed' => $eliminationPhase['is_completed']
                 ]
             );
-            // Guardar reglas por fase si vienen
-            if (!empty($eliminationPhase['rules']) && is_array($eliminationPhase['rules'])) {
-                $rules = $eliminationPhase['rules'];
-                \App\Models\TournamentPhaseRule::updateOrCreate(
-                    ['tournament_phase_id' => $tp->id],
-                    [
-                        'round_trip' => (bool)($rules['round_trip'] ?? false),
-                        'away_goals' => (bool)($rules['away_goals'] ?? false),
-                        'extra_time' => array_key_exists('extra_time', $rules) ? (bool)$rules['extra_time'] : true,
-                        'penalties' => array_key_exists('penalties', $rules) ? (bool)$rules['penalties'] : true,
-                        'advance_if_tie' => $rules['advance_if_tie'] ?? 'better_seed',
-                    ]
-                );
-            }
+
+            $rulesInput = is_array($eliminationPhase['rules'] ?? null)
+                ? $eliminationPhase['rules']
+                : [];
+            $existingRule = $tp->rules()->first();
+            $configuration = $this->tournament->configuration;
+
+            $roundTrip = array_key_exists('round_trip', $rulesInput)
+                ? (bool)$rulesInput['round_trip']
+                : (bool)($existingRule?->round_trip ?? $configuration?->elimination_round_trip ?? false);
+            $awayGoals = array_key_exists('away_goals', $rulesInput)
+                ? (bool)$rulesInput['away_goals']
+                : (bool)($existingRule?->away_goals ?? false);
+            $extraTime = array_key_exists('extra_time', $rulesInput)
+                ? (bool)$rulesInput['extra_time']
+                : (bool)($existingRule?->extra_time ?? true);
+            $penalties = array_key_exists('penalties', $rulesInput)
+                ? (bool)$rulesInput['penalties']
+                : (bool)($existingRule?->penalties ?? true);
+            $advanceIfTie = array_key_exists('advance_if_tie', $rulesInput)
+                ? $rulesInput['advance_if_tie']
+                : ($existingRule?->advance_if_tie ?? 'better_seed');
+
+            \App\Models\TournamentPhaseRule::updateOrCreate(
+                ['tournament_phase_id' => $tp->id],
+                [
+                    'round_trip' => $roundTrip,
+                    'away_goals' => $awayGoals,
+                    'extra_time' => $extraTime,
+                    'penalties' => $penalties,
+                    'advance_if_tie' => $advanceIfTie,
+                ]
+            );
+
             $this->tournament->tournamentPhases()->save($tp);
         }
     }

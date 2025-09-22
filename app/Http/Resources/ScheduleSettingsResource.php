@@ -102,17 +102,69 @@ class ScheduleSettingsResource extends JsonResource
 
         $activeTournamentPhase = $tournamentPhases?->firstWhere('is_active', true);
 
-        if (!$activeTournamentPhase || !$activeTournamentPhase->phase) {
-            return 0;
-        }
-
-        return match ($activeTournamentPhase->phase->name) {
+        $eliminationMapping = [
             'Dieciseisavos de Final' => 32,
             'Octavos de Final' => 16,
             'Cuartos de Final' => 8,
             'Semifinales' => 4,
             'Final' => 2,
-            default => 0,
-        };
+        ];
+
+        if ($activeTournamentPhase && $activeTournamentPhase->phase) {
+            $phaseName = $activeTournamentPhase->phase->name;
+
+            if (array_key_exists($phaseName, $eliminationMapping)) {
+                return $eliminationMapping[$phaseName];
+            }
+        }
+
+        $groupConfiguration = $this->resource->groupConfiguration;
+
+        if (!$groupConfiguration) {
+            return 0;
+        }
+
+        $groupSizes = $groupConfiguration->group_sizes;
+
+        if (is_array($groupSizes) && !empty($groupSizes)) {
+            $normalizedGroupSizes = array_values(array_filter(
+                array_map(static fn($size) => (int)$size, $groupSizes),
+                static fn(int $size) => $size > 0
+            ));
+            $groupCount = count($normalizedGroupSizes);
+        } else {
+            $teamsPerGroup = (int)($groupConfiguration->teams_per_group ?? 0);
+            $totalTeams = $this->resource->teams->count();
+            $groupCount = $teamsPerGroup > 0
+                ? (int)ceil($totalTeams / $teamsPerGroup)
+                : 0;
+        }
+
+        if ($groupCount <= 0) {
+            return 0;
+        }
+
+        $advanceTopN = max(0, (int)($groupConfiguration->advance_top_n ?? 0));
+        $qualifiedTeams = $groupCount * $advanceTopN;
+
+        if ($qualifiedTeams <= 0) {
+            return 0;
+        }
+
+        if ($groupConfiguration->include_best_thirds) {
+            $qualifiedTeams += (int)($groupConfiguration->best_thirds_count ?? 0);
+        }
+
+        if ($qualifiedTeams <= 0) {
+            return 0;
+        }
+
+        foreach ([2, 4, 8, 16, 32] as $bracketSize) {
+            if ($qualifiedTeams <= $bracketSize) {
+                return $bracketSize;
+            }
+        }
+
+        return 32;
     }
 }

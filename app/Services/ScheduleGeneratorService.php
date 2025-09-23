@@ -683,9 +683,12 @@ class ScheduleGeneratorService
 
     public function saveConfiguration($data): self
     {
+        $groupStageEnabled = (bool)($data['general']['group_stage']
+            ?? $data['rules_phase']['group_stage']
+            ?? false);
         $this->saveTournamentConfiguration(array_merge($data['general'], [
             'round_trip' => $data['rules_phase']['round_trip'],
-            'group_stage' => $data['rules_phase']['group_stage'] ?? false,
+            'group_stage' => $groupStageEnabled,
             'elimination_round_trip' => $data['elimination_phase']['elimination_round_trip']
         ]));
         $this->saveTiebreakers($data['rules_phase']['tiebreakers']);

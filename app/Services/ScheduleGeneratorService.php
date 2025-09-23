@@ -238,12 +238,16 @@ class ScheduleGeneratorService
             foreach ($groupFixtures as $gKey => $fx) {
                 if (isset($fx[$round])) {
                     foreach ($fx[$round] as $pair) {
-                        $fixturesThisRound[] = [$pair[0], $pair[1]];
+                        $fixturesThisRound[] = [
+                            'home_team_id' => $pair[0],
+                            'away_team_id' => $pair[1],
+                            'group_key' => $gKey,
+                        ];
                     }
                 }
             }
 
-            foreach ($fixturesThisRound as $pair) {
+            foreach ($fixturesThisRound as $fixture) {
                 $assigned = false;
                 $attempts = 0; $idx = $globalIndex;
                 while ($attempts < max(1, count($fieldsAvailable))) {
@@ -257,22 +261,23 @@ class ScheduleGeneratorService
                         $location = DB::table('fields')->where('id', $fieldId)->value('location_id');
 
                         $matchRound = $round + 1;
-                        if (isset($teamRounds[$matchRound][$pair[0]]) || isset($teamRounds[$matchRound][$pair[1]])) {
+                        if (isset($teamRounds[$matchRound][$fixture['home_team_id']]) || isset($teamRounds[$matchRound][$fixture['away_team_id']])) {
                             $idx++; $attempts++; continue;
                         }
-                        $teamRounds[$matchRound][$pair[0]] = true;
-                        $teamRounds[$matchRound][$pair[1]] = true;
+                        $teamRounds[$matchRound][$fixture['home_team_id']] = true;
+                        $teamRounds[$matchRound][$fixture['away_team_id']] = true;
 
                         $matches[] = [
                             'tournament_id' => $this->tournament->id,
-                            'home_team_id' => $pair[0],
-                            'away_team_id' => $pair[1],
+                            'home_team_id' => $fixture['home_team_id'],
+                            'away_team_id' => $fixture['away_team_id'],
                             'field_id' => $fieldId,
                             'location_id' => $location,
                             'match_date' => $matchTime->toDateString(),
                             'match_time' => $matchTime->format('H:i:s'),
                             'round' => $matchRound,
                             'status' => 'programado',
+                            'group_key' => $fixture['group_key'],
                         ];
                         $globalIndex++;
                         $assigned = true; break;
@@ -570,6 +575,7 @@ class ScheduleGeneratorService
                         'tournament_phase_id' => $phase?->id,
                         'starts_at_utc' => $startsAtUtc,
                         'ends_at_utc' => $endsAtUtc,
+                        'group_key' => $match['group_key'] ?? null,
                     ])
                 );
             }

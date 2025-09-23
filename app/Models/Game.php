@@ -43,6 +43,7 @@ class Game extends Model
         'starts_at_utc',
         'ends_at_utc',
         'tournament_phase_id',
+        'group_key',
         'slug',
     ];
     protected $casts = [

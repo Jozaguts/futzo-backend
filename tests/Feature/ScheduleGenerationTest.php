@@ -270,6 +270,12 @@ it('genera fase de grupos y luego elimina con reglas por fase', function () {
     $groupCount = DB::table('team_tournament')->where('tournament_id', $t->id)->whereNotNull('group_key')->count();
     expect($groupCount)->toBeGreaterThan(0);
 
+    $gameGroupCount = DB::table('games')
+        ->where('tournament_id', $t->id)
+        ->whereNotNull('group_key')
+        ->count();
+    expect($gameGroupCount)->toBeGreaterThan(0);
+
     // 2) Marcar los juegos de grupos como completados para que se calculen standings
     $groupPhaseId = \App\Models\TournamentPhase::where('tournament_id', $t->id)
         ->join('phases','phases.id','=','tournament_phases.phase_id')

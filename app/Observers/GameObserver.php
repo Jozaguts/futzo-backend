@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Jobs\RecalculateStandingsJob;
 use App\Models\Game;
 use App\Services\StandingsService;
+use Illuminate\Support\Facades\DB;
 use Throwable;
 
 class GameObserver
@@ -41,6 +42,45 @@ class GameObserver
                     $game->id,
                 )->onQueue('standings');
             }
+        }
+    }
+
+    public function saved(Game $game): void
+    {
+        $groupKey = $game->group_key;
+
+        if (!$groupKey) {
+            return;
+        }
+
+        $teamIds = array_filter([
+            $game->home_team_id,
+            $game->away_team_id,
+        ]);
+
+        if (empty($teamIds)) {
+            return;
+        }
+
+        $assignments = DB::table('team_tournament')
+            ->where('tournament_id', $game->tournament_id)
+            ->whereIn('team_id', $teamIds)
+            ->pluck('group_key', 'team_id');
+
+        foreach ($teamIds as $teamId) {
+            $current = $assignments[$teamId] ?? null;
+
+            if ($current === $groupKey || ($current !== null && $current !== $groupKey)) {
+                continue;
+            }
+
+            DB::table('team_tournament')
+                ->where('tournament_id', $game->tournament_id)
+                ->where('team_id', $teamId)
+                ->update([
+                    'group_key' => $groupKey,
+                    'updated_at' => now(),
+                ]);
         }
     }
 }

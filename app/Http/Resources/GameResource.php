@@ -133,6 +133,10 @@ class GameResource extends JsonResource
                 ['field_id' => (int)$fieldId, 'available_intervals' => $intervals]
             ];
         }
+        $homeGroupKey = $this->resource->getAttribute('home_group_key');
+        $awayGroupKey = $this->resource->getAttribute('away_group_key');
+        $groupSummary = $this->resource->getAttribute('group_summary');
+
         return [
             'id' => $this->resource->id,
             'home' => [
@@ -140,12 +144,14 @@ class GameResource extends JsonResource
                 'name' => $this->resource->homeTeam->name,
                 'image' => $this->resource->homeTeam->image,
                 'goals' => $this->resource->home_goals,
+                'group_key' => $this->when(!is_null($homeGroupKey), $homeGroupKey),
             ],
             'away' => [
                 'id' => $this->resource->awayTeam->id,
                 'name' => $this->resource->awayTeam->name,
                 'image' => $this->resource->awayTeam->image,
                 'goals' => $this->resource->away_goals,
+                'group_key' => $this->when(!is_null($awayGroupKey), $awayGroupKey),
             ],
             'details' => [
                 'date' => $this->resource->match_date->translatedFormat('D j/n'),
@@ -173,6 +179,11 @@ class GameResource extends JsonResource
             'start_date' => $this->resource->tournament->start_date,
             'end_date' => $this->resource->tournament->games()->orderBy('match_date', 'desc')->first()->match_date,
             'options' => $options,
+            'phase' => [
+                'id' => optional($this->resource->tournamentPhase)->id,
+                'name' => optional($this->resource->tournamentPhase?->phase)->name,
+            ],
+            'group' => $this->when(!empty($groupSummary), $groupSummary),
         ];
     }
 }

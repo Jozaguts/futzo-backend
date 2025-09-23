@@ -22,6 +22,7 @@ use App\Http\Resources\TournamentScheduleCollection;
 use App\Models\Game;
 use App\Models\GameEvent;
 use App\Models\Location;
+use App\Models\Team;
 use App\Models\Tournament;
 use App\Models\TournamentFormat;
 use App\Services\ScheduleGeneratorService;
@@ -34,6 +35,8 @@ use Maatwebsite\Excel\Facades\Excel;
 use PhpOffice\PhpSpreadsheet\Exception;
 use Spatie\MediaLibrary\MediaCollections\Exceptions\FileDoesNotExist;
 use Spatie\MediaLibrary\MediaCollections\Exceptions\FileIsTooBig;
+
+use TournamentFormatId;
 
 class TournamentController extends Controller
 {
@@ -208,7 +211,69 @@ class TournamentController extends Controller
         $page = (int)$request->get('page', 1);
         $per_page = 1;
         $skip = ($page - 1) * $per_page;
-        $schedule = Game::where([
+
+        $tournament = Tournament::with(['configuration'])
+            ->findOrFail($tournamentId);
+
+        $includeGroupData = (int)($tournament->configuration?->tournament_format_id ?? $tournament->tournament_format_id)
+            === TournamentFormatId::GroupAndElimination->value;
+
+        $teamGroupMap = [];
+        $groupSummaries = [];
+
+        if ($includeGroupData) {
+            $assignments = DB::table('team_tournament')
+                ->select('team_id', 'group_key')
+                ->where('tournament_id', $tournamentId)
+                ->whereNotNull('group_key')
+                ->get();
+
+            if ($assignments->isNotEmpty()) {
+                $teamIds = $assignments->pluck('team_id')->unique();
+                $teams = Team::whereIn('id', $teamIds)
+                    ->get(['id', 'name', 'image', 'colors'])
+                    ->keyBy('id');
+
+                $teamGroupMap = $assignments->pluck('group_key', 'team_id')->toArray();
+
+                $groupSummaries = $assignments
+                    ->groupBy('group_key')
+                    ->map(function ($rows, $groupKey) use ($teams) {
+                        $groupTeams = $rows->map(function ($row) use ($teams) {
+                            $team = $teams->get($row->team_id);
+
+                            if (!$team) {
+                                return null;
+                            }
+
+                            return [
+                                'id' => $team->id,
+                                'name' => $team->name,
+                                'image' => $team->image,
+                            ];
+                        })->filter()->values();
+
+                        return [
+                            'key' => $groupKey,
+                            'name' => "Grupo {$groupKey}",
+                            'teams_count' => $groupTeams->count(),
+                            'teams' => $groupTeams->toArray(),
+                        ];
+                    })->toArray();
+            }
+        }
+
+        $schedule = Game::with([
+            'homeTeam',
+            'awayTeam',
+            'field',
+            'location',
+            'referee',
+            'tournament',
+            'tournament.configuration',
+            'tournamentPhase',
+            'tournamentPhase.phase',
+        ])->where([
             'tournament_id' => $tournamentId
         ])
             ->when($filterBy, function ($query) use ($filterBy) {
@@ -223,6 +288,28 @@ class TournamentController extends Controller
             ->groupBy('round')
             ->slice($skip, $per_page)
             ->flatten();
+
+        if ($includeGroupData && !empty($teamGroupMap)) {
+            $schedule = $schedule->map(function (Game $game) use ($teamGroupMap, $groupSummaries) {
+                $homeGroup = $teamGroupMap[$game->home_team_id] ?? null;
+                $awayGroup = $teamGroupMap[$game->away_team_id] ?? null;
+                $groupKey = $homeGroup ?? $awayGroup;
+
+                if (!is_null($homeGroup)) {
+                    $game->setAttribute('home_group_key', $homeGroup);
+                }
+
+                if (!is_null($awayGroup)) {
+                    $game->setAttribute('away_group_key', $awayGroup);
+                }
+
+                if ($groupKey && isset($groupSummaries[$groupKey])) {
+                    $game->setAttribute('group_summary', $groupSummaries[$groupKey]);
+                }
+
+                return $game;
+            });
+        }
         return response()->json([
             'rounds' => TournamentScheduleCollection::make($schedule)->toArray($request),
             'pagination' => [

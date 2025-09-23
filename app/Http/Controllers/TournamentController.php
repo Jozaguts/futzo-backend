@@ -219,7 +219,8 @@ class TournamentController extends Controller
             === TournamentFormatId::GroupAndElimination->value;
 
         $teamGroupMap = [];
-        $groupSummaries = [];
+        $groupSummaries = collect();
+        $teamsById = collect();
 
         if ($includeGroupData) {
             $assignments = DB::table('team_tournament')
@@ -230,17 +231,19 @@ class TournamentController extends Controller
 
             if ($assignments->isNotEmpty()) {
                 $teamIds = $assignments->pluck('team_id')->unique();
-                $teams = Team::whereIn('id', $teamIds)
+                $teamsById = Team::whereIn('id', $teamIds)
                     ->get(['id', 'name', 'image', 'colors'])
                     ->keyBy('id');
 
                 $teamGroupMap = $assignments->pluck('group_key', 'team_id')->toArray();
 
-                $groupSummaries = $assignments
-                    ->groupBy('group_key')
-                    ->map(function ($rows, $groupKey) use ($teams) {
-                        $groupTeams = $rows->map(function ($row) use ($teams) {
-                            $team = $teams->get($row->team_id);
+                $groupSummaries = collect($teamGroupMap)
+                    ->mapToGroups(static function ($groupKey, $teamId) {
+                        return [$groupKey => $teamId];
+                    })
+                    ->map(function ($teamIds, $groupKey) use ($teamsById) {
+                        $groupTeams = $teamIds->map(function ($teamId) use ($teamsById) {
+                            $team = $teamsById->get($teamId);
 
                             if (!$team) {
                                 return null;
@@ -251,15 +254,15 @@ class TournamentController extends Controller
                                 'name' => $team->name,
                                 'image' => $team->image,
                             ];
-                        })->filter()->values();
+                        })->filter()->values()->all();
 
                         return [
                             'key' => $groupKey,
                             'name' => "Grupo {$groupKey}",
-                            'teams_count' => $groupTeams->count(),
-                            'teams' => $groupTeams->toArray(),
+                            'teams_count' => count($groupTeams),
+                            'teams' => $groupTeams,
                         ];
-                    })->toArray();
+                    });
             }
         }
 
@@ -290,10 +293,39 @@ class TournamentController extends Controller
             ->flatten();
 
         if ($includeGroupData && !empty($teamGroupMap)) {
-            $schedule = $schedule->map(function (Game $game) use ($teamGroupMap, $groupSummaries) {
+            $buildGroupSummary = static function (string $groupKey) use ($teamGroupMap, $teamsById) {
+                $teamIds = array_keys($teamGroupMap, $groupKey, true);
+
+                $groupTeams = collect($teamIds)
+                    ->map(function ($teamId) use ($teamsById) {
+                        $team = $teamsById->get((int)$teamId);
+
+                        if (!$team) {
+                            return null;
+                        }
+
+                        return [
+                            'id' => $team->id,
+                            'name' => $team->name,
+                            'image' => $team->image,
+                        ];
+                    })
+                    ->filter()
+                    ->values()
+                    ->all();
+
+                return [
+                    'key' => $groupKey,
+                    'name' => "Grupo {$groupKey}",
+                    'teams_count' => count($groupTeams),
+                    'teams' => $groupTeams,
+                ];
+            };
+
+            $schedule = $schedule->map(function (Game $game) use ($teamGroupMap, $groupSummaries, $buildGroupSummary) {
                 $homeGroup = $teamGroupMap[$game->home_team_id] ?? null;
                 $awayGroup = $teamGroupMap[$game->away_team_id] ?? null;
-                $groupKey = $homeGroup ?? $awayGroup;
+                $gameGroupKey = $game->group_key ?? null;
 
                 if (!is_null($homeGroup)) {
                     $game->setAttribute('home_group_key', $homeGroup);
@@ -303,8 +335,14 @@ class TournamentController extends Controller
                     $game->setAttribute('away_group_key', $awayGroup);
                 }
 
-                if ($groupKey && isset($groupSummaries[$groupKey])) {
-                    $game->setAttribute('group_summary', $groupSummaries[$groupKey]);
+                if (!$gameGroupKey && $homeGroup && $homeGroup === $awayGroup) {
+                    $gameGroupKey = $homeGroup;
+                }
+
+                if ($gameGroupKey) {
+                    $summary = $groupSummaries->get($gameGroupKey) ?? $buildGroupSummary($gameGroupKey);
+                    $game->setAttribute('group_key', $gameGroupKey);
+                    $game->setAttribute('group_summary', $summary);
                 }
 
                 return $game;

@@ -91,6 +91,7 @@ class ScheduleSettingsResource extends JsonResource
                 return [
                     'id' => $tournamentPhase->phase->id,
                     'name' => $tournamentPhase->phase->name,
+                    'min_teams_for' => $tournamentPhase->phase->min_teams_for,
                     'is_active' => $tournamentPhase->is_active,
                     'is_completed' => $tournamentPhase->is_completed,
                     'tournament_id' => $this->resource->id,

@@ -37,7 +37,6 @@ use Spatie\MediaLibrary\MediaCollections\Exceptions\FileDoesNotExist;
 use Spatie\MediaLibrary\MediaCollections\Exceptions\FileIsTooBig;
 
 use TournamentFormatId;
-
 class TournamentController extends Controller
 {
     const string IMG_EXPORT_TYPE = 'img';

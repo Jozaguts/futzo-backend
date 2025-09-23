@@ -181,6 +181,101 @@ it('no permite reservar horas solapadas para otro torneo', function () {
     // Debe fallar por superposición con reservas de otro torneo
     $resConflict->assertStatus(500);
 });
+it('usa general.group_stage cuando rules_phase.group_stage no está presente', function () {
+    [$t, $location] = createTournamentViaApi(TournamentFormatId::GroupAndElimination->value, 1, null, null);
+    attachTeamsToTournament($t, 8);
+    $field = $location->fields()->first();
+    $startDate = Carbon::now()->next(CarbonInterface::FRIDAY)->startOfDay()->toIso8601String();
+
+    $payload = [
+        'general' => [
+            'tournament_id' => $t->id,
+            'tournament_format_id' => TournamentFormatId::GroupAndElimination->value,
+            'football_type_id' => 1,
+            'start_date' => $startDate,
+            'game_time' => 90,
+            'time_between_games' => 0,
+            'total_teams' => 8,
+            'group_stage' => true,
+            'locations' => [['id' => $location->id, 'name' => $location->name]],
+        ],
+        'rules_phase' => [
+            'round_trip' => false,
+            'tiebreakers' => $t->configuration->tiebreakers->toArray(),
+        ],
+        'group_phase' => [
+            'teams_per_group' => 4,
+            'advance_top_n' => 2,
+            'include_best_thirds' => false,
+            'best_thirds_count' => null,
+        ],
+        'elimination_phase' => [
+            'teams_to_next_round' => 8,
+            'elimination_round_trip' => false,
+            'phases' => $t->tournamentPhases->load('phase')->map(function ($tournamentPhase) use ($t) {
+                return [
+                    'tournament_id' => $t->id,
+                    'id' => $tournamentPhase->phase->id,
+                    'name' => $tournamentPhase->phase->name,
+                    'is_active' => $tournamentPhase->is_active,
+                    'is_completed' => $tournamentPhase->is_completed,
+                ];
+            })->all(),
+        ],
+        'fields_phase' => [[
+            'field_id' => $field->id,
+            'step' => 1,
+            'field_name' => $field->name,
+            'location_id' => $location->id,
+            'location_name' => $location->name,
+            'disabled' => false,
+            'availability' => [
+                'friday' => [
+                    'enabled' => true,
+                    'available_range' => '09:00 a 17:00',
+                    'intervals' => [
+                        ['value' => '09:00', 'text' => '09:00', 'selected' => true, 'disabled' => false],
+                        ['value' => '11:00', 'text' => '11:00', 'selected' => true, 'disabled' => false],
+                        ['value' => '13:00', 'text' => '13:00', 'selected' => true, 'disabled' => false],
+                        ['value' => '15:00', 'text' => '15:00', 'selected' => true, 'disabled' => false],
+                    ],
+                    'label' => 'Viernes',
+                ],
+                'saturday' => [
+                    'enabled' => true,
+                    'available_range' => '09:00 a 17:00',
+                    'intervals' => [
+                        ['value' => '09:00', 'text' => '09:00', 'selected' => true, 'disabled' => false],
+                        ['value' => '11:00', 'text' => '11:00', 'selected' => true, 'disabled' => false],
+                        ['value' => '13:00', 'text' => '13:00', 'selected' => true, 'disabled' => false],
+                        ['value' => '15:00', 'text' => '15:00', 'selected' => true, 'disabled' => false],
+                    ],
+                    'label' => 'Sábado',
+                ],
+                'isCompleted' => true,
+            ],
+        ]],
+    ];
+    logger('payload', $payload);
+    $response = $this->postJson("/api/v1/admin/tournaments/{$t->id}/schedule", $payload)
+        ->assertOk()
+        ->assertJsonCount(12, 'data');
+
+    $data = $response->json('data');
+    expect($data)
+        ->not
+        ->toBeNull()
+        ->and($data[0]['group_key'] ?? null)
+        ->not
+        ->toBeNull();
+
+    $groupMatches = DB::table('games')
+        ->where('tournament_id', $t->id)
+        ->whereNotNull('group_key')
+        ->count();
+
+    expect($groupMatches)->toBeGreaterThan(0);
+});
 it('genera fase de grupos y luego elimina con reglas por fase', function () {
     // Crear torneo Liga + Eliminatoria desde cero con 16 equipos
     [$t, $location] = createTournamentViaApi(TournamentFormatId::GroupAndElimination->value, 1, null, null);

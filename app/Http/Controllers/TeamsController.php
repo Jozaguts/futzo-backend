@@ -102,7 +102,7 @@ class TeamsController extends Controller
                     'image' => $media->getUrl('default'),
                 ]);
             }
-            $league_id = auth()->user()->league_id;
+            $league_id = auth()?->user()?->league_id;
             if (!$league_id) {
                 $league_id = Tournament::where('id', $data['team']['tournament_id'])->firstOrFail()->league?->id;
             }

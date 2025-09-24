@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Category;
+use App\Models\Team;
 use App\Models\Tournament;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -47,6 +48,11 @@ it('stores a team correctly', function () {
         'name' => 'John Doe',
         'email' => $response->json('coach.email'),
         'phone' => $response->json('coach.phone'),
+    ]);
+
+    $team = Team::where('name', 'test 1')->first();
+    $this->assertDatabaseHas('default_lineups',[
+        'team_id' => $team->id,
     ]);
 
 });

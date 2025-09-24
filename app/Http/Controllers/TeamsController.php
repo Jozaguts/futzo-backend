@@ -109,10 +109,6 @@ class TeamsController extends Controller
             $team->leagues()->attach($league_id);
             $team->categories()->attach($data['team']['category_id']);
             $team->tournaments()->attach($data['team']['tournament_id']);
-            $defaultFormation = Formation::first();
-            $team->defaultLineup()->create([
-                'formation_id' => $defaultFormation?->id,
-            ]);
             DB::commit();
             return new TeamResource($team);
         } catch (\Exception $e) {
@@ -345,7 +341,6 @@ class TeamsController extends Controller
                 'email' => $row['N'],
             ],
         ];
-        logger('data' ,$data);
         $formRequest = TeamStoreRequest::create('', 'POST', $data);
         $formRequest->setContainer(app())->setRedirector(app('redirect'));
         $formRequest->validateResolved();

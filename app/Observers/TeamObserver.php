@@ -3,16 +3,18 @@
 namespace App\Observers;
 
 use App\Models\DefaultLineup;
+use App\Models\Formation;
 use App\Models\Team;
 
 class TeamObserver
 {
     public function created(Team $team): void
     {
-        DefaultLineup::create([
-            'team_id' => $team->id,
-            'formation' => '4-4-2'
-        ]);
+        if (!$team->defaultLineup()->exists()) {
+            $team->defaultLineup()->create([
+                'formation_id' => Formation::first()->id
+            ]);
+        }
     }
 
     public function updated(Team $team): void

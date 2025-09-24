@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use App\Observers\TeamObserver;
+use App\Scopes\LeagueScope;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Attributes\ScopedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -17,7 +20,8 @@ use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Builder;
-#[ScopedBy(\App\Scopes\LeagueScope::class)]
+#[ScopedBy(LeagueScope::class)]
+#[ObservedBy([TeamObserver::class])]
 class Team extends Model implements HasMedia
 {
     use HasFactory, SoftDeletes, InteractsWithMedia, HasSlug;

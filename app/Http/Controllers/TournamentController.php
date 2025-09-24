@@ -25,6 +25,7 @@ use App\Models\Location;
 use App\Models\Team;
 use App\Models\Tournament;
 use App\Models\TournamentFormat;
+use App\Models\TournamentPhase;
 use App\Services\ScheduleGeneratorService;
 use Barryvdh\Snappy\Facades\SnappyImage;
 use Illuminate\Http\JsonResponse;
@@ -157,7 +158,7 @@ class TournamentController extends Controller
         return response()->json($tournament);
     }
 
-    public function updatePhaseStatus(Request $request, Tournament $tournament, \App\Models\TournamentPhase $tournamentPhase): JsonResponse
+    public function updatePhaseStatus(Request $request, Tournament $tournament, TournamentPhase $tournamentPhase): JsonResponse
     {
         abort_unless($tournamentPhase->tournament_id === $tournament->id, 404);
         $data = $request->validate([

@@ -4,7 +4,6 @@ namespace App\Traits;
 
 use App\Models\Lineup;
 use App\Models\LineupPlayer;
-use function PHPUnit\Framework\isEmpty;
 
 trait LineupTrait
 {
@@ -12,7 +11,7 @@ trait LineupTrait
     {
         $lineup->load(['defaultLineup.defaultLineupPlayers','team.players']);
         $defaultLineupPlayers =  $lineup->defaultLineup?->defaultLineupPlayers;
-        if (!isEmpty($defaultLineupPlayers)) {
+        if (!empty($defaultLineupPlayers)) {
             $defaultLineupPlayers->each(function ($defaultPLayer) use ($lineup) {
                 // todo DON'T REGISTER players IN LINEUP_PLAYERS table if it's in SUSPEND STATUS
                 $lineup->lineupPlayers()->save(

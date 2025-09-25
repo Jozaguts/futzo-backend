@@ -48,10 +48,8 @@ class ScheduleGeneratorService
         $teams = $this->tournament->teams()->pluck('teams.id')->toArray();
         $fields = TournamentField::where('tournament_id', $this->tournament->id)->get();
 
-        // 1) elegir ida y vuelta según fase (liga usa TournamentFormatId::League)
-        $useRoundTrip = (int)$config->tournament_format_id === TournamentFormatId::League->value
-            ? $config->round_trip    // liga: usar ida y vuelta según este flag round_trip
-            : $config->elimination_round_trip;  // otros formatos (elim.): usar este
+        // 1) elegir ida y vuelta según fase
+        $useRoundTrip = (bool)($config->round_trip ?? false);
 
         // 2) según formato: liga pura vs liga+eliminatoria (fase grupos)
         $formatId = (int)$config->tournament_format_id;
@@ -62,11 +60,14 @@ class ScheduleGeneratorService
         $hasGroupConfig = \App\Models\TournamentGroupConfiguration::where('tournament_id', $this->tournament->id)->exists();
         $eliminationNames = ['Dieciseisavos de Final', 'Octavos de Final', 'Cuartos de Final', 'Semifinales', 'Final'];
 
-        if ($formatId !== TournamentFormatId::League->value && ($hasGroupConfig || $this->forceGroupStage)) {
+        if ($formatId === TournamentFormatId::GroupAndElimination->value || $formatId === TournamentFormatId::LeagueAndElimination->value) {
             if ($activePhaseName && in_array($activePhaseName, $eliminationNames, true)) {
                 return $this->makeEliminationScheduleInternal($fields, $matchDuration, $activePhase);
             }
-            if ($groupStageEnabled || $this->forceGroupStage || ($activePhaseName === 'Fase de grupos')) {
+            if (
+                ($groupStageEnabled || $this->forceGroupStage || $activePhaseName === 'Fase de grupos')
+                && ($hasGroupConfig || $this->forceGroupStage)
+            ) {
                 // Liga + Eliminatoria con grupos activos: generar fase de grupos
                 return $this->makeGroupStageScheduleInternal(
                     $teams,
@@ -397,7 +398,9 @@ class ScheduleGeneratorService
 
         // 2) reglas de la fase
         $rules = $activePhase->rules; // TournamentPhaseRule or null
-        $roundTrip = (bool)($rules->round_trip ?? false);
+        $globalRoundTrip = (bool)($this->tournament->configuration->elimination_round_trip ?? false);
+        $phaseRoundTrip  = (bool)($rules?->round_trip ?? false);
+        $roundTrip       = $globalRoundTrip || $phaseRoundTrip;
 
         // 3) slots por semana
         $weeksToGenerate = $roundTrip ? 2 : 1;

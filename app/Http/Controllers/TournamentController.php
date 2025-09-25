@@ -190,11 +190,17 @@ class TournamentController extends Controller
             'locations',
             'tournamentPhases.phase' => function ($query) use ($formatName, $teamsCount) {
                 $query->when(
-                $formatName === 'Grupos y Eliminatoria',
-                fn($q) => $q->where('phases.min_teams_for', '<=', $teamsCount)
-                    ->orWhere('phases.name' , 'Fase de grupos')
+                    $formatName === 'Grupos y Eliminatoria' || $formatName === 'Liga y Eliminatoria',
+                    function ($q) use ($formatName, $teamsCount) {
+                        $q->where(function ($nested) use ($formatName, $teamsCount) {
+                            $fallbackPhase = $formatName === 'Grupos y Eliminatoria' ? 'Fase de grupos' : 'Tabla general';
+
+                            $nested->where('phases.min_teams_for', '<=', $teamsCount)
+                                ->orWhere('phases.name', $fallbackPhase);
+                        });
+                    }
                 );
-                },
+            },
                 'tournamentPhases.rules'
                 ]
         );

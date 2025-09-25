@@ -24,13 +24,13 @@ it('previews and confirms bracket using table standings for Liga + Eliminatoria'
             'game_time' => 90,
             'time_between_games' => 0,
             'total_teams' => 8,
-            'round_trip' => false,
+            'round_trip' => true,
             'group_stage' => false,
             'elimination_round_trip' => true,
             'locations' => [['id' => $location->id, 'name' => $location->name]],
         ],
         'rules_phase' => [
-            'round_trip' => false,
+            'round_trip' => true,
             'tiebreakers' => $t->configuration->tiebreakers->toArray(),
         ],
         'elimination_phase' => [

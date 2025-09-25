@@ -50,7 +50,7 @@ class ScheduleGeneratorService
 
         // 1) elegir ida y vuelta según fase (liga usa TournamentFormatId::League)
         $useRoundTrip = (int)$config->tournament_format_id === TournamentFormatId::League->value
-            ? $config->round_trip    // liga: usar ida y vuelta según este flag
+            ? $config->round_trip    // liga: usar ida y vuelta según este flag round_trip
             : $config->elimination_round_trip;  // otros formatos (elim.): usar este
 
         // 2) según formato: liga pura vs liga+eliminatoria (fase grupos)
@@ -59,14 +59,21 @@ class ScheduleGeneratorService
         $activePhase = $this->tournament->tournamentPhases()->where('is_active', true)->with('phase')->first();
         $activePhaseName = $activePhase?->phase?->name;
 
-        if ($formatId !== TournamentFormatId::League->value && (\App\Models\TournamentGroupConfiguration::where('tournament_id', $this->tournament->id)->exists() || $this->forceGroupStage)) {
-            if ($groupStageEnabled || $this->forceGroupStage) {
-                // Liga + Eliminatoria con grupos activos: generar fase de grupos
-                return $this->makeGroupStageScheduleInternal($teams, $fields, $matchDuration);
-            }
-            // Si no hay grupos habilitados, y es una fase de eliminación
-            if (in_array($activePhaseName, ['Dieciseisavos de Final','Octavos de Final','Cuartos de Final','Semifinales','Final'])) {
+        $hasGroupConfig = \App\Models\TournamentGroupConfiguration::where('tournament_id', $this->tournament->id)->exists();
+        $eliminationNames = ['Dieciseisavos de Final', 'Octavos de Final', 'Cuartos de Final', 'Semifinales', 'Final'];
+
+        if ($formatId !== TournamentFormatId::League->value && ($hasGroupConfig || $this->forceGroupStage)) {
+            if ($activePhaseName && in_array($activePhaseName, $eliminationNames, true)) {
                 return $this->makeEliminationScheduleInternal($fields, $matchDuration, $activePhase);
+            }
+            if ($groupStageEnabled || $this->forceGroupStage || ($activePhaseName === 'Fase de grupos')) {
+                // Liga + Eliminatoria con grupos activos: generar fase de grupos
+                return $this->makeGroupStageScheduleInternal(
+                    $teams,
+                    $fields,
+                    $matchDuration,
+                    (bool)($config->round_trip ?? false)
+                );
             }
         }
 
@@ -169,7 +176,7 @@ class ScheduleGeneratorService
         return $matches;
     }
 
-    private function makeGroupStageScheduleInternal(array $teams, $fields, int $matchDuration): array
+    private function makeGroupStageScheduleInternal(array $teams, $fields, int $matchDuration,  bool $roundTrip = false): array
     {
         $gc = $this->tournament->groupConfiguration;
         $groupSizes = null;
@@ -194,7 +201,7 @@ class ScheduleGeneratorService
         $groupFixtures = [];
         $maxRounds = 0;
         foreach ($groups as $groupKey => $groupTeams) {
-            $fx = $this->generateFixtures($groupTeams, false);
+            $fx = $this->generateFixtures($groupTeams, $roundTrip);
             $groupFixtures[$groupKey] = $fx; // array de rondas
             $maxRounds = max($maxRounds, count($fx));
         }
@@ -683,9 +690,7 @@ class ScheduleGeneratorService
 
     public function saveConfiguration($data): self
     {
-        $groupStageEnabled = (bool)($data['general']['group_stage']
-            ?? $data['rules_phase']['group_stage']
-            ?? false);
+        $groupStageEnabled = (int)$data['general']['tournament_format_id'] === TournamentFormatId::GroupAndElimination->value;
         $this->saveTournamentConfiguration(array_merge($data['general'], [
             'round_trip' => $data['rules_phase']['round_trip'],
             'group_stage' => $groupStageEnabled,

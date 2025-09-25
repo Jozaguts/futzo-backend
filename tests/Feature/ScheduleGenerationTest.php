@@ -200,7 +200,7 @@ it('usa general.group_stage cuando rules_phase.group_stage no está presente', f
             'locations' => [['id' => $location->id, 'name' => $location->name]],
         ],
         'rules_phase' => [
-            'round_trip' => false,
+            'round_trip' => true,
             'tiebreakers' => $t->configuration->tiebreakers->toArray(),
         ],
         'group_phase' => [
@@ -256,10 +256,9 @@ it('usa general.group_stage cuando rules_phase.group_stage no está presente', f
             ],
         ]],
     ];
-    logger('payload', $payload);
     $response = $this->postJson("/api/v1/admin/tournaments/{$t->id}/schedule", $payload)
         ->assertOk()
-        ->assertJsonCount(12, 'data');
+        ->assertJsonCount(24, 'data');
 
     $data = $response->json('data');
     expect($data)
@@ -294,13 +293,13 @@ it('genera fase de grupos y luego elimina con reglas por fase', function () {
             'game_time' => 90,
             'time_between_games' => 0,
             'total_teams' => 16,
-            'round_trip' => false,
+            'round_trip' => true,
             'group_stage' => true,
             'elimination_round_trip' => true,
             'locations' => [['id' => $location->id, 'name' => $location->name]],
         ],
         'rules_phase' => [
-            'round_trip' => false,
+            'round_trip' => true,
             'tiebreakers' => $t->configuration->tiebreakers->toArray(),
         ],
         'group_phase' => [
@@ -358,8 +357,8 @@ it('genera fase de grupos y luego elimina con reglas por fase', function () {
     $resGroup = $this->postJson("/api/v1/admin/tournaments/{$t->id}/schedule", $payloadGroups)
         ->assertOk();
 
-    // 24 partidos esperados en grupos (4 grupos * 6 partidos)
-    $resGroup->assertJsonCount(24, 'data');
+    // 48 partidos esperados en grupos (4 grupos * 12 partidos ida y vuelta)
+    $resGroup->assertJsonCount(48, 'data');
 
     // Validar que group_key se haya asignado en pivot
     $groupCount = DB::table('team_tournament')->where('tournament_id', $t->id)->whereNotNull('group_key')->count();
@@ -388,7 +387,10 @@ it('genera fase de grupos y luego elimina con reglas por fase', function () {
     $payloadKO = $payloadGroups;
     // Para etapa de eliminatorias, deshabilitamos group_stage y removemos group_phase
     $payloadKO['general']['group_stage'] = false;
-    $payloadKO['general']['start_date'] = Carbon::parse($startDate)->addWeeks(4)->toIso8601String();
+    // Para asegurar que la fase eliminatoria arranque después de concluir las 6 jornadas
+    // (ida y vuelta) de grupos, desplazamos la fecha de inicio dos semanas más allá del
+    // ajuste previo usado para una sola vuelta.
+    $payloadKO['general']['start_date'] = Carbon::parse($startDate)->addWeeks(6)->toIso8601String();
     unset($payloadKO['group_phase']);
     $payloadKO['elimination_phase']['phases'] = [
         ['id' => $phases['Fase de grupos']->id, 'name' => 'Fase de grupos', 'is_active' => false, 'is_completed' => true, 'tournament_id' => $t->id],
@@ -548,12 +550,12 @@ it('genera y expone dieciseisavos de final con 32 equipos', function () {
             'time_between_games' => 0,
             'total_teams' => 32,
             'round_trip' => false,
-            'group_stage' => false,
+            'group_stage' => true,
             'elimination_round_trip' => false,
             'locations' => [['id' => $location->id, 'name' => $location->name]],
         ],
         'rules_phase' => [
-            'round_trip' => false,
+            'round_trip' => true,
             'tiebreakers' => $t->configuration->tiebreakers->toArray(),
         ],
         'elimination_phase' => [
@@ -611,13 +613,13 @@ it('respeta tamaños de grupo personalizados 6-6-5', function () {
             'game_time' => 90,
             'time_between_games' => 0,
             'total_teams' => 17,
-            'round_trip' => false,
+            'round_trip' => true,
             'group_stage' => true,
             'elimination_round_trip' => true,
             'locations' => [['id' => $location->id, 'name' => $location->name]],
         ],
         'rules_phase' => [
-            'round_trip' => false,
+            'round_trip' => true,
             'tiebreakers' => $t->configuration->tiebreakers->toArray(),
         ],
         'group_phase' => [
@@ -676,7 +678,7 @@ it('respeta tamaños de grupo personalizados 6-6-5', function () {
     $response = $this->postJson("/api/v1/admin/tournaments/{$t->id}/schedule", $payload)
         ->assertOk();
 
-    $response->assertJsonCount(40, 'data');
+    $response->assertJsonCount(80, 'data');
 
     $groupCounts = DB::table('team_tournament')
         ->select('group_key', DB::raw('COUNT(*) as total'))
@@ -719,13 +721,13 @@ it('respeta tamaños de grupo personalizados 5-4-4', function () {
             'game_time' => 90,
             'time_between_games' => 0,
             'total_teams' => 13,
-            'round_trip' => false,
+            'round_trip' => true,
             'group_stage' => true,
             'elimination_round_trip' => true,
             'locations' => [['id' => $location->id, 'name' => $location->name]],
         ],
         'rules_phase' => [
-            'round_trip' => false,
+            'round_trip' => true,
             'tiebreakers' => $t->configuration->tiebreakers->toArray(),
         ],
         'group_phase' => [
@@ -784,7 +786,7 @@ it('respeta tamaños de grupo personalizados 5-4-4', function () {
     $response = $this->postJson("/api/v1/admin/tournaments/{$t->id}/schedule", $payload)
         ->assertOk();
 
-    $response->assertJsonCount(22, 'data');
+    $response->assertJsonCount(44, 'data');
 
     $groupCounts = DB::table('team_tournament')
         ->select('group_key', DB::raw('COUNT(*) as total'))

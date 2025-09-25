@@ -11,8 +11,12 @@ class ScheduleSettingsResource extends JsonResource
     public function toArray(Request $request): array
     {
         $teamCount = $this->resource->teams->count();
+        $formatName = $this->resource->format->name ?? null;
         $optionsService = new GroupConfigurationOptionService();
-        $groupOptions = $optionsService->buildOptions($teamCount);
+        $groupOptions = [];
+        if ($formatName === 'Grupos y Eliminatoria') {
+            $groupOptions = $optionsService->buildOptions($teamCount);
+        }
 
         $selectedOptionId = null;
         $groupConfiguration = $this->resource->groupConfiguration;

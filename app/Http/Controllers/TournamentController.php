@@ -26,6 +26,7 @@ use App\Models\Team;
 use App\Models\Tournament;
 use App\Models\TournamentFormat;
 use App\Models\TournamentPhase;
+use App\Models\TournamentFieldReservation;
 use App\Services\ScheduleGeneratorService;
 use Barryvdh\Snappy\Facades\SnappyImage;
 use Illuminate\Http\JsonResponse;
@@ -175,6 +176,77 @@ class TournamentController extends Controller
         return response()->json([
             'phase' => $tournamentPhase->load('phase'),
             'all' => $tournament->tournamentPhases()->with('phase')->get(),
+        ]);
+    }
+
+    public function advancePhase(Request $request, Tournament $tournament): JsonResponse
+    {
+        $currentPhase = $tournament->tournamentPhases()
+            ->with('phase')
+            ->where('is_active', true)
+            ->first();
+
+        if (!$currentPhase) {
+            abort(422, 'No hay una fase activa para avanzar.');
+        }
+
+        $hasPendingGames = Game::where('tournament_id', $tournament->id)
+            ->where('tournament_phase_id', $currentPhase->id)
+            ->where('status', '!=', Game::STATUS_COMPLETED)
+            ->exists();
+
+        if ($hasPendingGames) {
+            abort(422, 'Aún hay partidos pendientes en la fase actual.');
+        }
+
+        $phases = $tournament->tournamentPhases()->with('phase')->orderBy('id')->get();
+        $currentIndex = $phases->search(fn($phase) => $phase->id === $currentPhase->id);
+        $teamsCount = $tournament->teams()->count();
+
+        $nextPhase = null;
+        if ($currentIndex !== false) {
+            for ($i = $currentIndex + 1; $i < $phases->count(); $i++) {
+                $candidate = $phases[$i];
+                if ($candidate->is_completed) {
+                    continue;
+                }
+                $minTeams = $candidate->phase?->min_teams_for;
+                if (!is_null($minTeams) && $teamsCount < $minTeams) {
+                    continue;
+                }
+                $nextPhase = $candidate;
+                break;
+            }
+        }
+
+        DB::transaction(function () use ($tournament, $currentPhase, $nextPhase) {
+            TournamentFieldReservation::where('tournament_id', $tournament->id)->delete();
+
+            $currentPhase->update([
+                'is_active' => false,
+                'is_completed' => true,
+            ]);
+
+            if ($nextPhase) {
+                $nextPhase->update([
+                    'is_active' => true,
+                ]);
+            }
+        });
+
+        $currentPhase->refresh();
+        if ($nextPhase) {
+            $nextPhase->refresh();
+        }
+        $phases = $tournament->tournamentPhases()->with('phase')->orderBy('id')->get();
+
+        return response()->json([
+            'message' => $nextPhase
+                ? sprintf('Fase "%s" activada.', $nextPhase->phase->name)
+                : 'Todas las fases del torneo han sido completadas.',
+            'current_phase' => $currentPhase->load('phase'),
+            'next_phase' => $nextPhase ? $nextPhase->load('phase') : null,
+            'phases' => $phases,
         ]);
     }
 

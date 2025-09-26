@@ -35,6 +35,7 @@ Route::prefix('tournaments')->group(function () {
 
     Route::post('', [TournamentController::class, 'store'])->withoutMiddleware('auth:sanctum');
     Route::post('{tournament}/schedule', [TournamentController::class, 'schedule']);
+    Route::post('{tournament}/phases/advance', [TournamentController::class, 'advancePhase']);
     Route::post('{tournament}/locations', [TournamentController::class, 'storeTournamentLocations']);
     Route::post('{tournament}/rounds/{roundId}', [TournamentController::class, 'updateTournamentRound']);
     Route::post('{tournament}/bracket/confirm', [BracketController::class, 'confirm']);

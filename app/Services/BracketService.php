@@ -40,32 +40,44 @@ class BracketService
             ->get();
 
         return $rows->groupBy('group_key')->map(function ($groupRows, $gk) {
+            $standings = $groupRows->map(function ($r) {
+                return [
+                    'id' => $r->id,
+                    'team_id' => $r->team_id,
+                    'team_tournament_id' => $r->team_tournament_id,
+                    'tournament_phase_id' => $r->tournament_phase_id,
+                    'matches_played' => (int)$r->matches_played,
+                    'wins' => (int)$r->wins,
+                    'draws' => (int)$r->draws,
+                    'losses' => (int)$r->losses,
+                    'goals_for' => (int)$r->goals_for,
+                    'goals_against' => (int)$r->goals_against,
+                    'goal_difference' => (int)$r->goal_difference,
+                    'points' => (int)$r->points,
+                    'fair_play_points' => (int)($r->fair_play_points ?? 0),
+                    'last_5' => $r->last_5,
+                    'rank' => (int)$r->rank,
+                    'team' => [
+                        'id' => $r->team_id,
+                        'name' => $r->team_name,
+                        'image' => $r->team_image,
+                    ],
+                ];
+            })->values();
+
+            $teams = $standings->map(function ($item) {
+                return [
+                    'team_id' => $item['team_id'],
+                    'team_name' => $item['team']['name'],
+                    'rank' => $item['rank'],
+                    'points' => $item['points'],
+                ];
+            });
+
             return [
                 'group' => $gk,
-                'standings' => $groupRows->map(function ($r) {
-                    return [
-                        'id' => $r->id,
-                        'team_id' => $r->team_id,
-                        'team_tournament_id' => $r->team_tournament_id,
-                        'tournament_phase_id' => $r->tournament_phase_id,
-                        'matches_played' => (int)$r->matches_played,
-                        'wins' => (int)$r->wins,
-                        'draws' => (int)$r->draws,
-                        'losses' => (int)$r->losses,
-                        'goals_for' => (int)$r->goals_for,
-                        'goals_against' => (int)$r->goals_against,
-                        'goal_difference' => (int)$r->goal_difference,
-                        'points' => (int)$r->points,
-                        'fair_play_points' => (int)($r->fair_play_points ?? 0),
-                        'last_5' => $r->last_5,
-                        'rank' => (int)$r->rank,
-                        'team' => [
-                            'id' => $r->team_id,
-                            'name' => $r->team_name,
-                            'image' => $r->team_image,
-                        ],
-                    ];
-                })->values(),
+                'standings' => $standings,
+                'teams' => $teams->values(),
             ];
         })->values()->toArray();
     }

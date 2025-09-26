@@ -71,9 +71,6 @@ class LocationFieldCollection extends ResourceCollection
         $labels = self::dayLabels;
         $out = [];
         foreach ($weekly as $dow => $ranges) {
-            if (empty($ranges)) {
-                continue;
-            }
             $dayKey = $map[$dow];
             $intervals = [];
             foreach ($ranges as [$s, $e]) {
@@ -99,10 +96,30 @@ class LocationFieldCollection extends ResourceCollection
                     }
                 }
             }
-
             // available_range usando primer inicio y último fin del día
+            if (empty($ranges)) {
+                $out[$dayKey] = [
+                    'enabled' => false,
+                    'available_range' => null,
+                    'intervals' => [],
+                    'label' => $labels[$dayKey],
+                ];
+                continue;
+            }
+
             $firstStart = $ranges[0][0];
             $lastEnd = $ranges[count($ranges)-1][1];
+
+            if (empty($intervals)) {
+                $out[$dayKey] = [
+                    'enabled' => false,
+                    'available_range' => sprintf('%02d:%02d a %02d:%02d', intdiv($firstStart,60), $firstStart%60, intdiv($lastEnd,60), $lastEnd%60),
+                    'intervals' => [],
+                    'label' => $labels[$dayKey],
+                ];
+                continue;
+            }
+
             $out[$dayKey] = [
                 'enabled' => true,
                 'available_range' => sprintf('%02d:%02d a %02d:%02d', intdiv($firstStart,60), $firstStart%60, intdiv($lastEnd,60), $lastEnd%60),

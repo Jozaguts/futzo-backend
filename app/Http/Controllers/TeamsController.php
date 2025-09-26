@@ -208,10 +208,18 @@ class TeamsController extends Controller
             $user->update(['image' => $media->getUrl()]);
         }
 
-        $user->league()->associate(League::find( auth()->user()->league_id ));
+        $league_id = auth()?->user()?->league_id;
+        if (!$league_id) {
+            $tournament_id = request()->input('team')['tournament_id'];
+            if($tournament_id){
+                $league_id = Tournament::where('id', $tournament_id)->firstOrFail()->league?->id;
+                $user->league()->associate($league_id);
+            }
+        }
+
         $user->save();
         $user->assignRole($roleName);
-        if ($sendEmail) {
+        if ($sendEmail && app()->environment('production')) {
             event(new $eventClass($user, $temporaryPassword));
         }
 
@@ -374,7 +382,7 @@ class TeamsController extends Controller
             'address' => json_decode($data['team']['address'], false, 512, JSON_THROW_ON_ERROR),
             'colors' => json_decode($data['team']['colors'], false, 512, JSON_THROW_ON_ERROR)
         ]);
-        $team->leagues()->attach( auth()->user()->league_id);
+        $team->leagues()->attach( auth()?->user()?->league_id);
         $team->categories()->attach($data['team']['category_id']);
         $team->tournaments()->attach($data['team']['tournament_id']);
     }

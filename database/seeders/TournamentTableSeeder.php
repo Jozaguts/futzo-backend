@@ -11,7 +11,7 @@ use App\Models\TournamentFormat;
 use App\Models\FootballType;
 use App\Models\DefaultTournamentConfiguration;
 use Illuminate\Database\Seeder;
-use TournamentFormatId;
+use App\Enums\TournamentFormatId;
 
 class TournamentTableSeeder extends Seeder
 {

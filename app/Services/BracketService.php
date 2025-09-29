@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Models\Tournament;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
-use TournamentFormatId;
+use App\Enums\TournamentFormatId;
 
 class BracketService
 {

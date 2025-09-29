@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\TournamentFormatId;
 use App\Models\Game;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;

@@ -15,7 +15,7 @@ use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
-use TournamentFormatId;
+use App\Enums\TournamentFormatId;
 
 class SeedLeagueTournamentsCommand extends Command
 {

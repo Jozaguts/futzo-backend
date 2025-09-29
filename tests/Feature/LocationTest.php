@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use TournamentFormatId;
+use App\Enums\TournamentFormatId;
 
 it('stores a location correctly', function () {
     $response = $this->postJson('/api/v1/admin/locations', [

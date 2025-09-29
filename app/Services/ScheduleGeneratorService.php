@@ -14,7 +14,7 @@ use App\Services\GroupConfigurationOptionService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
-use TournamentFormatId;
+use App\Enums\TournamentFormatId;
 
 class ScheduleGeneratorService
 {

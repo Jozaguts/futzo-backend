@@ -1,23 +1,7 @@
 <?php
 
-if (!enum_exists('TournamentFormatId')) {
-    enum TournamentFormatId : int
-    {
-        case League = 1;
-        case LeagueAndElimination = 2;
-        case GroupAndElimination = 3;
-        case Elimination = 4;
-        case Swiss = 5;
-    }
-}
-if (!enum_exists('FootballTypeId')) {
-    enum FootballTypeId: int
-    {
-        case TraditionalFootball = 1;
-        case SevenFootball = 2;
-        case Futsal = 3;
-    }
-}
+use App\Enums\FootballTypeId;
+use App\Enums\TournamentFormatId;
 
 $address = [
     'description' => 'La Sabana, San José Province, San José, Sabana, Costa Rica',

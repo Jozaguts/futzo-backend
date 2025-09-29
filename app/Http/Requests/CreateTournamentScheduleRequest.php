@@ -6,7 +6,7 @@ use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
-use TournamentFormatId;
+use App\Enums\TournamentFormatId;
 
 class CreateTournamentScheduleRequest extends FormRequest
 {

@@ -7,7 +7,7 @@ use App\Models\DefaultTournamentConfiguration;
 use App\Models\Phase;
 use App\Models\Tournament;
 use App\Models\TournamentConfiguration;
-use TournamentFormatId;
+use App\Enums\TournamentFormatId;
 
 class TournamentCreatedListener
 {

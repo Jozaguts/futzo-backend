@@ -10,7 +10,7 @@ use App\Models\TournamentFormat;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use JsonException;
-use TournamentFormatId;
+use App\Enums\TournamentFormatId;
 
 it('get tournaments', function () {
 

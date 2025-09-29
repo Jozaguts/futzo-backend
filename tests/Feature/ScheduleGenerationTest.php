@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\TournamentFormatId;
 use App\Models\Game;
 use App\Models\Phase;
 use App\Models\Standing;

@@ -82,7 +82,16 @@ class Team extends Model implements HasMedia
         );
 
     }
-
+    protected function colors (): Attribute
+    {
+        $colors['home']['primary'] = $this->colors['home']['primary'] ?? '#FFF';
+        $colors['home']['secondary'] = $this->colors['home']['secondary'] ?? '#FFF';
+        $colors['away']['primary'] = $this->colors['away']['primary'] ?? '#FFF';
+        $colors['away']['secondary'] = $this->colors['away']['secondary'] ?? '#FFF';
+        return Attribute::make(
+            get: static fn($value) => $colors
+        );
+    }
 
     public function defaultLineup(): HasOne
     {

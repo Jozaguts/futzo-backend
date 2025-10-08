@@ -121,17 +121,18 @@ class TeamsController extends Controller
 
     }
 
+    /**
+     * @throws Throwable
+     */
     public function update(TeamUpdateRequest $request, $id)
     {
 
         try {
             $data = $request->validated();
-            $president = collect($data['president']);
-            $coach = collect($data['coach']);
             DB::beginTransaction();
             $team = Team::findOrFail($id);
-            if ($president !== null) {
-                $team->president->update($president->only('name')->toArray());
+            if (!empty($data['president'])) {
+                $team->president->update(['name' => $data['president']['name']]);
                 if ($request->hasFile('president.image')) {
 
                     $media = $team->president
@@ -142,10 +143,9 @@ class TeamsController extends Controller
                     ]);
                 }
             }
-            if ($coach !== null) {
-                $team->coach->update($coach->only('name')->toArray());
+            if ( !empty($data['coach'])) {
+                $team->coach->update(['name' => $data['coach']['name']]);
                 if ($request->hasFile('coach.image')) {
-
                     $media = $team->coach
                         ->addMedia($request->file('coach.image'))
                         ->toMediaCollection('image');
@@ -159,8 +159,8 @@ class TeamsController extends Controller
             }
             $team->update([
                 'name' => $data['team']['name'],
-                'address' => json_decode($data['team']['address']),
-                'colors' => json_decode($data['team']['colors']),
+                'address' => json_decode($data['team']['address'], true, 512, JSON_THROW_ON_ERROR),
+                'colors' => json_decode($data['team']['colors'],true, 512, JSON_THROW_ON_ERROR),
             ]);
             if ($request->hasFile('team.image')) {
 

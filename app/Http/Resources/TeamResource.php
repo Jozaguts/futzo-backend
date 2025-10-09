@@ -27,6 +27,7 @@ class TeamResource extends JsonResource
                 ->first(),
             'category' => $this->resource->category()->select('id', 'name')->first(),
             'league' => $this->resource->leagues()->where('league_id', auth()?->user()?->league_id)->select('leagues.id', 'leagues.name')->first(),
+            'slug' => $this->resource->slug,
         ];
     }
 }

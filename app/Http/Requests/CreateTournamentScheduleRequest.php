@@ -109,44 +109,44 @@ class CreateTournamentScheduleRequest extends FormRequest
 
             'fields_phase.*.availability.monday' => 'nullable|array',
             'fields_phase.*.availability.monday.enabled' => 'sometimes|required|boolean',
-            'fields_phase.*.availability.monday.available_range' => 'sometimes|required|string',
-            'fields_phase.*.availability.monday.intervals' => 'sometimes|required|array',
+            'fields_phase.*.availability.monday.available_range' => 'nullable|string',
+            'fields_phase.*.availability.monday.intervals' => 'nullable|array',
             'fields_phase.*.availability.monday.label' => 'sometimes|required|string',
 
             'fields_phase.*.availability.tuesday' => 'nullable|array',
             'fields_phase.*.availability.tuesday.enabled' => 'sometimes|required|boolean',
-            'fields_phase.*.availability.tuesday.available_range' => 'sometimes|required|string',
-            'fields_phase.*.availability.tuesday.intervals' => 'sometimes|required|array',
+            'fields_phase.*.availability.tuesday.available_range' => 'nullable|string',
+            'fields_phase.*.availability.tuesday.intervals' => 'nullable|array',
             'fields_phase.*.availability.tuesday.label' => 'sometimes|required|string',
 
             'fields_phase.*.availability.wednesday' => 'nullable|array',
             'fields_phase.*.availability.wednesday.enabled' => 'sometimes|required|boolean',
-            'fields_phase.*.availability.wednesday.available_range' => 'sometimes|required|string',
-            'fields_phase.*.availability.wednesday.intervals' => 'sometimes|required|array',
+            'fields_phase.*.availability.wednesday.available_range' => 'nullable|string',
+            'fields_phase.*.availability.wednesday.intervals' => 'nullable|array',
             'fields_phase.*.availability.wednesday.label' => 'sometimes|required|string',
 
             'fields_phase.*.availability.thursday' => 'nullable|array',
             'fields_phase.*.availability.thursday.enabled' => 'sometimes|required|boolean',
-            'fields_phase.*.availability.thursday.available_range' => 'sometimes|required|string',
-            'fields_phase.*.availability.thursday.intervals' => 'sometimes|required|array',
+            'fields_phase.*.availability.thursday.available_range' => 'nullable|string',
+            'fields_phase.*.availability.thursday.intervals' => 'nullable|array',
             'fields_phase.*.availability.thursday.label' => 'sometimes|required|string',
 
             'fields_phase.*.availability.friday' => 'nullable|array',
             'fields_phase.*.availability.friday.enabled' => 'sometimes|required|boolean',
-            'fields_phase.*.availability.friday.available_range' => 'sometimes|required|string',
-            'fields_phase.*.availability.friday.intervals' => 'sometimes|required|array',
+            'fields_phase.*.availability.friday.available_range' => 'nullable|string',
+            'fields_phase.*.availability.friday.intervals' => 'nullable|array',
             'fields_phase.*.availability.friday.label' => 'sometimes|required|string',
 
             'fields_phase.*.availability.saturday' => 'nullable|array',
             'fields_phase.*.availability.saturday.enabled' => 'sometimes|required|boolean',
-            'fields_phase.*.availability.saturday.available_range' => 'sometimes|required|string',
-            'fields_phase.*.availability.saturday.intervals' => 'sometimes|required|array',
+            'fields_phase.*.availability.saturday.available_range' => 'nullable|string',
+            'fields_phase.*.availability.saturday.intervals' => 'nullable|array',
             'fields_phase.*.availability.saturday.label' => 'sometimes|required|string',
 
             'fields_phase.*.availability.sunday' => 'nullable|array',
             'fields_phase.*.availability.sunday.enabled' => 'sometimes|required|boolean',
-            'fields_phase.*.availability.sunday.available_range' => 'sometimes|required|string',
-            'fields_phase.*.availability.sunday.intervals' => 'sometimes|required|array',
+            'fields_phase.*.availability.sunday.available_range' => 'nullable|string',
+            'fields_phase.*.availability.sunday.intervals' => 'nullable|array',
             'fields_phase.*.availability.sunday.label' => 'sometimes|required|string',
 
             // Configuración de fase de grupos (opcional, solo si group_stage=1)
@@ -167,6 +167,58 @@ class CreateTournamentScheduleRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function ($validator) {
+            $fieldsPhase = $this->input('fields_phase', []);
+            $dayLabels = [
+                'monday' => 'lunes',
+                'tuesday' => 'martes',
+                'wednesday' => 'miércoles',
+                'thursday' => 'jueves',
+                'friday' => 'viernes',
+                'saturday' => 'sábado',
+                'sunday' => 'domingo',
+            ];
+
+            foreach ($fieldsPhase as $fieldIndex => $field) {
+                if (!is_array($field)) {
+                    continue;
+                }
+
+                $availability = $field['availability'] ?? [];
+                if (!is_array($availability)) {
+                    continue;
+                }
+
+                foreach ($dayLabels as $dayKey => $dayLabel) {
+                    $dayData = $availability[$dayKey] ?? null;
+                    if (!is_array($dayData)) {
+                        continue;
+                    }
+
+                    $enabledRaw = $dayData['enabled'] ?? false;
+                    $isEnabled = filter_var($enabledRaw, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
+                    $isEnabled = $isEnabled ?? (bool) $enabledRaw;
+
+                    if (!$isEnabled) {
+                        continue;
+                    }
+
+                    if (!array_key_exists('available_range', $dayData) || $dayData['available_range'] === null || $dayData['available_range'] === '') {
+                        $validator->errors()->add(
+                            "fields_phase.{$fieldIndex}.availability.{$dayKey}.available_range",
+                            "El campo fields_phase.{$fieldIndex}.availability.{$dayKey}.available_range es obligatorio cuando {$dayLabel} está habilitado."
+                        );
+                    }
+
+                    $intervals = $dayData['intervals'] ?? null;
+                    if (!is_array($intervals) || count($intervals) === 0) {
+                        $validator->errors()->add(
+                            "fields_phase.{$fieldIndex}.availability.{$dayKey}.intervals",
+                            "El campo fields_phase.{$fieldIndex}.availability.{$dayKey}.intervals debe contener al menos un intervalo cuando {$dayLabel} está habilitado."
+                        );
+                    }
+                }
+            }
+
             $groupPhase = $this->input('group_phase');
 
             if (is_array($groupPhase)) {

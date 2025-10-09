@@ -718,9 +718,6 @@ class ScheduleGeneratorService
             ->firstOrFail();
         $startDate = Carbon::parse($generalData['start_date']);
 
-        if ($startDate->isPast()) {
-            throw new RuntimeException('La fecha de inicio no puede ser en el pasado.');
-        }
         $tournament->start_date = $startDate;
         $tournament->saveQuietly();
         $this->tournament = $tournament->refresh();

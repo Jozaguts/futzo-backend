@@ -27,8 +27,6 @@ class TeamsDataSheet implements FromCollection, WithHeadings, WithTitle, WithCol
                 '',
                 '',
                 '',
-                '',
-                ''
             ]
         ]);
     }
@@ -37,8 +35,6 @@ class TeamsDataSheet implements FromCollection, WithHeadings, WithTitle, WithCol
     {
         return [
             'Nombre del equipo',
-            'Correo del equipo',
-            'Teléfono del equipo',
             'Dirección',
             'Color local primario',
             'Color local secundario',
@@ -62,19 +58,17 @@ class TeamsDataSheet implements FromCollection, WithHeadings, WithTitle, WithCol
     {
         return [
             'A' => 25,
-            'B' => 30,
+            'B' => 40,
             'C' => 20,
-            'D' => 40,
+            'D' => 20,
             'E' => 20,
             'F' => 20,
-            'G' => 20,
+            'G' => 25,
             'H' => 20,
-            'I' => 25,
-            'J' => 20,
-            'K' => 30,
-            'L' => 25,
-            'M' => 20,
-            'N' => 30,
+            'I' => 30,
+            'J' => 25,
+            'K' => 20,
+            'L' => 30,
         ];
     }
 

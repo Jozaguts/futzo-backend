@@ -28,8 +28,6 @@ class TeamsInstructionsSheet implements FromCollection, WithTitle, WithColumnWid
             ['', '', '', ''],
             ['Campo', 'Descripción', '¿Obligatorio?', 'Ejemplo'],
             ['Nombre del equipo', 'Nombre completo del equipo', 'Sí', 'Tigres FC'],
-            ['Correo del equipo', 'Correo electrónico de contacto', 'No', 'contacto@tigres.com'],
-            ['Teléfono del equipo', 'Teléfono de contacto', 'No', '+52 322 239 21 21'],
             ['Dirección', 'Dirección física del equipo', 'No', 'Calle 123, Ciudad'],
             ['Color local primario', 'Color principal del uniforme de local en HEX', 'No', '#FF0000'],
             ['Color local secundario', 'Color secundario del uniforme de local en HEX', 'No', '#00FF00'],
@@ -48,8 +46,6 @@ class TeamsInstructionsSheet implements FromCollection, WithTitle, WithColumnWid
             ['', '', '', ''],
             [
                 'Nombre del equipo',
-                'Correo del equipo',
-                'Teléfono del equipo',
                 'Dirección',
                 'Color local primario',
                 'Color local secundario',
@@ -60,14 +56,10 @@ class TeamsInstructionsSheet implements FromCollection, WithTitle, WithColumnWid
                 'Correo del presidente',
                 'Nombre del entrenador',
                 'Teléfono del entrenador',
-                'Correo del entrenador'
+                'Correo del entrenador',
             ],
-
-
             [
                 'Leones Negros',
-                'leones@futzo.mx',
-                '+52 333 123 4567',
                 'Av. Universidad 1200',
                 '#123456',
                 '#654321',
@@ -78,14 +70,10 @@ class TeamsInstructionsSheet implements FromCollection, WithTitle, WithColumnWid
                 'miguel.soto@leones.mx',
                 'Javier Martínez',
                 '+52 333 112 2233',
-                'javier.martinez@leones.mx'
+                'javier.martinez@leones.mx',
             ],
-
-
             [
                 'Águilas Doradas',
-                'aguilas@futzo.mx',
-                '+52 555 111 2222',
                 'Calle Palmas 200',
                 '#FFAA00',
                 '#AA00FF',
@@ -96,14 +84,10 @@ class TeamsInstructionsSheet implements FromCollection, WithTitle, WithColumnWid
                 'laura.gomez@aguilas.mx',
                 'Andrés Pérez',
                 '+52 555 777 6666',
-                'andres.perez@aguilas.mx'
+                'andres.perez@aguilas.mx',
             ],
-
-
             [
                 'Tiburones Rojos',
-                'tiburones@futzo.mx',
-                '+52 229 444 5555',
                 'Malecón Costero 500',
                 '#CC0000',
                 '#0033CC',
@@ -114,7 +98,7 @@ class TeamsInstructionsSheet implements FromCollection, WithTitle, WithColumnWid
                 'roberto.diaz@tiburones.mx',
                 'Víctor Cruz',
                 '+52 229 777 8888',
-                'victor.cruz@tiburones.mx'
+                'victor.cruz@tiburones.mx',
             ],
         ]);
     }
@@ -128,20 +112,17 @@ class TeamsInstructionsSheet implements FromCollection, WithTitle, WithColumnWid
     {
         return [
             'A' => 30, // Nombre del equipo
-            'B' => 30, // Correo del equipo
-            'C' => 20, // Teléfono del equipo
-            'D' => 40, // Dirección
-            'E' => 30, // Color local primario
-            'F' => 30, // Color local secundario
-            'G' => 30, // Color visitante primario
-            'H' => 30, // Color visitante secundario
-            'I' => 30, // Nombre del presidente
-            'J' => 30, // Teléfono del presidente
-            'K' => 30, // Correo del presidente
-            'L' => 30, // Nombre del entrenador
-            'M' => 30, // Teléfono del entrenador
-            'N' => 30, // Correo del entrenador
-            'O' => 20, // (opcional si llega hasta O)
+            'B' => 40, // Dirección
+            'C' => 30, // Color local primario
+            'D' => 30, // Color local secundario
+            'E' => 30, // Color visitante primario
+            'F' => 30, // Color visitante secundario
+            'G' => 30, // Nombre del presidente
+            'H' => 30, // Teléfono del presidente
+            'I' => 30, // Correo del presidente
+            'J' => 30, // Nombre del entrenador
+            'K' => 30, // Teléfono del entrenador
+            'L' => 30, // Correo del entrenador
         ];
     }
 
@@ -163,8 +144,8 @@ class TeamsInstructionsSheet implements FromCollection, WithTitle, WithColumnWid
         ]);
 
         // Merge Nota
-        $sheet->mergeCells('A24:D25');
-        $sheet->getStyle('A24')->applyFromArray([
+        $sheet->mergeCells('A22:D23');
+        $sheet->getStyle('A22')->applyFromArray([
             'font' => [
                 'bold' => true,
                 'color' => ['rgb' => 'FFFFFF'],
@@ -205,7 +186,7 @@ class TeamsInstructionsSheet implements FromCollection, WithTitle, WithColumnWid
 
         // Bordes para ejemplos
         $sheet->mergeCells('A26:D27');
-        $sheet->getStyle('A23:N26')->applyFromArray([
+        $sheet->getStyle('A23:L26')->applyFromArray([
             'font' => ['bold' => true],
             'alignment' => [
                 'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
@@ -213,7 +194,7 @@ class TeamsInstructionsSheet implements FromCollection, WithTitle, WithColumnWid
                 'wrapText' => true,
             ],
         ]);
-        $sheet->getStyle('A28:N28')->applyFromArray([
+        $sheet->getStyle('A28:L28')->applyFromArray([
             'font' => ['bold' => true],
             'alignment' => [
                 'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
@@ -222,7 +203,7 @@ class TeamsInstructionsSheet implements FromCollection, WithTitle, WithColumnWid
             ],
 
         ]);
-        $sheet->getStyle('A28:N31')->applyFromArray([
+        $sheet->getStyle('A28:L31')->applyFromArray([
             'borders' => [
                 'allBorders' => [
                     'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,

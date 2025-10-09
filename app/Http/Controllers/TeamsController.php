@@ -256,7 +256,7 @@ class TeamsController extends Controller
                     continue;
                 }
 
-                $header = $sheet->rangeToArray('A1:O1', null, true, true, true)[1];
+                $header = $sheet->rangeToArray('A1:L1', null, true, true, true)[1];
 
                 if ($this->isValidHeader($header)) {
                     $found = true;
@@ -295,19 +295,17 @@ class TeamsController extends Controller
     {
         $expected = [
             'A' => 'Nombre del equipo',
-            'B' => 'Correo del equipo',
-            'C' => 'Teléfono del equipo',
-            'D' => 'Dirección',
-            'E' => 'Color local primario',
-            'F' => 'Color local secundario',
-            'G' => 'Color visitante primario',
-            'H' => 'Color visitante secundario',
-            'I' => 'Nombre del presidente',
-            'J' => 'Teléfono del presidente',
-            'K' => 'Correo del presidente',
-            'L' => 'Nombre del entrenador',
-            'M' => 'Teléfono del entrenador',
-            'N' => 'Correo del entrenador',
+            'B' => 'Dirección',
+            'C' => 'Color local primario',
+            'D' => 'Color local secundario',
+            'E' => 'Color visitante primario',
+            'F' => 'Color visitante secundario',
+            'G' => 'Nombre del presidente',
+            'H' => 'Teléfono del presidente',
+            'I' => 'Correo del presidente',
+            'J' => 'Nombre del entrenador',
+            'K' => 'Teléfono del entrenador',
+            'L' => 'Correo del entrenador',
         ];
 
         foreach ($expected as $column => $expectedValue) {
@@ -326,29 +324,29 @@ class TeamsController extends Controller
         $data = [
             'team' => [
                 'name' => $row['A'],
-                'address' => $this->normalizeAddress($row['D']),
+                'address' => $this->normalizeAddress($row['B']),
                 'colors' => json_encode([
                     'home' => [
-                        'primary' => $row['E'],
-                        'secondary' => $row['F'],
+                        'primary' => $row['C'],
+                        'secondary' => $row['D'],
                     ],
                     'away' => [
-                        'primary' => $row['G'],
-                        'secondary' => $row['H'],
+                        'primary' => $row['E'],
+                        'secondary' => $row['F'],
                     ],
                 ], JSON_THROW_ON_ERROR),
                 'category_id' => $tournament->category->id,
                 'tournament_id' => $tournament->id,
             ],
             'president' => [
-                'name' => $row['I'],
-                'phone' => $row['J'],
-                'email' => $row['K'],
+                'name' => $row['G'],
+                'phone' => $row['H'],
+                'email' => $row['I'],
             ],
             'coach' => [
-                'name' => $row['L'],
-                'phone' => $row['M'],
-                'email' => $row['N'],
+                'name' => $row['J'],
+                'phone' => $row['K'],
+                'email' => $row['L'],
             ],
         ];
         $formRequest = TeamStoreRequest::create('', 'POST', $data);

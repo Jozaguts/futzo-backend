@@ -157,10 +157,12 @@ class TeamsController extends Controller
                     ]);
                 }
             }
+            $address = !empty($data['team']['address']) ?  json_decode( $data['team']['address'] , true, 512, JSON_THROW_ON_ERROR) : null;
+            $colors = !empty($data['team']['colors']) ? json_decode($data['team']['colors'],true, 512, JSON_THROW_ON_ERROR) : null;
             $team->update([
                 'name' => $data['team']['name'],
-                'address' => json_decode($data['team']['address'], true, 512, JSON_THROW_ON_ERROR),
-                'colors' => json_decode($data['team']['colors'],true, 512, JSON_THROW_ON_ERROR),
+                'address' => $address,
+                'colors' =>$colors,
             ]);
             if ($request->hasFile('team.image')) {
 
@@ -553,7 +555,7 @@ class TeamsController extends Controller
             ->where('team_id', $team->id)
             ->first();
         $lineupPlayer = LineupPlayer::query()
-            ->where('lineup_id', $lineup->id)
+            ->where('lineup_id', $lineup?->id)
             ->where('field_location', $data['field_location'])
             ->first();
         if ($lineupPlayer) {
@@ -561,7 +563,7 @@ class TeamsController extends Controller
             $lineupPlayer->is_headline = false;
             $lineupPlayer->save();
         }
-        $lineupPlayer = LineupPlayer::where('lineup_id', $lineup->id)
+        $lineupPlayer = LineupPlayer::where('lineup_id', $lineup?->id)
             ->where('player_id', $data['player']['player_id'])
             ->update([
                 'field_location' => $data['field_location'],

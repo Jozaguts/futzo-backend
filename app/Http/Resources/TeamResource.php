@@ -22,7 +22,7 @@ class TeamResource extends JsonResource
             'image'=> $this->resource->image,
             'president' => $this->resource->president()->select('id', 'name', 'email', 'phone')->first(),
             'coach' => $this->resource->coach()->select('id', 'name', 'email', 'phone')->first(),
-            'address' => $this->resource->address['place_id'] ? $this->resource->address : null,
+            'address' => !empty($this->resource->address['place_id']) ? $this->resource->address : null,
             'tournament' => $this->resource->tournaments()
                 ->first(),
             'category' => $this->resource->category()->select('id', 'name')->first(),

@@ -13,6 +13,7 @@ class DefaultLineupPlayer extends Model
         'default_lineup_id',
         'player_id',
         'field_location',
+        'team_id',
     ];
 
     public function defaultLineup(): BelongsTo

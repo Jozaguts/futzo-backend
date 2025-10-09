@@ -98,7 +98,10 @@ class ScheduleGeneratorService
                 ->copy()
                 ->startOfWeek($startOfWeekDay)
                 ->toDateString(),
-            )->map(fn($week) => $week->groupBy('field_id'));
+            )->map(fn($week) => $week
+                ->groupBy('field_id')
+                ->map(fn($slots) => $slots->values())
+            );
 
         // 6) encontrar primera semana válida
         $weekStart = $this->findFirstAvailableWeekStart(
@@ -222,7 +225,10 @@ class ScheduleGeneratorService
                 ->copy()
                 ->startOfWeek($startOfWeekDay)
                 ->toDateString())
-            ->map(fn($week) => $week->groupBy('field_id'));
+            ->map(fn($week) => $week
+                ->groupBy('field_id')
+                ->map(fn($slots) => $slots->values())
+            );
 
         $weekStart = $this->findFirstAvailableWeekStart(
             $slotsByWeekAndField->toArray(),
@@ -411,7 +417,10 @@ class ScheduleGeneratorService
                 ->copy()
                 ->startOfWeek($startOfWeekDay)
                 ->toDateString())
-            ->map(fn($week) => $week->groupBy('field_id'));
+            ->map(fn($week) => $week
+                ->groupBy('field_id')
+                ->map(fn($slots) => $slots->values())
+            );
         $weekStart = $this->findFirstAvailableWeekStart($slotsByWeekAndField->toArray(), Carbon::parse($this->tournament->start_date));
 
         $matches = [];

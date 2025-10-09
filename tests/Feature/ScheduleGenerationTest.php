@@ -1,7 +1,12 @@
 <?php
 
 use App\Enums\TournamentFormatId;
+use App\Models\Field;
 use App\Models\Game;
+use App\Models\League;
+use App\Models\LeagueField;
+use App\Models\LeagueFieldWindow;
+use App\Models\Location;
 use App\Models\Phase;
 use App\Models\Standing;
 use App\Models\Tournament;
@@ -104,6 +109,229 @@ it('genera un calendario para 16 equipos en liga ida y vuelta', function () {
         ->assertJsonCount(240, 'data')
         ->assertJsonPath('data.0.field_id', $fields[0]->id);
     $this->assertDatabaseCount('games', 240);
+});
+
+it('genera calendarios para dos torneos compartidos sin solapar reservas', function () {
+    $league = League::firstOrFail();
+
+    $location = Location::create([
+        'name' => 'Complejo Compartido',
+        'address' => 'Dirección de prueba 123',
+        'position' => ['lat' => 19.0, 'lng' => -99.0],
+        'place_id' => uniqid('place_', true),
+    ]);
+    $league->locations()->attach($location->id, ['created_at' => now(), 'updated_at' => now()]);
+
+    $fieldOne = Field::create([
+        'location_id' => $location->id,
+        'name' => 'Campo Compartido 1',
+        'type' => 'Fútbol 7',
+        'dimensions' => ['width' => 50, 'length' => 90],
+    ]);
+    $fieldTwo = Field::create([
+        'location_id' => $location->id,
+        'name' => 'Campo Compartido 2',
+        'type' => 'Fútbol 7',
+        'dimensions' => ['width' => 50, 'length' => 90],
+    ]);
+
+    $leagueFieldOne = LeagueField::create([
+        'league_id' => $league->id,
+        'field_id' => $fieldOne->id,
+    ]);
+    $leagueFieldTwo = LeagueField::create([
+        'league_id' => $league->id,
+        'field_id' => $fieldTwo->id,
+    ]);
+
+    foreach ([$leagueFieldOne, $leagueFieldTwo] as $lf) {
+        LeagueFieldWindow::create([
+            'league_field_id' => $lf->id,
+            'day_of_week' => 0,
+            'start_minute' => 0,
+            'end_minute' => 1440,
+            'enabled' => true,
+        ]);
+    }
+
+    $startDate = Carbon::now()->next(CarbonInterface::SUNDAY)->startOfDay()->toIso8601String();
+
+    [$leagueTournament] = createTournamentViaApi(TournamentFormatId::League->value, 1, null, $location->id);
+    attachTeamsToTournament($leagueTournament, 16);
+
+    $hourSlots = fn(array $hours) => array_map(fn($hour) => [
+        'value' => sprintf('%02d:00', $hour),
+        'text' => sprintf('%02d:00', $hour),
+        'selected' => true,
+        'disabled' => false,
+    ], $hours);
+
+    $firstPayload = [
+        'general' => [
+            'tournament_id' => $leagueTournament->id,
+            'tournament_format_id' => TournamentFormatId::League->value,
+            'football_type_id' => 1,
+            'start_date' => $startDate,
+            'game_time' => 60,
+            'time_between_games' => 0,
+            'total_teams' => 16,
+            'locations' => [['id' => $location->id, 'name' => $location->name]],
+        ],
+        'rules_phase' => [
+            'round_trip' => true,
+            'tiebreakers' => $leagueTournament->configuration->tiebreakers->toArray(),
+        ],
+        'elimination_phase' => [
+            'teams_to_next_round' => 8,
+            'elimination_round_trip' => false,
+            'phases' => $leagueTournament->tournamentPhases->load('phase')->map(function ($tp) use ($leagueTournament) {
+                return [
+                    'tournament_id' => $leagueTournament->id,
+                    'id' => $tp->phase->id,
+                    'name' => $tp->phase->name,
+                    'is_active' => $tp->is_active,
+                    'is_completed' => $tp->is_completed,
+                ];
+            })->all(),
+        ],
+        'fields_phase' => [
+            [
+                'field_id' => $fieldOne->id,
+                'step' => 1,
+                'field_name' => $fieldOne->name,
+                'location_id' => $location->id,
+                'location_name' => $location->name,
+                'disabled' => false,
+                'availability' => [
+                    'sunday' => [
+                        'enabled' => true,
+                        'available_range' => '00:00 a 16:00',
+                        'intervals' => $hourSlots(range(0, 15)),
+                        'label' => 'Domingo',
+                    ],
+                    'isCompleted' => true,
+                ],
+            ],
+            [
+                'field_id' => $fieldTwo->id,
+                'step' => 2,
+                'field_name' => $fieldTwo->name,
+                'location_id' => $location->id,
+                'location_name' => $location->name,
+                'disabled' => true,
+                'availability' => [
+                    'sunday' => [
+                        'enabled' => false,
+                        'available_range' => null,
+                        'intervals' => [],
+                        'label' => 'Domingo',
+                    ],
+                    'isCompleted' => true,
+                ],
+            ],
+        ],
+    ];
+
+    $this->postJson("/api/v1/admin/tournaments/{$leagueTournament->id}/schedule", $firstPayload)
+        ->assertOk();
+
+    [$mixedTournament] = createTournamentViaApi(TournamentFormatId::LeagueAndElimination->value, 2, null, $location->id);
+    attachTeamsToTournament($mixedTournament, 15);
+
+    $phases = $mixedTournament->tournamentPhases->load('phase')->map(function ($tp) use ($mixedTournament) {
+        return [
+            'tournament_id' => $mixedTournament->id,
+            'id' => $tp->phase->id,
+            'name' => $tp->phase->name,
+            'is_active' => $tp->is_active,
+            'is_completed' => $tp->is_completed,
+        ];
+    })->all();
+
+    $secondPayload = [
+        'general' => [
+            'tournament_id' => $mixedTournament->id,
+            'tournament_format_id' => TournamentFormatId::LeagueAndElimination->value,
+            'football_type_id' => 2,
+            'start_date' => $startDate,
+            'game_time' => 60,
+            'time_between_games' => 0,
+            'total_teams' => 15,
+            'locations' => [['id' => $location->id, 'name' => $location->name]],
+        ],
+        'rules_phase' => [
+            'round_trip' => true,
+            'tiebreakers' => $mixedTournament->configuration->tiebreakers->toArray(),
+        ],
+        'elimination_phase' => [
+            'teams_to_next_round' => 8,
+            'elimination_round_trip' => true,
+            'phases' => $phases,
+        ],
+        'fields_phase' => [
+            [
+                'field_id' => $fieldOne->id,
+                'step' => 1,
+                'field_name' => $fieldOne->name,
+                'location_id' => $location->id,
+                'location_name' => $location->name,
+                'disabled' => false,
+                'availability' => [
+                    'sunday' => [
+                        'enabled' => true,
+                        'available_range' => '17:00 a 24:00',
+                        'intervals' => $hourSlots(range(17, 23)),
+                        'label' => 'Domingo',
+                    ],
+                    'isCompleted' => true,
+                ],
+            ],
+            [
+                'field_id' => $fieldTwo->id,
+                'step' => 2,
+                'field_name' => $fieldTwo->name,
+                'location_id' => $location->id,
+                'location_name' => $location->name,
+                'disabled' => false,
+                'availability' => [
+                    'sunday' => [
+                        'enabled' => true,
+                        'available_range' => '00:00 a 24:00',
+                        'intervals' => $hourSlots(range(0, 23)),
+                        'label' => 'Domingo',
+                    ],
+                    'isCompleted' => true,
+                ],
+            ],
+        ],
+    ];
+
+    $this->postJson("/api/v1/admin/tournaments/{$mixedTournament->id}/schedule", $secondPayload)
+        ->assertOk();
+
+    $firstReservation = DB::table('tournament_field_reservations')
+        ->where('tournament_id', $leagueTournament->id)
+        ->where('league_field_id', $leagueFieldOne->id)
+        ->where('day_of_week', 0)
+        ->first();
+    $secondReservationFieldOne = DB::table('tournament_field_reservations')
+        ->where('tournament_id', $mixedTournament->id)
+        ->where('league_field_id', $leagueFieldOne->id)
+        ->where('day_of_week', 0)
+        ->first();
+    $secondReservationFieldTwo = DB::table('tournament_field_reservations')
+        ->where('tournament_id', $mixedTournament->id)
+        ->where('league_field_id', $leagueFieldTwo->id)
+        ->where('day_of_week', 0)
+        ->first();
+
+    expect($firstReservation)->not->toBeNull();
+    expect($secondReservationFieldOne)->not->toBeNull();
+    expect($secondReservationFieldTwo)->not->toBeNull();
+    expect($firstReservation->end_minute)->toBeLessThanOrEqual($secondReservationFieldOne->start_minute);
+
+    expect(Game::where('tournament_id', $leagueTournament->id)->count())->toBeGreaterThan(0);
+    expect(Game::where('tournament_id', $mixedTournament->id)->count())->toBeGreaterThan(0);
 });
 it('no permite reservar horas solapadas para otro torneo', function () {
     // 1) Genera reservas para el Torneo A

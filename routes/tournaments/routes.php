@@ -25,6 +25,8 @@ Route::prefix('tournaments')->group(function () {
     Route::get('{tournament}/group-standings', [BracketController::class, 'groupStandings']);
     Route::get('{tournament}/bracket/preview', [BracketController::class, 'preview']);
     Route::get('{tournament}/bracket/suggestions', [BracketController::class, 'suggestions']);
+    Route::get('{tournament}/registration/qr-code/generate', [TournamentController::class, 'qrCodeGenerate'])
+        ->name('admin.tournament.registration.qr.generate');
 
     Route::get('{tournament}', [TournamentController::class, 'show'])->withoutMiddleware('auth:sanctum');
 

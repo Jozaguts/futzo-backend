@@ -11,6 +11,7 @@ use App\Models\TournamentField;
 use App\Models\TournamentPhase;
 use App\Models\TournamentTiebreaker;
 use App\Services\GroupConfigurationOptionService;
+use App\Support\MatchDuration;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -18,8 +19,6 @@ use App\Enums\TournamentFormatId;
 
 class ScheduleGeneratorService
 {
-    private const int GLOBAL_REST = 15;
-    private const int UNEXPECTED_BUFFER = 15;
     private Tournament $tournament;
     private bool $forceGroupStage = false;
 
@@ -39,12 +38,7 @@ class ScheduleGeneratorService
     public function makeSchedule(): array
     {
         $config = $this->tournament->configuration;
-        $gameTime = $config->game_time;
-        $adminGap = $config->time_between_games;
-        $matchDuration = $gameTime
-            + self::GLOBAL_REST
-            + $adminGap
-            + self::UNEXPECTED_BUFFER;
+        $matchDuration = MatchDuration::minutes($config);
         $teams = $this->tournament->teams()->pluck('teams.id')->toArray();
         $fields = TournamentField::where('tournament_id', $this->tournament->id)->get();
 
@@ -568,10 +562,7 @@ class ScheduleGeneratorService
 
         $leagueTz = $this->tournament->league->timezone ?? config('app.timezone', 'America/Mexico_City');
         $config = $this->tournament->configuration;
-        $matchDuration = ($config->game_time ?? 0)
-            + self::GLOBAL_REST
-            + ($config->time_between_games ?? 0)
-            + self::UNEXPECTED_BUFFER;
+        $matchDuration = MatchDuration::minutes($config);
 
         DB::transaction(static function () use ($matches, $phase, $leagueTz, $matchDuration) {
             foreach ($matches as $match) {
@@ -915,12 +906,7 @@ class ScheduleGeneratorService
     private function saveFieldsPhase($data): void
     {
         $config = $this->tournament->configuration;
-        $gameTime = $config->game_time;
-        $adminGap = $config->time_between_games;
-        $blockDuration = $gameTime
-            + self::GLOBAL_REST
-            + $adminGap
-            + self::UNEXPECTED_BUFFER;
+        $blockDuration = MatchDuration::minutes($config);
 
         foreach ($data as $field) {
             // Ubicar el league_field del campo en la liga actual

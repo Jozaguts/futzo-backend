@@ -12,6 +12,7 @@ use App\Models\Game;
 use App\Models\GameEvent;
 use App\Models\Lineup;
 use App\Models\Substitution;
+use App\Support\MatchDuration;
 use App\Traits\LineupTrait;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -61,7 +62,7 @@ class GameController extends Controller
         }
 
         $config = $game->tournament->configuration;
-        $matchDuration = $config->game_time + $config->time_between_games + 15 + 15;
+        $matchDuration = MatchDuration::minutes($config);
 
         // ventanas efectivas para ese campo en esta liga excluyendo el torneo actual
         $leagueField = \App\Models\LeagueField::where('league_id', $game->tournament->league_id)
@@ -95,9 +96,8 @@ class GameController extends Controller
         foreach ($others as $og) {
             if (empty($og->match_time)) { continue; }
             $ogStart = \Carbon\Carbon::createFromFormat('H:i', $og->match_time);
-            $ogCfg = optional($og->tournament->configuration);
-            $ogDuration = ($ogCfg->game_time ?? $matchDuration) + ($ogCfg->time_between_games ?? 0) + 15 + 15;
-            if (!isset($og->tournament->configuration)) { $ogDuration = $matchDuration; }
+            $ogCfg = $og->tournament->configuration;
+            $ogDuration = MatchDuration::minutes($ogCfg, $matchDuration);
             $ogStartMin = $ogStart->hour * 60 + $ogStart->minute;
             $ogEndMin = $ogStartMin + $ogDuration;
             if ($startMinutes < $ogEndMin && $endMinutes > $ogStartMin) {

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Tournament;
 use App\Services\BracketService;
+use App\Support\MatchDuration;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -35,7 +36,7 @@ class BracketController extends Controller
         $dow = $date->dayOfWeek; // 0..6
 
         $config = $tournament->configuration;
-        $matchDuration = ($config->game_time ?? 0) + ($config->time_between_games ?? 0) + 15 + 15; // minutos
+        $matchDuration = MatchDuration::minutes($config);
 
         // Campos del torneo (opcionalmente filtrados)
         $tournamentFields = $tournament->tournamentFields()->pluck('field_id')->toArray();
@@ -70,8 +71,8 @@ class BracketController extends Controller
             foreach ($existing as $g) {
                 if (empty($g->match_time)) { continue; }
                 $start = \Illuminate\Support\Carbon::createFromFormat('H:i', substr($g->match_time,0,5));
-                $cfg = optional($g->tournament->configuration);
-                $dur = ($cfg->game_time ?? $matchDuration) + ($cfg->time_between_games ?? 0) + 15 + 15;
+                $cfg = $g->tournament->configuration;
+                $dur = MatchDuration::minutes($cfg, $matchDuration);
                 $busy[] = [ $start->hour*60 + $start->minute, $start->hour*60 + $start->minute + $dur ];
             }
 
@@ -135,7 +136,7 @@ class BracketController extends Controller
 
         $minRest = (int)($data['min_rest_minutes'] ?? 120); // descanso mínimo por equipo entre juegos (minutos)
         $config = $tournament->configuration;
-        $matchDuration = ($config->game_time ?? 0) + ($config->time_between_games ?? 0) + 15 + 15; // minutos
+        $matchDuration = MatchDuration::minutes($config);
 
         // Validaciones internas del lote: duplicados campo/hora y juegos del mismo equipo
         $fieldTimeSet = [];

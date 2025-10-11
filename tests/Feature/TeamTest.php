@@ -88,3 +88,74 @@ it('stores a team with empty colors', function () {
 });
 
 
+it('allows duplicate team names in different tournaments', function () {
+    fake()->unique(true);
+
+    $category = Category::factory()->create();
+
+    $tournamentA = Tournament::withoutEvents(fn () => Tournament::factory()->create([
+        'category_id' => $category->id,
+    ]));
+    $tournamentA->category()->associate($category);
+    $tournamentA->save();
+    $tournamentA->refresh();
+
+    $tournamentB = Tournament::withoutEvents(fn () => Tournament::factory()->create([
+        'category_id' => $category->id,
+    ]));
+    $tournamentB->category()->associate($category);
+    $tournamentB->save();
+    $tournamentB->refresh();
+
+    $name = 'Club Futzo';
+
+    $this->json('POST', '/api/v1/admin/teams', teamPayload($tournamentA, $name))
+        ->assertCreated();
+
+    $this->json('POST', '/api/v1/admin/teams', teamPayload($tournamentB, $name))
+        ->assertCreated();
+});
+
+it('rejects duplicate team names within the same tournament', function () {
+    fake()->unique(true);
+
+    $category = Category::factory()->create();
+
+    $tournament = Tournament::withoutEvents(fn () => Tournament::factory()->create([
+        'category_id' => $category->id,
+    ]));
+    $tournament->category()->associate($category);
+    $tournament->save();
+    $tournament->refresh();
+
+    $name = 'Club Único';
+
+    $this->json('POST', '/api/v1/admin/teams', teamPayload($tournament, $name))
+        ->assertCreated();
+
+    $response = $this->json('POST', '/api/v1/admin/teams', teamPayload($tournament, $name));
+
+    $response->assertStatus(422)
+        ->assertJsonFragment(['message' => 'El equipo ya existe en este torneo'])
+        ->assertJsonFragment(['team.name' => ['El equipo ya existe en este torneo']]);
+});
+
+
+function teamPayload(Tournament $tournament, string $name): array
+{
+    $address = json_encode(config('constants.address'), JSON_THROW_ON_ERROR);
+    $colors = json_encode(config('constants.colors'), JSON_THROW_ON_ERROR);
+    $categoryId = optional($tournament->category()->first())->id ?? $tournament->category_id;
+
+    return [
+        'team' => [
+            'name' => $name,
+            'address' => $address,
+            'colors' => $colors,
+            'category_id' => $categoryId,
+            'tournament_id' => $tournament->id,
+        ],
+        'president' => [],
+        'coach' => [],
+    ];
+}

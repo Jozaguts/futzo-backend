@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use App\Models\Game;
 use App\Models\LeagueField;
 use App\Services\AvailabilityService;
+use App\Support\MatchDuration;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -41,9 +42,9 @@ class GameResource extends JsonResource
         if ($request->has('date') && ($selectedDate->lt($phaseStart) || $selectedDate->gt($phaseEnd))) {
             $options = [];
         } else {
-            // 5) Duración del partido (game_time + gap + pausas)
+            // 5) Duración total a reservar (tiempo de juego + gap admin + buffer según modalidad)
             $config = $this->resource->tournament->configuration;
-            $matchDuration = ($config->game_time ?? 0) + ($config->time_between_games ?? 0) + 15 + 15; // minutos
+            $matchDuration = MatchDuration::minutes($config);
 
             // 6) Ventanas efectivas: field ∩ league − reservas de otros torneos
             $leagueField = LeagueField::where('field_id', $fieldId)
@@ -75,14 +76,8 @@ class GameResource extends JsonResource
             foreach ($otherGames as $g) {
                 if (empty($g->match_time)) { continue; }
                 $gStart = Carbon::createFromFormat('H:i', $g->match_time);
-                $gCfg = optional($g->tournament->configuration);
-                $gDuration = ($gCfg->game_time ?? $matchDuration)
-                    + ($gCfg->time_between_games ?? 0)
-                    + 15 + 15;
-                // Si sumamos doble 15 al fallback, nos pasamos; aseguremos fallback correcto
-                if (!isset($g->tournament->configuration)) {
-                    $gDuration = $matchDuration; // usa duración del torneo actual si no hay config cargada
-                }
+                $gCfg = $g->tournament->configuration;
+                $gDuration = MatchDuration::minutes($gCfg, $matchDuration);
                 $startMin = $gStart->hour * 60 + $gStart->minute;
                 $endMin = $startMin + $gDuration;
                 $reservedIntervals[] = [$startMin, $endMin];

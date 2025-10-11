@@ -61,19 +61,27 @@ class TeamStoreRequest extends FormRequest
     public function withValidator(Validator $validator)
     {
         $validator->after(function ($validator) {
-            if ($this->teamNameCategoryExists()) {
-                $validator->errors()->add('team.name', 'El equipo ya existe en esta categoría');
+            if ($this->teamNameTournamentExists()) {
+                $validator->errors()->add('team.name', 'El equipo ya existe en este torneo');
             }
         });
 
     }
 
-    protected function teamNameCategoryExists(): bool
+    protected function teamNameTournamentExists(): bool
     {
-        return DB::table('category_team')
-            ->join('teams', 'category_team.team_id', '=', 'teams.id')
-            ->where('teams.name', $this->input('team.name'))
-            ->where('category_team.category_id', $this->input('team.category_id'))
+        $teamName = $this->input('team.name');
+        $tournamentId = $this->input('team.tournament_id');
+
+        if (!$teamName || !$tournamentId) {
+            return false;
+        }
+
+        return DB::table('team_tournament')
+            ->join('teams', 'team_tournament.team_id', '=', 'teams.id')
+            ->whereNull('teams.deleted_at')
+            ->where('teams.name', $teamName)
+            ->where('team_tournament.tournament_id', $tournamentId)
             ->exists();
     }
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Events\RegisteredTeamCoach;
 use App\Events\RegisteredTeamPresident;
 use App\Exports\TeamsTemplateExport;
+use App\Facades\QrTemplateRendererService;
 use App\Http\Requests\ImportTeamsRequest;
 use App\Http\Requests\TeamStoreRequest;
 use App\Http\Requests\TeamUpdateRequest;
@@ -23,6 +24,7 @@ use App\Models\Lineup;
 use App\Models\LineupPlayer;
 use App\Models\Player;
 use App\Models\Position;
+use App\Models\QrConfiguration;
 use App\Models\Team;
 use App\Models\Tournament;
 use App\Models\User;
@@ -642,6 +644,40 @@ class TeamsController extends Controller
     {
         $canRegister = $team->players->count() < $team->tournaments()->first()->configuration->max_players_per_team;
         return response()->json(['canRegister' => $canRegister]);
+    }
+    public function qrCodeGenerate(Request $request, Team $team): JsonResponse
+    {
+        $typeKey = request()->query('key', 'player_registration');
+        $leagueId = $team->leagues()->first()->id;
+        sleep(1);
+        $config = QrConfiguration::query()
+            ->join('qr_types', 'qr_configurations.qr_type_id', '=', 'qr_types.id')
+            ->where('qr_configurations.league_id', $leagueId)
+            ->where('qr_types.key', $typeKey)
+            ->select('qr_configurations.*')
+            ->first();
+
+        if (!$config) {
+            return response()->json(['error' => 'No existe configuración de QR para este tipo.'], 404);
+        }
+        $qrValue = $team->register_link;
+        $image = QrTemplateRendererService::render([
+            'title' => 'Equipo',
+            'subtitle' => $team->name,
+            'description' => 'Escanear para registrarse',
+            'background_color' => $config->background_color,
+            'foreground_color' => $config->foreground_color,
+            'logo' => 'images/text only/logo-18.png',
+            'qr_value' => $qrValue,
+        ]);
+        return response()->json([
+            'image' => $image,
+            'meta' => [
+                'league_id' => $leagueId,
+                'tournament_id' => $team->id,
+                'type' => $typeKey,
+            ],
+        ]);
     }
 
 }

@@ -14,6 +14,8 @@ Route::prefix('teams')->group(function () {
     Route::get('list', [TeamsController::class, 'list'])->withoutMiddleware('auth:sanctum');
     Route::get('template', [TeamsController::class, 'downloadTeamsTemplate']);
     Route::get('search', [TeamsController::class, 'search']);
+    Route::get('{team}/registration/qr-code/generate', [TeamsController::class, 'qrCodeGenerate'])
+        ->name('admin.team.registration.qr.generate');
     Route::get('', [TeamsController::class, 'index'])->withoutMiddleware('auth:sanctum');
     Route::get('{id}', [TeamsController::class, 'show'])->withoutMiddleware('auth:sanctum');
     Route::post('{team}/default-lineup-players', [TeamsController::class, 'addDefaultLineupPlayer']);

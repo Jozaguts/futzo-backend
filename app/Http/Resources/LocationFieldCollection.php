@@ -103,6 +103,7 @@ class LocationFieldCollection extends ResourceCollection
                     'available_range' => null,
                     'intervals' => [],
                     'label' => $labels[$dayKey],
+                    'mobile_label' => $labels[$dayKey][0],
                 ];
                 continue;
             }
@@ -116,6 +117,7 @@ class LocationFieldCollection extends ResourceCollection
                     'available_range' => sprintf('%02d:%02d a %02d:%02d', intdiv($firstStart,60), $firstStart%60, intdiv($lastEnd,60), $lastEnd%60),
                     'intervals' => [],
                     'label' => $labels[$dayKey],
+                    'mobile_label' => $labels[$dayKey][0],
                 ];
                 continue;
             }
@@ -125,9 +127,10 @@ class LocationFieldCollection extends ResourceCollection
                 'available_range' => sprintf('%02d:%02d a %02d:%02d', intdiv($firstStart,60), $firstStart%60, intdiv($lastEnd,60), $lastEnd%60),
                 'intervals' => $intervals,
                 'label' => $labels[$dayKey],
+                'mobile_label' => $labels[$dayKey][0],
             ];
         }
-        $out['isCompleted'] = false;
+//        $out['isCompleted'] = false;
         return $out;
     }
 }

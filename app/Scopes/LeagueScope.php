@@ -47,12 +47,19 @@ class LeagueScope implements Scope
         } elseif ($model instanceof Game) {
             $builder->where('league_id', $effectiveLeagueId);
         } elseif ($model instanceof Player) {
-            $builder->whereHas('team', function ($query) use ($effectiveLeagueId) {
-                $query->whereIn('teams.id', function ($query) use ($effectiveLeagueId) {
-                    $query->select('team_id')
-                        ->from('league_team')
-                        ->where('league_id', $effectiveLeagueId);
-                });
+            $builder->where(function ($query) use ($effectiveLeagueId) {
+                // Case 1: players con un equipo asociado a la liga
+                $query->whereHas('team', function ($teamQuery) use ($effectiveLeagueId) {
+                    $teamQuery->whereIn('teams.id', function ($subQuery) use ($effectiveLeagueId) {
+                        $subQuery->select('team_id')
+                            ->from('league_team')
+                            ->where('league_id', $effectiveLeagueId);
+                    });
+                })
+                    // Case 2: players sin equipo, pero cuyo user pertenece a la liga
+                    ->orWhereHas('user', function ($userQuery) use ($effectiveLeagueId) {
+                        $userQuery->where('league_id', $effectiveLeagueId);
+                    });
             });
         }
     }

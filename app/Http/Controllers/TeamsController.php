@@ -529,7 +529,6 @@ class TeamsController extends Controller
             return response()->json(['message' => 'El jugador no pertenece a este equipo.'], 422);
         }
         $defaultLineupPlayer = DefaultLineupPlayer::create([
-            'team_id' => $team->id,
             'default_lineup_id' => $team->defaultLineup?->id,
             'player_id' => $data['player']['player_id'],
             'field_location' => $data['field_location'],

@@ -303,12 +303,25 @@ class TournamentController extends Controller
 
     public function getTournamentSchedule(Request $request, int $tournamentId): JsonResponse
     {
+
+
         $filterBy = $request->get('filterBy', false);
         $search = $request->get('search', false);
         $page = (int)$request->get('page', 1);
         $per_page = 1;
         $skip = ($page - 1) * $per_page;
-
+        $hasSchedule = Game::where('tournament_id', $tournamentId)->exists();
+        if(!$hasSchedule){
+            return response()->json([
+                'rounds' => [],
+                'pagination' => [
+                    'current_page' => $page,
+                    'per_page' => $per_page,
+                    'total_rounds' => 0
+                ],
+                'hasSchedule' => false,
+            ]);
+        }
         $tournament = Tournament::with(['configuration'])
             ->findOrFail($tournamentId);
 
@@ -456,7 +469,8 @@ class TournamentController extends Controller
                     $query->where('status', $filterBy);
                 })
                     ->distinct('round')->count('round'),
-            ]
+            ],
+            'hasSchedule' => $hasSchedule,
         ]);
     }
 

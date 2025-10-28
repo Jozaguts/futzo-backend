@@ -128,3 +128,87 @@ it('avanza de la fase Tabla general a la siguiente y libera reservas', function 
     $activePhase = $tournament->tournamentPhases()->where('is_active', true)->with('phase')->first();
     expect($activePhase?->phase?->name)->toBe('Cuartos de Final');
 });
+
+it('finaliza el torneo y marca al campeón cuando no hay más fases', function () {
+    [$tournament, $location] = createTournamentViaApi(TournamentFormatId::LeagueAndElimination->value, 1, null, null);
+    attachTeamsToTournament($tournament, 8);
+
+    $field = $location->fields()->first();
+    $startDate = Carbon::now()->next(CarbonInterface::FRIDAY)->startOfDay()->toIso8601String();
+
+    $payload = buildLeagueEliminationSchedulePayload($tournament->refresh(), $location, $field, $startDate);
+
+    $this->postJson("/api/v1/admin/tournaments/{$tournament->id}/schedule", $payload)->assertOk();
+
+    $tournament->refresh();
+
+    $maxIterations = 5;
+    $expectedChampionTeamId = null;
+    $expectedChampionName = null;
+
+    for ($i = 0; $i < $maxIterations; $i++) {
+        $tournament->refresh();
+        $activePhase = $tournament->activePhase();
+        expect($activePhase)->not->toBeNull();
+
+        $gamesQuery = Game::where('tournament_id', $tournament->id)
+            ->where('tournament_phase_id', $activePhase->id);
+
+        if ($activePhase->phase?->name === 'Final' && !$gamesQuery->exists()) {
+            $teams = $tournament->teams()->take(2)->get()->values();
+            $fieldModel = $location->fields()->first();
+            Game::create([
+                'tournament_id' => $tournament->id,
+                'league_id' => $tournament->league_id,
+                'home_team_id' => $teams[0]->id,
+                'away_team_id' => $teams[1]->id,
+                'field_id' => $fieldModel?->id,
+                'location_id' => $location->id,
+                'round' => 99,
+                'match_date' => now()->toDateString(),
+                'match_time' => now()->format('H:i:s'),
+                'status' => Game::STATUS_SCHEDULED,
+                'tournament_phase_id' => $activePhase->id,
+            ]);
+        }
+
+        $games = $gamesQuery->get();
+
+        foreach ($games as $game) {
+            $game->home_goals = 2;
+            $game->away_goals = 1;
+            $game->status = Game::STATUS_COMPLETED;
+            $game->winner_team_id = $game->home_team_id;
+            $game->save();
+        }
+
+        if ($activePhase->phase?->name === 'Final') {
+            $finalGame = $games->first();
+            expect($finalGame)->not->toBeNull();
+            $expectedChampionTeamId = $finalGame->home_team_id;
+            $expectedChampionName = $finalGame->homeTeam->name;
+        }
+
+        expect(
+            Game::where('tournament_id', $tournament->id)
+                ->where('tournament_phase_id', $activePhase->id)
+                ->where('status', '!=', Game::STATUS_COMPLETED)
+                ->exists()
+        )->toBeFalse();
+
+        $response = $this->postJson("/api/v1/admin/tournaments/{$tournament->id}/phases/advance");
+
+        if ($response->json('next_phase') === null) {
+            $response->assertOk()
+                ->assertJsonPath('champion.team_id', $expectedChampionTeamId)
+                ->assertJsonPath('tournament.status', 'completado')
+                ->assertJsonPath('tournament.winner', $expectedChampionName);
+            expect($response->json('message'))->toContain('Torneo finalizado');
+            break;
+        }
+    }
+
+    $tournament->refresh();
+    expect($tournament->status)->toBe('completado');
+    expect($tournament->winner)->toBe($expectedChampionName);
+});

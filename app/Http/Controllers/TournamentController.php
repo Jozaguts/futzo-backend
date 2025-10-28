@@ -221,7 +221,9 @@ class TournamentController extends Controller
             }
         }
 
-        DB::transaction(function () use ($tournament, $currentPhase, $nextPhase) {
+        $champion = null;
+
+        DB::transaction(function () use ($tournament, $currentPhase, $nextPhase, &$champion) {
             TournamentFieldReservation::where('tournament_id', $tournament->id)->delete();
 
             $currentPhase->update([
@@ -233,6 +235,13 @@ class TournamentController extends Controller
                 $nextPhase->update([
                     'is_active' => true,
                 ]);
+            } else {
+                $champion = $this->resolveTournamentChampion($tournament, $currentPhase);
+                $tournament->status = 'completado';
+                if ($champion) {
+                    $tournament->winner = $champion['team_name'];
+                }
+                $tournament->save();
             }
         });
 
@@ -240,16 +249,62 @@ class TournamentController extends Controller
         if ($nextPhase) {
             $nextPhase->refresh();
         }
+        $tournament->refresh();
         $phases = $tournament->tournamentPhases()->with('phase')->orderBy('id')->get();
+        $message = $nextPhase
+            ? sprintf('Fase "%s" activada.', $nextPhase->phase->name)
+            : ($champion
+                ? sprintf('Torneo finalizado. Campeón: %s.', $champion['team_name'])
+                : 'Todas las fases del torneo han sido completadas.');
 
         return response()->json([
-            'message' => $nextPhase
-                ? sprintf('Fase "%s" activada.', $nextPhase->phase->name)
-                : 'Todas las fases del torneo han sido completadas.',
+            'message' => $message,
             'current_phase' => $currentPhase->load('phase'),
             'next_phase' => $nextPhase ? $nextPhase->load('phase') : null,
             'phases' => $phases,
+            'champion' => $champion,
+            'tournament' => $tournament->only(['id', 'name', 'status', 'winner']),
         ]);
+    }
+
+    protected function resolveTournamentChampion(Tournament $tournament, TournamentPhase $completedPhase): ?array
+    {
+        $phaseName = $completedPhase->phase?->name;
+
+        if ($phaseName === 'Final') {
+            $finalMatch = Game::with('winnerTeam')
+                ->where('tournament_id', $tournament->id)
+                ->where('tournament_phase_id', $completedPhase->id)
+                ->where('status', Game::STATUS_COMPLETED)
+                ->orderByDesc('match_date')
+                ->orderByDesc('match_time')
+                ->orderByDesc('id')
+                ->first();
+
+            if ($finalMatch && $finalMatch->winnerTeam) {
+                return [
+                    'team_id' => $finalMatch->winnerTeam->id,
+                    'team_name' => $finalMatch->winnerTeam->name,
+                    'game_id' => $finalMatch->id,
+                ];
+            }
+        }
+
+        $standing = $tournament->standings()
+            ->where('tournament_phase_id', $completedPhase->id)
+            ->with('team')
+            ->orderBy('rank')
+            ->first();
+
+        if ($standing && $standing->team) {
+            return [
+                'team_id' => $standing->team->id,
+                'team_name' => $standing->team->name,
+                'standing_id' => $standing->id,
+            ];
+        }
+
+        return null;
     }
 
     public function scheduleSettings(Tournament $tournament): ScheduleSettingsResource
@@ -310,7 +365,23 @@ class TournamentController extends Controller
         $page = (int)$request->get('page', 1);
         $per_page = 1;
         $skip = ($page - 1) * $per_page;
-        $hasSchedule = Game::where('tournament_id', $tournamentId)->exists();
+
+        $tournament = Tournament::with(['configuration'])
+            ->findOrFail($tournamentId);
+
+        $activePhase = $tournament->activePhase();
+
+        $baseQuery = Game::query()
+            ->where('tournament_id', $tournamentId)
+            ->when($activePhase, static function ($query, $phase) {
+                $query->where('tournament_phase_id', $phase->id);
+            })
+            ->when(!$activePhase, static function ($query, $value) {
+                $query->whereNull('tournament_phase_id');
+            });
+
+        $hasSchedule = (clone $baseQuery)->exists();
+
         if(!$hasSchedule){
             return response()->json([
                 'rounds' => [],
@@ -322,8 +393,6 @@ class TournamentController extends Controller
                 'hasSchedule' => false,
             ]);
         }
-        $tournament = Tournament::with(['configuration'])
-            ->findOrFail($tournamentId);
 
         $includeGroupData = (int)($tournament->configuration?->tournament_format_id ?? $tournament->tournament_format_id)
             === TournamentFormatId::GroupAndElimination->value;
@@ -376,25 +445,26 @@ class TournamentController extends Controller
             }
         }
 
-        $schedule = Game::with([
-            'homeTeam',
-            'awayTeam',
-            'field',
-            'location',
-            'referee',
-            'tournament',
-            'tournament.configuration',
-            'tournamentPhase',
-            'tournamentPhase.phase',
-        ])->where([
-            'tournament_id' => $tournamentId
-        ])
-            ->when($filterBy, function ($query) use ($filterBy) {
-                return $query->where('status', $filterBy);
+        $schedule = (clone $baseQuery)
+            ->with([
+                'homeTeam',
+                'awayTeam',
+                'field',
+                'location',
+                'referee',
+                'tournament',
+                'tournament.configuration',
+                'tournamentPhase',
+                'tournamentPhase.phase',
+            ])
+            ->when($filterBy, static function ($query, $status) {
+                $query->where('status', $status);
             })
-            ->when($search, function ($query) use ($search) {
-                return $query->whereHas('awayTeam', fn($query) => $query->where('name', 'like', "%$search%"))
-                    ->orWhereHas('homeTeam', fn($query) => $query->where('name', 'like', "%$search%"));
+            ->when($search, static function ($query, $term) {
+                $query->where(static function ($nested) use ($term) {
+                    $nested->whereHas('awayTeam', static fn($teamQuery) => $teamQuery->where('name', 'like', "%{$term}%"))
+                        ->orWhereHas('homeTeam', static fn($teamQuery) => $teamQuery->where('name', 'like', "%{$term}%"));
+                });
             })
             ->orderBy('round')
             ->get()
@@ -463,11 +533,16 @@ class TournamentController extends Controller
             'pagination' => [
                 'current_page' => $page,
                 'per_page' => $per_page,
-                'total_rounds' => Game::where([
-                    'tournament_id' => $tournamentId,
-                ])->when($filterBy, function ($query) use ($filterBy) {
-                    $query->where('status', $filterBy);
-                })
+                'total_rounds' => (clone $baseQuery)
+                    ->when($filterBy, static function ($query, $status) {
+                        $query->where('status', $status);
+                    })
+                    ->when($search, static function ($query, $term) {
+                        $query->where(static function ($nested) use ($term) {
+                            $nested->whereHas('awayTeam', static fn($teamQuery) => $teamQuery->where('name', 'like', "%{$term}%"))
+                                ->orWhereHas('homeTeam', static fn($teamQuery) => $teamQuery->where('name', 'like', "%{$term}%"));
+                        });
+                    })
                     ->distinct('round')->count('round'),
             ],
             'hasSchedule' => $hasSchedule,
@@ -575,13 +650,32 @@ class TournamentController extends Controller
     }
     public function getStandings(Tournament $tournament): array
     {
-       return $tournament
-           ->standings()
-           ->where('tournament_phase_id', $tournament->activePhase()->id)
-           ->with('team')
-           ->orderBy('rank')
-           ->get()
-           ->toArray();
+        $tournament->loadMissing(['format', 'tournamentPhases.phase']);
+
+        $fallbackPhaseName = $tournament->format?->name === 'Grupos y Eliminatoria'
+            ? 'Fase de grupos'
+            : 'Tabla general';
+
+        $fallbackPhase = $tournament->tournamentPhases
+            ->first(static fn($phase) => $phase->phase?->name === $fallbackPhaseName);
+
+        $activePhase = $tournament->activePhase();
+        $targetPhaseId = $fallbackPhase?->id ?? $activePhase?->id;
+
+        $query = $tournament
+            ->standings()
+            ->with('team')
+            ->orderBy('rank');
+
+        if (is_null($targetPhaseId)) {
+            $query->whereNull('tournament_phase_id');
+        } else {
+            $query->where('tournament_phase_id', $targetPhaseId);
+        }
+
+        return $query
+            ->get()
+            ->toArray();
     }
     public function getStats(Tournament $tournament): array
     {

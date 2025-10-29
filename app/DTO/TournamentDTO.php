@@ -47,6 +47,7 @@ class TournamentDTO
             'prize' => $this->details['prize'] ?? null,
             'winner' => $this->details['winner'] ?? null,
             'description' => $this->details['description'] ?? null,
+            'penalty_draw_enabled' => (bool) data_get($this->details, 'penalty_draw_enabled', false),
         ];
     }
 

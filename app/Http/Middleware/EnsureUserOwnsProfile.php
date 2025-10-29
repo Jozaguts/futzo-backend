@@ -16,7 +16,9 @@ class EnsureUserOwnsProfile
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
+        logger('user',$user->toArray());
         $profileId = $request->route('user')?->id;
+        logger('profile' .$profileId);
 
         if ($user->id != $profileId) {
             return response()->json(['error' => 'Unauthorized'], 403);

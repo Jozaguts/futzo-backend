@@ -7,6 +7,7 @@ use App\Models\FootballType;
 use App\Models\Country;
 use App\Models\League;
 use App\Models\Location;
+use App\Models\LocationTournament;
 use App\Models\Tournament;
 use App\Models\TournamentFormat;
 use Illuminate\Http\UploadedFile;
@@ -195,8 +196,16 @@ it('store tournament Grupos y Eliminatoria fully configured', function () {
  * @throws JsonException
  */
 it('update tournaments with filters and location', function () {
-    $tournament = Tournament::first();
-    $location = $tournament->locations()->first();
+    $tournament = Tournament::factory()->create();
+
+    $location = Location::first();
+
+    LocationTournament::updateOrCreate([
+        'tournament_id' => $tournament->id,
+        'location_id' => $location->id,
+    ]);
+
+
     $response = $this->json('PUT', '/api/v1/admin/tournaments/' . $tournament->id, [
         'basic' => [
             'name' => fake()->name,
@@ -239,7 +248,8 @@ it('update tournaments with filters and location', function () {
  * @throws JsonException
  */
 it('get tournaments with filters and location without autocomplete', function () {
-    $tournament = Tournament::first();
+    $tournament = Tournament::factory()->create();
+
     $response = $this->json('PUT', '/api/v1/admin/tournaments/' . $tournament->id, [
         'basic' => [
             'name' => fake()->name,
@@ -279,7 +289,7 @@ it('get tournaments with filters and location without autocomplete', function ()
 
 it('get tournaments with filters and location without autocomplete and without location', function () {
     $STATUS = ['creado', 'en curso', 'completado', 'cancelado'];
-    $tournament = Tournament::first();
+    $tournament = Tournament::factory()->create();
     $response = $this->json('PUT', '/api/v1/admin/tournaments/' . $tournament->id . '/status', [
         'status' => $STATUS[1]
     ]);

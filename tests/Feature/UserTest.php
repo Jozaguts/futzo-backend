@@ -41,11 +41,12 @@ it('get user by id', function () {
 });
 
 it('get user by id with wrong id', function () {
-    $user = User::first();
+    $user1 = User::factory()->create();
+    $user2 = User::factory()->create();
 
     $response = $this
-        ->actingAs($user)
-        ->json('PUT', "/api/v1/admin/profile/2", [
+        ->actingAs($user1)
+        ->json('PUT', "/api/v1/admin/profile/$user2->id", [
             'name' => 'John',
             'email' => 'test@gmail.com',
             'phone' => '+523222397179',

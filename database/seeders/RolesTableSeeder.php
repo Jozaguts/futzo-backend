@@ -35,13 +35,13 @@ class RolesTableSeeder extends Seeder
         ['id' => 8, 'name' => 'ver jugadores de equipo'],
         ['id' => 9, 'name' => 'programar practicas'],
         ['id' => 10, 'name' => 'ver horario del equipo'],
-        ['id' => 11, 'name' => 'ver estadisticas de jugadores'],
+        ['id' => 11, 'name' => 'ver estadísticas de jugadores'],
         ['id' => 12, 'name' => 'administrar oficiales de juego'],
         ['id' => 13, 'name' => 'registrar eventos de juego'],
         ['id' => 14, 'name' => 'administrar horario de liga'],
         ['id' => 15, 'name' => 'administrar resultados de juego'],
         ['id' => 16, 'name' => 'ver resultados de juego'],
-        ['id' => 17, 'name' => 'ver estadisticas de equipo'],
+        ['id' => 17, 'name' => 'ver estadísticas de equipo'],
         ['id' => 18, 'name' => 'ver contenido publico']
     ];
 
@@ -70,7 +70,7 @@ class RolesTableSeeder extends Seeder
                     ['permission_id' => $this->getPermissionId('programar practicas'), 'role_id' => 4],
                     # jugador
                     ['permission_id' => $this->getPermissionId('ver horario del equipo'), 'role_id' => 5],
-                    ['permission_id' => $this->getPermissionId('ver estadisticas de jugadores'), 'role_id' => 5],
+                    ['permission_id' => $this->getPermissionId('ver estadísticas de jugadores'), 'role_id' => 5],
                     # arbitro
                     ['permission_id' => $this->getPermissionId('administrar oficiales de juego'), 'role_id' => 6],
                     ['permission_id' => $this->getPermissionId('registrar eventos de juego'), 'role_id' => 6],
@@ -79,7 +79,7 @@ class RolesTableSeeder extends Seeder
                     ['permission_id' => $this->getPermissionId('administrar resultados de juego'), 'role_id' => 7],
                     # aficionado
                     ['permission_id' => $this->getPermissionId('ver resultados de juego'), 'role_id' => 8],
-                    ['permission_id' => $this->getPermissionId('ver estadisticas de equipo'), 'role_id' => 8],
+                    ['permission_id' => $this->getPermissionId('ver estadísticas de equipo'), 'role_id' => 8],
                     # predeterminado
                     ['permission_id' => $this->getPermissionId('ver contenido publico'), 'role_id' => 9],
                 ]

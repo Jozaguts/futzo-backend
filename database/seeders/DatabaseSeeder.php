@@ -41,8 +41,8 @@ class DatabaseSeeder extends Seeder
                 // Ventanas base 24/7 por campo y por liga-campo
                 FieldWindowsSeeder::class,
                 LeagueFieldWindowsSeeder::class,
-                TournamentTableSeeder::class,
-                TeamsTableSeeder::class,
+//                TournamentTableSeeder::class,
+//                TeamsTableSeeder::class,
             ];
         }
         $this->call($seeders);

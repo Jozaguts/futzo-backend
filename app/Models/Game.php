@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Observers\GameObserver;
+use App\Models\Penalty;
 use App\Scopes\LeagueScope;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -153,5 +154,10 @@ class Game extends Model
     public function gameEvent(): HasMany
     {
         return $this->hasMany(GameEvent::class);
+    }
+
+    public function penalties(): HasMany
+    {
+        return $this->hasMany(Penalty::class);
     }
 }

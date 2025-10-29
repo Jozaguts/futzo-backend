@@ -31,8 +31,8 @@ class LeagueFactory extends Factory
     {
 
         return [
-            'name' => Fake::company(),
-            'description' => Fake::text(20),
+            'name' => 'Premier League',
+            'description' => 'Premier League ',
             'creation_date' => Fake::dateTime(),
             'logo' => Fake::imageUrl(),
             'banner' => Fake::imageUrl(),

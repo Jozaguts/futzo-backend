@@ -11,6 +11,7 @@ use App\Models\Formation;
 use App\Models\Game;
 use App\Models\GameEvent;
 use App\Models\Lineup;
+use App\Models\Penalty;
 use App\Models\Substitution;
 use App\Support\MatchDuration;
 use App\Traits\LineupTrait;
@@ -18,6 +19,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class GameController extends Controller
 {
@@ -27,7 +29,7 @@ class GameController extends Controller
 
     public function show(int $gameId): GameResource
     {
-        $game = Game::with(["tournament.locations.fields"])->findOrFail($gameId);
+        $game = Game::with(["tournament.locations.fields", 'penalties.player.user'])->findOrFail($gameId);
         return new GameResource($game);
     }
     /*
@@ -121,6 +123,8 @@ class GameController extends Controller
             'ends_at_utc' => $endsAtUtc,
             'field_id' => (int)$data['field_id'],
         ]);
+
+        $game->loadMissing(['tournament.locations.fields', 'penalties.player.user']);
 
         return new GameResource($game);
     }
@@ -326,55 +330,154 @@ class GameController extends Controller
         return response()->json(['message' => 'Tarjeta eliminada correctamente.']);
     }
 
-    public function goals (Request $request, Game $game): JsonResponse
+    public function goals(Request $request, Game $game): JsonResponse
     {
         $data = $request->validate([
             'home' => 'array',
             'away' => 'array',
+            'shootout' => 'nullable|array',
         ]);
+
         $homeGoals = 0;
         $awayGoals = 0;
-        foreach (['home' => $game->home_team_id, 'away' => $game->away_team_id] as $key => $teamId) {
-            if (!empty($data[$key])) {
-                foreach ($data[$key] as $goal) {
-                    if ($goal['type'] === GameEvent::OWN_GOAL) {
-                        GameEvent::updateOrCreate([
-                            'game_id' => $game->id,
-                            'type' => GameEvent::OWN_GOAL,
-                            'minute' => $goal['minute'],
-                            'player_id' => $goal['player_id'],
-                            'team_id' => $teamId,
-                        ], [
-                            'related_player_id' => null,
-                        ]);
-                        if ($key === 'home'){
-                            ++$awayGoals; // Si es un autogol, se suma al equipo contrario
-                        } else {
-                            ++$homeGoals; // Si es un autogol, se suma al equipo contrario
-                        }
-                    }else if($goal['type'] === GameEvent::GOAL ||  $goal['type'] === GameEvent::PENALTY) {
-                        GameEvent::updateOrCreate([
-                            'game_id' => $game->id,
-                            'type' => $goal['type'],
-                            'minute' => $goal['minute'],
-                            'player_id' => $goal['player_id'],
-                            'team_id' => $teamId,
-                        ], [
-                            'related_player_id' => $goal['related_player_id'],
-                        ]);
-                        if ($key === 'home' ){
-                            ++$homeGoals;
-                        }else if($key === 'away'){
-                            ++$awayGoals;
-                        }
-                    }
-                    $game->home_goals = $homeGoals;
-                    $game->away_goals = $awayGoals;
-                    $game->save();
 
+        $homeEvents = $data['home'] ?? [];
+        $awayEvents = $data['away'] ?? [];
+
+        foreach (['home' => $game->home_team_id, 'away' => $game->away_team_id] as $key => $teamId) {
+            $events = $key === 'home' ? $homeEvents : $awayEvents;
+
+            if (empty($events)) {
+                continue;
+            }
+
+            foreach ($events as $goal) {
+                if (!isset($goal['player_id'], $goal['minute'], $goal['type'])) {
+                    continue;
+                }
+
+                if ($goal['type'] === GameEvent::OWN_GOAL) {
+                    GameEvent::updateOrCreate([
+                        'game_id' => $game->id,
+                        'type' => GameEvent::OWN_GOAL,
+                        'minute' => $goal['minute'],
+                        'player_id' => $goal['player_id'],
+                        'team_id' => $teamId,
+                    ], [
+                        'related_player_id' => null,
+                    ]);
+
+                    if ($key === 'home') {
+                        ++$awayGoals;
+                    } else {
+                        ++$homeGoals;
+                    }
+                } elseif (in_array($goal['type'], [GameEvent::GOAL, GameEvent::PENALTY], true)) {
+                    GameEvent::updateOrCreate([
+                        'game_id' => $game->id,
+                        'type' => $goal['type'],
+                        'minute' => $goal['minute'],
+                        'player_id' => $goal['player_id'],
+                        'team_id' => $teamId,
+                    ], [
+                        'related_player_id' => $goal['related_player_id'] ?? null,
+                    ]);
+
+                    if ($key === 'home') {
+                        ++$homeGoals;
+                    } else {
+                        ++$awayGoals;
+                    }
                 }
             }
         }
+
+        $shootout = $data['shootout'] ?? null;
+        $applyShootoutRule = $game->tournament->penalty_draw_enabled && !$this->isEliminationPhaseGame($game);
+
+        if ($applyShootoutRule && data_get($shootout, 'decided')) {
+            if ($homeGoals !== $awayGoals) {
+                throw ValidationException::withMessages([
+                    'shootout' => ['Solo se permite desempate por penales cuando el marcador quedó empatado.'],
+                ]);
+            }
+
+            $homeAttempts = collect(data_get($shootout, 'home', []))
+                ->map(function ($attempt, $index) use ($game) {
+                    if (!isset($attempt['player_id'])) {
+                        throw ValidationException::withMessages([
+                            'shootout.home.' . $index . '.player_id' => ['El jugador es obligatorio.'],
+                        ]);
+                    }
+
+                    return [
+                        'player_id' => (int) $attempt['player_id'],
+                        'team_id' => $game->home_team_id,
+                        'score_goal' => filter_var($attempt['score_goal'] ?? false, FILTER_VALIDATE_BOOLEAN),
+                        'kicks_number' => (int) ($attempt['kicks_number'] ?? ($index + 1)),
+                    ];
+                });
+
+            $awayAttempts = collect(data_get($shootout, 'away', []))
+                ->map(function ($attempt, $index) use ($game) {
+                    if (!isset($attempt['player_id'])) {
+                        throw ValidationException::withMessages([
+                            'shootout.away.' . $index . '.player_id' => ['El jugador es obligatorio.'],
+                        ]);
+                    }
+
+                    return [
+                        'player_id' => (int) $attempt['player_id'],
+                        'team_id' => $game->away_team_id,
+                        'score_goal' => filter_var($attempt['score_goal'] ?? false, FILTER_VALIDATE_BOOLEAN),
+                        'kicks_number' => (int) ($attempt['kicks_number'] ?? ($index + 1)),
+                    ];
+                });
+
+            if ($homeAttempts->isEmpty() || $awayAttempts->isEmpty()) {
+                throw ValidationException::withMessages([
+                    'shootout' => ['Registra al menos un cobro de penal por equipo.'],
+                ]);
+            }
+
+            $homeShootoutGoals = $homeAttempts->where('score_goal', true)->count();
+            $awayShootoutGoals = $awayAttempts->where('score_goal', true)->count();
+
+            if ($homeShootoutGoals === $awayShootoutGoals) {
+                throw ValidationException::withMessages([
+                    'shootout' => ['El desempate por penales debe tener un ganador.'],
+                ]);
+            }
+
+            $winnerTeamId = $homeShootoutGoals > $awayShootoutGoals ? $game->home_team_id : $game->away_team_id;
+
+            DB::transaction(function () use ($game, $homeAttempts, $awayAttempts) {
+                Penalty::where('game_id', $game->id)->forceDelete();
+
+                $homeAttempts->each(function ($attempt) use ($game) {
+                    Penalty::create(array_merge($attempt, ['game_id' => $game->id]));
+                });
+
+                $awayAttempts->each(function ($attempt) use ($game) {
+                    Penalty::create(array_merge($attempt, ['game_id' => $game->id]));
+                });
+            });
+
+            $game->decided_by_penalties = true;
+            $game->penalty_home_goals = $homeShootoutGoals;
+            $game->penalty_away_goals = $awayShootoutGoals;
+            $game->penalty_winner_team_id = $winnerTeamId;
+        } else {
+            Penalty::where('game_id', $game->id)->forceDelete();
+            $game->decided_by_penalties = false;
+            $game->penalty_home_goals = null;
+            $game->penalty_away_goals = null;
+            $game->penalty_winner_team_id = null;
+        }
+
+        $game->home_goals = $homeGoals;
+        $game->away_goals = $awayGoals;
+        $game->save();
 
         return response()->json(['message' => 'Goles actualizados correctamente.']);
     }
@@ -478,6 +581,23 @@ class GameController extends Controller
 
 
         return response()->json($game->gameEvent);
+    }
+
+    private function isEliminationPhaseGame(Game $game): bool
+    {
+        $phaseName = optional($game->tournamentPhase?->phase)->name;
+
+        if (!$phaseName) {
+            return false;
+        }
+
+        return in_array($phaseName, [
+            'Dieciseisavos de Final',
+            'Octavos de Final',
+            'Cuartos de Final',
+            'Semifinales',
+            'Final',
+        ], true);
     }
     public function markAsComplete(Game $game): JsonResponse
     {

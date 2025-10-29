@@ -14,6 +14,20 @@ class PenaltyResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        return parent::toArray($request);
+        return [
+            'id' => $this->resource->id,
+            'player_id' => $this->resource->player_id,
+            'team_id' => $this->resource->team_id,
+            'score_goal' => (bool) $this->resource->score_goal,
+            'kicks_number' => (int) $this->resource->kicks_number,
+            'player' => $this->whenLoaded('player', function () {
+                $user = $this->player?->user;
+
+                return [
+                    'id' => $this->player?->id,
+                    'name' => trim(($user->name ?? '') . ' ' . ($user->last_name ?? '')) ?: null,
+                ];
+            }),
+        ];
     }
 }

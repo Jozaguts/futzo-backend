@@ -152,6 +152,17 @@ class GameResource extends JsonResource
             }
         }
 
+        $penaltyRelation = $this->resource->relationLoaded('penalties')
+            ? $this->resource->penalties
+            : collect();
+
+        $homeShootout = PenaltyResource::collection(
+            collect($penaltyRelation)->where('team_id', $this->resource->home_team_id)->values()
+        );
+        $awayShootout = PenaltyResource::collection(
+            collect($penaltyRelation)->where('team_id', $this->resource->away_team_id)->values()
+        );
+
         return [
             'id' => $this->resource->id,
             'home' => [
@@ -199,6 +210,10 @@ class GameResource extends JsonResource
                 'winner_team_id' => $this->resource->penalty_winner_team_id,
                 'home_goals' => $this->resource->penalty_home_goals,
                 'away_goals' => $this->resource->penalty_away_goals,
+            ],
+            'penalty_shootout' => [
+                'home' => $homeShootout,
+                'away' => $awayShootout,
             ],
             'penalty_draw_enabled' => (bool)$this->resource->tournament->penalty_draw_enabled,
             'phase' => [

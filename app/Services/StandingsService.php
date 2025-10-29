@@ -2,10 +2,10 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\DB;
+use App\Models\Phase;
 use App\Models\Standing;
-use Carbon\Carbon;
-use Throwable;
+use App\Models\TournamentPhase;
+use Illuminate\Support\Facades\DB;
 
 class StandingsService
 {
@@ -23,6 +23,8 @@ class StandingsService
             $penaltyDrawEnabled = (bool) DB::table('tournaments')
                 ->where('id', $tournamentId)
                 ->value('penalty_draw_enabled');
+
+            $standingsPhaseId = $this->resolveStandingsPhaseId($tournamentId, $tournamentPhaseId);
 
             $phaseNameMap = DB::table('tournament_phases')
                 ->join('phases', 'phases.id', '=', 'tournament_phases.phase_id')
@@ -190,7 +192,7 @@ class StandingsService
                     [
                         'team_id' => $teamId,
                         'team_tournament_id' => $s['team_tournament_id'],
-                        'tournament_phase_id' => $tournamentPhaseId,
+                        'tournament_phase_id' => $standingsPhaseId,
                     ],
                     [
                         'matches_played' => $s['matches_played'],
@@ -210,7 +212,7 @@ class StandingsService
             }
 
             // 6) Recalcular ranks (standard competition ranking)
-            $this->recalculateRanks($tournamentId, $tournamentPhaseId);
+            $this->recalculateRanks($tournamentId, $standingsPhaseId, $tournamentPhaseId);
         });
     }
 
@@ -218,7 +220,7 @@ class StandingsService
      * Recalcula y persiste el campo `rank` para una fase/tournament
      * utiliza: pts DESC, gd DESC, gf DESC, fair_play_points ASC (menor mejor).
      */
-    protected function recalculateRanks(int $tournamentId, ?int $tournamentPhaseId = null): void
+    protected function recalculateRanks(int $tournamentId, int $standingsPhaseId, ?int $phaseFilter = null): void
     {
         $tiebreakers = DB::table('tournament_tiebreakers')
             ->join('tournament_configurations', 'tournament_configurations.id', '=', 'tournament_tiebreakers.tournament_configuration_id')
@@ -238,12 +240,8 @@ class StandingsService
         ];
 
         // Query base
-        $query = Standing::where('tournament_id', $tournamentId);
-        if (is_null($tournamentPhaseId)) {
-            $query->whereNull('tournament_phase_id');
-        } else {
-            $query->where('tournament_phase_id', $tournamentPhaseId);
-        }
+        $query = Standing::where('tournament_id', $tournamentId)
+            ->where('tournament_phase_id', $standingsPhaseId);
 
         // Aplicar solo reglas directas (antes de head-to-head)
         foreach ($tiebreakers as $rule) {
@@ -294,7 +292,7 @@ class StandingsService
 
             // Si hay empate y "Resultado entre equipos" está activo
             if (count($block) > 1 && in_array('Resultado entre equipos', $tiebreakers)) {
-                $block = $this->applyHeadToHead($block, $tournamentId, $tournamentPhaseId);
+                $block = $this->applyHeadToHead($block, $tournamentId, $phaseFilter);
             }
 
             // Asignar rank secuencial (sin repeticiones)
@@ -306,14 +304,15 @@ class StandingsService
             $i = $j;
         }
     }
-    protected function applyHeadToHead(array $block, int $tournamentId, ?int $tournamentPhaseId): array
+    protected function applyHeadToHead(array $block, int $tournamentId, ?int $phaseFilter): array
     {
         $teamIds = array_map(fn($s) => $s->team_id, $block);
 
         // Obtener partidos solo entre estos equipos
         $games = DB::table('games')
             ->where('tournament_id', $tournamentId)
-            ->when($tournamentPhaseId, fn($q) => $q->where('tournament_phase_id', $tournamentPhaseId))
+            ->when($phaseFilter, fn($q) => $q->where('tournament_phase_id', $phaseFilter))
+            ->when(is_null($phaseFilter), fn($q) => $q->whereNull('tournament_phase_id'))
             ->where('status', 'completado')
             ->whereIn('home_team_id', $teamIds)
             ->whereIn('away_team_id', $teamIds)
@@ -386,6 +385,37 @@ class StandingsService
         $stats[$home]['losses']++;
         $stats[$home]['results'][] = 'L';
         return $stats;
+    }
+
+    protected function resolveStandingsPhaseId(int $tournamentId, ?int $tournamentPhaseId): int
+    {
+        if (!is_null($tournamentPhaseId)) {
+            return $tournamentPhaseId;
+        }
+
+        $existing = DB::table('tournament_phases')
+            ->join('phases', 'phases.id', '=', 'tournament_phases.phase_id')
+            ->where('tournament_phases.tournament_id', $tournamentId)
+            ->where('phases.name', 'Tabla general')
+            ->value('tournament_phases.id');
+
+        if ($existing) {
+            return (int) $existing;
+        }
+
+        $phase = Phase::firstOrCreate(
+            ['name' => 'Tabla general'],
+            ['is_active' => true, 'is_completed' => false, 'min_teams_for' => null]
+        );
+
+        $tournamentPhase = TournamentPhase::create([
+            'phase_id' => $phase->id,
+            'tournament_id' => $tournamentId,
+            'is_active' => true,
+            'is_completed' => false,
+        ]);
+
+        return $tournamentPhase->id;
     }
 
 }

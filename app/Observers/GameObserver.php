@@ -16,16 +16,14 @@ class GameObserver
     public function updated(Game $game): void
     {
         if ($game->status === Game::STATUS_COMPLETED) {
-            switch (true){
-                case  $game->home_goals > $game->away_goals:
-                    $game->winner_team_id = $game->home_team_id;
-                    break;
-                case  $game->away_goals > $game->home_goals:
-                    $game->winner_team_id = $game->away_team_id;
-                    break;
-                case  $game->home_goals === $game->away_goals:
-                    $game->winner_team_id = null;
-                    break;
+            if ($game->decided_by_penalties && $game->penalty_winner_team_id) {
+                $game->winner_team_id = $game->penalty_winner_team_id;
+            } else {
+                $game->winner_team_id = match (true) {
+                    $game->home_goals > $game->away_goals => $game->home_team_id,
+                    $game->away_goals > $game->home_goals => $game->away_team_id,
+                    default => null,
+                };
             }
             $game->saveQuietly();
 

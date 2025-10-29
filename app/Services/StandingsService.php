@@ -20,6 +20,23 @@ class StandingsService
     public function recalculateStandingsForPhase(int $tournamentId, ?int $tournamentPhaseId = null, ?int $triggeringGameId = null): void
     {
         DB::transaction(function () use ($tournamentId, $tournamentPhaseId, $triggeringGameId) {
+            $penaltyDrawEnabled = (bool) DB::table('tournaments')
+                ->where('id', $tournamentId)
+                ->value('penalty_draw_enabled');
+
+            $phaseNameMap = DB::table('tournament_phases')
+                ->join('phases', 'phases.id', '=', 'tournament_phases.phase_id')
+                ->where('tournament_phases.tournament_id', $tournamentId)
+                ->pluck('phases.name', 'tournament_phases.id')
+                ->toArray();
+
+            $eliminationPhaseNames = [
+                'Dieciseisavos de Final',
+                'Octavos de Final',
+                'Cuartos de Final',
+                'Semifinales',
+                'Final',
+            ];
 
             // 1) Mapear team_tournament (team_id => team_tournament_id)
             $teamTournamentRows = DB::table('team_tournament')
@@ -65,10 +82,7 @@ class StandingsService
             // Detectar si es fase de grupos
             $isGroupPhase = false;
             if (!is_null($tournamentPhaseId)) {
-                $phaseName = DB::table('tournament_phases')
-                    ->join('phases','phases.id','=','tournament_phases.phase_id')
-                    ->where('tournament_phases.id', $tournamentPhaseId)
-                    ->value('phases.name');
+                $phaseName = $phaseNameMap[$tournamentPhaseId] ?? null;
                 $isGroupPhase = ($phaseName === 'Fase de grupos');
             }
 
@@ -78,6 +92,9 @@ class StandingsService
                 $away = (int) $g->away_team_id;
                 $hg = (int) $g->home_goals;
                 $ag = (int) $g->away_goals;
+                $gamePhaseName = $phaseNameMap[$g->tournament_phase_id] ?? null;
+                $isEliminationGame = in_array($gamePhaseName, $eliminationPhaseNames, true);
+                $applyPenaltyRuleForGame = $penaltyDrawEnabled && !$isEliminationGame;
 
                 // En fase de grupos: contar solo partidos entre equipos del mismo grupo
                 if ($isGroupPhase) {
@@ -125,13 +142,30 @@ class StandingsService
                 if ($hg > $ag) {
                     $stats = $this->updateStats($stats, $home, $away);
                 } elseif ($hg === $ag) {
-                    $stats[$home]['draws']++;
-                    ++$stats[$home]['points'];
-                    $stats[$home]['results'][] = 'D';
+                    if (
+                        $applyPenaltyRuleForGame
+                        && (bool) $g->decided_by_penalties
+                        && in_array((int) $g->penalty_winner_team_id, [$home, $away], true)
+                    ) {
+                        $winner = (int) $g->penalty_winner_team_id;
+                        $loser = $winner === $home ? $away : $home;
 
-                    $stats[$away]['draws']++;
-                    ++$stats[$away]['points'];
-                    $stats[$away]['results'][] = 'D';
+                        $stats[$winner]['wins']++;
+                        $stats[$winner]['points'] += 2;
+                        $stats[$winner]['results'][] = 'W';
+
+                        $stats[$loser]['losses']++;
+                        $stats[$loser]['points'] += 1;
+                        $stats[$loser]['results'][] = 'L';
+                    } else {
+                        $stats[$home]['draws']++;
+                        ++$stats[$home]['points'];
+                        $stats[$home]['results'][] = 'D';
+
+                        $stats[$away]['draws']++;
+                        ++$stats[$away]['points'];
+                        $stats[$away]['results'][] = 'D';
+                    }
                 } else {
                     $stats = $this->updateStats($stats, $away, $home);
                 }
@@ -311,8 +345,18 @@ class StandingsService
             } elseif ($hg < $ag) {
                 $mini[$g->away_team_id]['points'] += 3;
             } else {
-                ++$mini[$g->home_team_id]['points'];
-                ++$mini[$g->away_team_id]['points'];
+                if ((bool) $g->decided_by_penalties && in_array((int)$g->penalty_winner_team_id, [$g->home_team_id, $g->away_team_id], true)) {
+                    $winnerId = (int) $g->penalty_winner_team_id;
+                    $loserId = $winnerId === (int)$g->home_team_id
+                        ? (int)$g->away_team_id
+                        : (int)$g->home_team_id;
+
+                    $mini[$winnerId]['points'] += 2;
+                    $mini[$loserId]['points'] += 1;
+                } else {
+                    ++$mini[$g->home_team_id]['points'];
+                    ++$mini[$g->away_team_id]['points'];
+                }
             }
         }
 

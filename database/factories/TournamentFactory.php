@@ -46,6 +46,7 @@ class TournamentFactory extends Factory
             'winner' => null,
             'description' => Fake::paragraph(),
             'status' => $status,
+            'penalty_draw_enabled' => false,
         ];
     }
 

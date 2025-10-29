@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\Category;
 use App\Models\FootballType;
+use App\Models\Country;
+use App\Models\League;
 use App\Models\Location;
 use App\Models\Tournament;
 use App\Models\TournamentFormat;
@@ -64,6 +66,51 @@ it('get tournaments with pagination', function () {
         ]);
 });
 
+it('filters tournaments by status', function () {
+    $country = Country::query()->firstOrCreate(['iso_code' => 'TC'], ['name' => 'Test Country']);
+    $footballType = FootballType::factory()->create();
+    $league = League::factory()->create([
+        'country_id' => $country->id,
+        'football_type_id' => $footballType->id,
+    ]);
+    $category = Category::factory()->create();
+    $tournamentFormat = TournamentFormat::query()->first() ?? TournamentFormat::factory()->create();
+
+    $createdTournament = Tournament::factory()->create([
+        'status' => 'creado',
+        'league_id' => $league->id,
+        'category_id' => $category->id,
+        'tournament_format_id' => $tournamentFormat->id,
+        'football_type_id' => $footballType->id,
+    ]);
+    $inProgressTournament = Tournament::factory()->create([
+        'status' => 'en curso',
+        'league_id' => $league->id,
+        'category_id' => $category->id,
+        'tournament_format_id' => $tournamentFormat->id,
+        'football_type_id' => $footballType->id,
+    ]);
+    $completedTournament = Tournament::factory()->create([
+        'status' => 'completado',
+        'league_id' => $league->id,
+        'category_id' => $category->id,
+        'tournament_format_id' => $tournamentFormat->id,
+        'football_type_id' => $footballType->id,
+    ]);
+
+    $response = $this->json('GET', '/api/v1/admin/tournaments', [
+        'status' => ['creado', 'en curso'],
+    ]);
+
+    $response->assertStatus(200);
+    $ids = collect($response->json('data'))->pluck('id');
+
+    expect($ids->all())
+        ->toContain($createdTournament->id)
+        ->toContain($inProgressTournament->id)
+        ->not->toContain($completedTournament->id);
+});
+
 /**
  * @throws JsonException
  */
@@ -100,6 +147,7 @@ it('store tournament', function () {
             'winner' => null,
             'description' => fake()->text(),
             'status' => null,
+            'penalty_draw_enabled' => true,
             'location_ids' => json_encode($locationIds, JSON_THROW_ON_ERROR | true),
         ],
     ]);
@@ -118,7 +166,11 @@ it('store tournament', function () {
             'id',
             'image',
             'thumbnail',
+            'penalty_draw_enabled',
         ]);
+    $response->assertJsonFragment([
+        'penalty_draw_enabled' => true,
+    ]);
 });
 
 it('store tournament Liga y Eliminatoria fully configured', function () {
@@ -159,6 +211,7 @@ it('update tournaments with filters and location', function () {
             'winner' => null,
             'description' => fake()->text(),
             'status' => null,
+            'penalty_draw_enabled' => false,
             'location' => json_encode($location->autocomplete_prediction, JSON_THROW_ON_ERROR | true),
         ],
     ]);
@@ -175,7 +228,11 @@ it('update tournaments with filters and location', function () {
             'id',
             'image',
             'thumbnail',
+            'penalty_draw_enabled',
         ]);
+    $response->assertJsonFragment([
+        'penalty_draw_enabled' => false,
+    ]);
 });
 
 /**
@@ -197,6 +254,7 @@ it('get tournaments with filters and location without autocomplete', function ()
             'winner' => null,
             'description' => fake()->text(),
             'status' => null,
+            'penalty_draw_enabled' => false,
         ],
     ]);
     $response->assertStatus(200)
@@ -212,7 +270,11 @@ it('get tournaments with filters and location without autocomplete', function ()
             'id',
             'image',
             'thumbnail',
+            'penalty_draw_enabled',
         ]);
+    $response->assertJsonFragment([
+        'penalty_draw_enabled' => false,
+    ]);
 });
 
 it('get tournaments with filters and location without autocomplete and without location', function () {

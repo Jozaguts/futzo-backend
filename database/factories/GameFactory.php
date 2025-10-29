@@ -28,6 +28,10 @@ class GameFactory extends Factory
 			'status' => Game::STATUS_COMPLETED,
 			'winner_team_id' => Fake::randomElement([$homeTeam->id, $awayTeam->id]),
 			'tournament_id' => $tournament->id,
+			'decided_by_penalties' => false,
+			'penalty_home_goals' => null,
+			'penalty_away_goals' => null,
+			'penalty_winner_team_id' => null,
 		];
 	}
 }

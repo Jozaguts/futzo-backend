@@ -163,6 +163,9 @@ class PurgeLeagueDataCommand extends Command
             return $stats;
         }
 
+        // Se eliminan primero los juegos para evitar restricciones de claves foráneas al borrar torneos.
+        $stats['games_removed'] = $this->purgeGames($leagueId);
+
         $this->purgeTournaments($tournaments);
         $this->purgeTeams($teamIds);
         $fieldRemovalStats = $this->purgeFieldsAndLocations($leagueId, $leagueFields, $fieldIds, $locationIds);
@@ -172,8 +175,6 @@ class PurgeLeagueDataCommand extends Command
 
         Standing::where('league_id', $leagueId)->delete();
         $stats['standings_removed'] = $stats['standings'];
-
-        $stats['games_removed'] = $this->purgeGames($leagueId);
 
         QrConfiguration::where('league_id', $leagueId)->delete();
         $stats['qr_configurations_removed'] = $stats['qr_configurations'];

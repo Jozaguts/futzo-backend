@@ -10,11 +10,18 @@ use Illuminate\Support\Facades\DB;
 class StandingsService
 {
     /**
-     * Recalcula los standings para un torneo + fase (o fase NULL)
+     * Recalcula la tabla de posiciones para una fase específica de un torneo.
+     *
+     * Flujo de alto nivel:
+     * - Determinar si el torneo está configurado con empates por penales y, cuando sea necesario,
+     *   crear/recuperar la fase "Tabla general" para juegos sin tournament_phase_id.
+     * - Iterar todos los partidos completados (orden cronológico) acumulando estadísticas en memoria.
+     * - Para empates con penales habilitados: asignar 2 puntos al ganador de la tanda y 1 al perdedor.
+     * - Persistir los acumulados en standings y recalcular los rankings aplicando los desempates configurados.
      *
      * @param int $tournamentId
-     * @param int|null $tournamentPhaseId
-     * @param int|null $triggeringGameId // el game que disparó el recalculo
+     * @param int|null $tournamentPhaseId Fase objetivo; null representa la fase general.
+     * @param int|null $triggeringGameId Game que detonó el proceso (se usa para updated_after_game_id).
      * @throws Throwable
      */
     public function recalculateStandingsForPhase(int $tournamentId, ?int $tournamentPhaseId = null, ?int $triggeringGameId = null): void
@@ -217,8 +224,8 @@ class StandingsService
     }
 
     /**
-     * Recalcula y persiste el campo `rank` para una fase/tournament
-     * utiliza: pts DESC, gd DESC, gf DESC, fair_play_points ASC (menor mejor).
+     * Recalcula y persiste el campo `rank` para una fase determinada,
+     * respetando los criterios configurados en tournament_tiebreakers.
      */
     protected function recalculateRanks(int $tournamentId, int $standingsPhaseId, ?int $phaseFilter = null): void
     {
@@ -304,6 +311,9 @@ class StandingsService
             $i = $j;
         }
     }
+    /**
+     * Construye una mini tabla entre equipos empatados cuando el criterio "Resultado entre equipos" está activo.
+     */
     protected function applyHeadToHead(array $block, int $tournamentId, ?int $phaseFilter): array
     {
         $teamIds = array_map(fn($s) => $s->team_id, $block);
@@ -376,6 +386,9 @@ class StandingsService
      * @param int $home
      * @return array
      */
+    /**
+     * Aplica el resultado de un partido con ganador perdedor (90 minutos) al acumulado de standings.
+     */
     public function updateStats(array $stats, int $away, int $home): array
     {
         $stats[$away]['wins']++;
@@ -387,6 +400,11 @@ class StandingsService
         return $stats;
     }
 
+    /**
+     * Obtiene (o crea) el identificador de fase que se usará en standings.
+     * - Si el partido pertenece a una fase concreta, reutilizamos ese ID.
+     * - Si no tiene fase (tabla general), garantizamos que exista un tournament_phase "Tabla general".
+     */
     protected function resolveStandingsPhaseId(int $tournamentId, ?int $tournamentPhaseId): int
     {
         if (!is_null($tournamentPhaseId)) {

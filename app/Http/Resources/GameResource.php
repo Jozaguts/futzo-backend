@@ -152,6 +152,7 @@ class GameResource extends JsonResource
             }
         }
 
+        // Cuando el controlador cargó la relación de penales, repartimos los intentos por equipo
         $penaltyRelation = $this->resource->relationLoaded('penalties')
             ? $this->resource->penalties
             : collect();
@@ -212,6 +213,7 @@ class GameResource extends JsonResource
                 'away_goals' => $this->resource->penalty_away_goals,
             ],
             'penalty_shootout' => [
+                // La UI consume esta estructura para reconstruir la tanda en el formulario de actas
                 'home' => $homeShootout,
                 'away' => $awayShootout,
             ],

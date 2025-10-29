@@ -56,6 +56,7 @@ class LineupResource extends JsonResource
             $formation->defenses + $formation->midfielders + $formation->forwards + 1
         ); // for 4-4-2 the result is:  [10,11]
 
+        // Determinamos si la alineación proviene de una plantilla base para decidir qué jugadores mostrar en la banca.
         $hasDefaultLineupPlayers = $this->hasDefaultLineupPlayers();
         $availablePlayers = $hasDefaultLineupPlayers
             ? $this->availableBenchPlayers()

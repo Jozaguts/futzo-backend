@@ -330,6 +330,18 @@ class GameController extends Controller
         return response()->json(['message' => 'Tarjeta eliminada correctamente.']);
     }
 
+    /**
+     * Actualiza los eventos de gol de un partido e, opcionalmente, el detalle de penales de desempate.
+     *
+     * Flujo general:
+     * 1. Validar la carga útil proveniente del acta (goles locales/visitantes y bloque de penales).
+     * 2. Persistir/actualizar los GameEvent correspondientes al tiempo reglamentario (incluye penales marcados dentro del partido).
+     * 3. Cuando el torneo permite definir empates en penales y el encuentro terminó igualado:
+     *    a. Validar que exista información coherente de la tanda (tiradores, marcador y ganador).
+     *    b. Guardar los intentos en la tabla penalties y reflejar el ganador de la tanda en el registro del juego.
+     * 4. Cuando el empate no aplica a la regla (fase eliminatoria o marcador distinto), limpiar cualquier rastro previo de penales.
+     * 5. Responder con un mensaje de éxito sin recalcular standings (eso ocurre al marcar el juego como completado).
+     */
     public function goals(Request $request, Game $game): JsonResponse
     {
         $data = $request->validate([
@@ -357,6 +369,7 @@ class GameController extends Controller
                 }
 
                 if ($goal['type'] === GameEvent::OWN_GOAL) {
+                    // Un autogol se almacena como evento del equipo que lo sufre, pero suma para el adversario.
                     GameEvent::updateOrCreate([
                         'game_id' => $game->id,
                         'type' => GameEvent::OWN_GOAL,
@@ -396,12 +409,14 @@ class GameController extends Controller
         $applyShootoutRule = $game->tournament->penalty_draw_enabled && !$this->isEliminationPhaseGame($game);
 
         if ($applyShootoutRule && data_get($shootout, 'decided')) {
+            // Solo aceptamos la tanda si el marcador regular finalizó empatado.
             if ($homeGoals !== $awayGoals) {
                 throw ValidationException::withMessages([
                     'shootout' => ['Solo se permite desempate por penales cuando el marcador quedó empatado.'],
                 ]);
             }
 
+            // Normalizamos y validamos el bloque de penales local.
             $homeAttempts = collect(data_get($shootout, 'home', []))
                 ->map(function ($attempt, $index) use ($game) {
                     if (!isset($attempt['player_id'])) {
@@ -452,6 +467,7 @@ class GameController extends Controller
             $winnerTeamId = $homeShootoutGoals > $awayShootoutGoals ? $game->home_team_id : $game->away_team_id;
 
             DB::transaction(function () use ($game, $homeAttempts, $awayAttempts) {
+                // Limpiamos intentos previos antes de reemplazarlos por la nueva tanda reportada.
                 Penalty::where('game_id', $game->id)->forceDelete();
 
                 $homeAttempts->each(function ($attempt) use ($game) {
@@ -468,6 +484,7 @@ class GameController extends Controller
             $game->penalty_away_goals = $awayShootoutGoals;
             $game->penalty_winner_team_id = $winnerTeamId;
         } else {
+            // Si no aplica la regla, aseguramos que el juego no conserve datos residuales de tandas anteriores.
             Penalty::where('game_id', $game->id)->forceDelete();
             $game->decided_by_penalties = false;
             $game->penalty_home_goals = null;
@@ -583,6 +600,9 @@ class GameController extends Controller
         return response()->json($game->gameEvent);
     }
 
+    /**
+     * Determina si el juego pertenece a una fase eliminatoria para evitar aplicar la regla de 2/1 puntos.
+     */
     private function isEliminationPhaseGame(Game $game): bool
     {
         $phaseName = optional($game->tournamentPhase?->phase)->name;
@@ -599,6 +619,9 @@ class GameController extends Controller
             'Final',
         ], true);
     }
+    /**
+     * Marca el juego como completado; el GameObserver desencadena el recalculo de standings.
+     */
     public function markAsComplete(Game $game): JsonResponse
     {
         $game->update(['status' => Game::STATUS_COMPLETED]);

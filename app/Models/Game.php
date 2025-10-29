@@ -158,6 +158,7 @@ class Game extends Model
 
     public function penalties(): HasMany
     {
+        // Relación con los cobros de penales que se generan únicamente cuando el partido se define por tanda.
         return $this->hasMany(Penalty::class);
     }
 }

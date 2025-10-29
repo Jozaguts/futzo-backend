@@ -14,6 +14,7 @@ class PenaltyResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        // Representa un intento individual dentro de la tanda de penales de desempate.
         return [
             'id' => $this->resource->id,
             'player_id' => $this->resource->player_id,

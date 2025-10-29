@@ -15,6 +15,7 @@ use App\Models\User;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 
+// Validamos que la API persiste los intentos de penales cuando el acta los reporta.
 it('stores penalty shootout attempts when saving goals', function () {
     [$tournament, $teams, $game] = createPenaltyShootoutReadyGame();
 
@@ -66,6 +67,7 @@ it('stores penalty shootout attempts when saving goals', function () {
         ->toEqual([$teams[0]->id, $teams[1]->id]);
 });
 
+// No se permite reportar tanda si el marcador regular no terminó empatado.
 it('rejects shootouts when the match is not tied', function () {
     [$tournament, $teams, $game] = createPenaltyShootoutReadyGame();
 
@@ -105,6 +107,7 @@ it('rejects shootouts when the match is not tied', function () {
     $this->postJson("/api/v1/admin/games/{$game->id}/goals", $payload)->assertStatus(422);
 });
 
+// Escenario end-to-end: empate reportado, tanda definida y standings con puntaje 2/1.
 it('awards league points when finishing a draw via penalties using the game endpoints', function () {
     [$tournament, $teams, $game] = createPenaltyShootoutReadyGame();
 
@@ -159,6 +162,12 @@ it('awards league points when finishing a draw via penalties using the game endp
         ->and($standings[$teams[0]->id]->losses)->toBe(1);
 });
 
+/**
+ * Bootstrapea un torneo listo para probar tandas de penales:
+ * - Liga habilitada con bandera penalty_draw_enabled.
+ * - Fase "Tabla general" creada para asociar standings.
+ * - Juego pendiente entre dos equipos registrados.
+ */
 function createPenaltyShootoutReadyGame(): array
 {
     $country = Country::query()->firstOrCreate(['iso_code' => 'TC'], ['name' => 'Test Country']);
@@ -242,6 +251,7 @@ function createPenaltyShootoutReadyGame(): array
     return [$tournament, $teams, $game];
 }
 
+// La tanda debe dejar un ganador claro: el mismo marcador de penales para ambos se rechaza.
 it('requires a winner in the penalty shootout', function () {
     [$tournament, $teams, $game] = createPenaltyShootoutReadyGame();
 

@@ -562,6 +562,7 @@ class TeamsController extends Controller
             $lineupPlayer->is_headline = false;
             $lineupPlayer->save();
         }
+        // Nos aseguramos de que el jugador exista en la alineación actual y lo marcamos como titular.
         $playerLineup = LineupPlayer::where('lineup_id', $lineup?->id)
             ->where('player_id', $data['player']['player_id'])
             ->first();
@@ -575,6 +576,7 @@ class TeamsController extends Controller
                 'substituted' => false,
             ]);
         } else {
+            // Si ya estaba asociado (por ejemplo, como cambio o suplente), actualizamos su posición y lo rehabilitamos.
             $playerLineup->field_location = $data['field_location'];
             $playerLineup->is_headline = true;
             $playerLineup->substituted = false;

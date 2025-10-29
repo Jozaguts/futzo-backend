@@ -17,6 +17,11 @@ class UpdateTournamentRoundRequest extends FormRequest
             'matches.*.away' => 'required|array',
             'matches.*.away.id' => 'required|integer',
             'matches.*.away.goals' => 'required|integer',
+            'matches.*.penalties' => 'array|nullable',
+            'matches.*.penalties.decided' => 'boolean',
+            'matches.*.penalties.home_goals' => 'nullable|integer|min:0',
+            'matches.*.penalties.away_goals' => 'nullable|integer|min:0',
+            'matches.*.penalties.winner_team_id' => 'nullable|integer',
         ];
     }
 

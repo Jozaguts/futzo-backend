@@ -38,6 +38,7 @@ class TournamentUpdateRequest extends FormRequest
             'details.winner' => 'string|nullable',
             'details.description' => 'string|nullable',
             'details.status' => 'string|nullable',
+            'details.penalty_draw_enabled' => 'boolean',
             'details.location' => 'json',
         ];
     }

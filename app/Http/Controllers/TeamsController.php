@@ -562,16 +562,28 @@ class TeamsController extends Controller
             $lineupPlayer->is_headline = false;
             $lineupPlayer->save();
         }
-        $lineupPlayer = LineupPlayer::where('lineup_id', $lineup?->id)
+        $playerLineup = LineupPlayer::where('lineup_id', $lineup?->id)
             ->where('player_id', $data['player']['player_id'])
-            ->update([
+            ->first();
+
+        if (!$playerLineup) {
+            $playerLineup = LineupPlayer::create([
+                'lineup_id' => $lineup?->id,
+                'player_id' => $data['player']['player_id'],
                 'field_location' => $data['field_location'],
                 'is_headline' => true,
+                'substituted' => false,
             ]);
+        } else {
+            $playerLineup->field_location = $data['field_location'];
+            $playerLineup->is_headline = true;
+            $playerLineup->substituted = false;
+            $playerLineup->save();
+        }
 
         return response()->json([
             'message' => 'Jugador agregado a la alineación del partido.',
-            'lineup_player' => $lineupPlayer,
+            'lineup_player' => $playerLineup,
         ]);
     }
     public function updateDefaultFormation(Request $request, Team $team): JsonResponse

@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\DefaultLineupPlayer;
 use App\Models\GameEvent;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -55,6 +56,11 @@ class LineupResource extends JsonResource
             $formation->defenses + $formation->midfielders + $formation->forwards + 1
         ); // for 4-4-2 the result is:  [10,11]
 
+        $hasDefaultLineupPlayers = $this->hasDefaultLineupPlayers();
+        $availablePlayers = $hasDefaultLineupPlayers
+            ? $this->availableBenchPlayers()
+            : $this->teamRosterPlayers();
+
         return [
             'team_id' => $this->resource->team_id,
             'team' => [
@@ -62,21 +68,7 @@ class LineupResource extends JsonResource
                 'name' => $this->resource->team?->name ?? '',
                 'image' => $this->resource->team?->image,
             ],
-            'players' => $this->resource
-                ->lineupPlayers()
-                ->where('is_headline', false)
-                ->with('player.user')
-                ->get()
-                ->map(function ($lnp) {
-                    return [
-                        'player_id' => $lnp->player->id,
-                        'team_id' => $lnp->player->team_id,
-                        'name' => $lnp->player->user?->name ?? '',
-                        'number' => $lnp->player->number,
-                        'position' => $lnp->player->position?->abbr ?? '',
-                    ];
-                })
-                ->values(),
+            'players' => $availablePlayers,
             'name' => $formation->name,
             'goalkeeper' => $this->fillPlayers(
                 $this->transformPlayers($this->positions['goalkeeper']),
@@ -157,6 +149,60 @@ class LineupResource extends JsonResource
         }
 
         return array_slice($players, 0, $total);
+    }
+
+    private function hasDefaultLineupPlayers(): bool
+    {
+        if (!$this->resource->default_lineup_id) {
+            return false;
+        }
+
+        return DefaultLineupPlayer::where('default_lineup_id', $this->resource->default_lineup_id)->exists();
+    }
+
+    private function availableBenchPlayers(): array
+    {
+        return $this->resource
+            ->lineupPlayers()
+            ->where('is_headline', false)
+            ->with('player.user', 'player.position')
+            ->get()
+            ->map(function ($lnp) {
+                return [
+                    'player_id' => $lnp->player->id,
+                    'team_id' => $lnp->player->team_id,
+                    'name' => $lnp->player->user?->name ?? '',
+                    'number' => $lnp->player->number,
+                    'position' => $lnp->player->position?->abbr ?? '',
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    private function teamRosterPlayers(): array
+    {
+        if (!$this->resource->team) {
+            return [];
+        }
+
+        return $this->resource
+            ->team
+            ->players()
+            ->with('user', 'position')
+            ->get()
+            ->map(function ($player) {
+                return [
+                    'player_id' => $player->id,
+                    'team_id' => $player->team_id,
+                    'name' => $player->user?->name ?? '',
+                    'number' => $player->number,
+                    'position' => $player->position?->abbr ?? '',
+                ];
+            })
+            ->unique('player_id')
+            ->values()
+            ->all();
     }
 
     /**

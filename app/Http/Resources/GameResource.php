@@ -194,6 +194,13 @@ class GameResource extends JsonResource
             'start_date' => $this->resource->tournament->start_date,
             'end_date' => $this->resource->tournament->games()->orderBy('match_date', 'desc')->first()->match_date,
             'options' => $options,
+            'penalties' => [
+                'decided' => (bool)$this->resource->decided_by_penalties,
+                'winner_team_id' => $this->resource->penalty_winner_team_id,
+                'home_goals' => $this->resource->penalty_home_goals,
+                'away_goals' => $this->resource->penalty_away_goals,
+            ],
+            'penalty_draw_enabled' => (bool)$this->resource->tournament->penalty_draw_enabled,
             'phase' => [
                 'id' => optional($this->resource->tournamentPhase)->id,
                 'name' => optional($this->resource->tournamentPhase?->phase)->name,

@@ -40,6 +40,7 @@ class TournamentResource extends JsonResource
             'image' => $this->resource->image,
             'thumbnail' => $this->resource->thumbnail,
             'status' => $this->resource->status,
+            'penalty_draw_enabled' => (bool)$this->resource->penalty_draw_enabled,
             'league' => $this->resource->league,
             'location' => ($location = $this->resource->locations->first()) ? [
                 'id' => $location->id,

@@ -45,6 +45,10 @@ class Game extends Model
         'tournament_phase_id',
         'group_key',
         'slug',
+        'decided_by_penalties',
+        'penalty_home_goals',
+        'penalty_away_goals',
+        'penalty_winner_team_id',
     ];
     protected $casts = [
         'created_at' => 'datetime',
@@ -53,6 +57,10 @@ class Game extends Model
         'match_time' => 'datetime:H:i:s',
         'starts_at_utc' => 'datetime',
         'ends_at_utc' => 'datetime',
+        'decided_by_penalties' => 'boolean',
+        'penalty_home_goals' => 'integer',
+        'penalty_away_goals' => 'integer',
+        'penalty_winner_team_id' => 'integer',
 
     ];
 

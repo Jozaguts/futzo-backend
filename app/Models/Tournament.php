@@ -42,11 +42,12 @@ class Tournament extends Model implements HasMedia
         'football_type_id',
         'league_id',
         'slug',
+        'penalty_draw_enabled',
     ];
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
-
+        'penalty_draw_enabled' => 'boolean',
     ];
     protected $appends = ['register_link'];
     public function getSlugOptions(): SlugOptions

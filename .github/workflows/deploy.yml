@@ -181,4 +181,12 @@ jobs:
             php artisan config:cache
             php artisan storage:link || true
             sudo systemctl restart horizon
+
+            # Verifica que Horizon continúe activo tras el despliegue; si falla, mostramos su estado y abortamos.
+            if ! php artisan horizon:wait --seconds=15; then
+              echo "Horizon no alcanzó el estado RUNNING dentro del tiempo esperado" >&2
+              sudo systemctl status horizon --no-pager || true
+              exit 1
+            fi
+            php artisan horizon:status
           EOF

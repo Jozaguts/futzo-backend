@@ -35,6 +35,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Arr;
+use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
 use PhpOffice\PhpSpreadsheet\Exception;
 use Spatie\MediaLibrary\MediaCollections\Exceptions\FileDoesNotExist;
@@ -48,14 +50,33 @@ class TournamentController extends Controller
     public function index(Request $request): TournamentCollection
     {
 
-        $tournaments = Tournament::withCount(['teams', 'players', 'games'])
+        $query = Tournament::withCount(['teams', 'players', 'games'])
             ->with([
                 'format' => function ($query) {
                     $query->select('id', 'name');
                 },
                 'locations'
-            ])
-            ->paginate($request->get('per_page', 10), ['*'], 'page', $request->get('page', 1));
+            ]);
+
+        $allowedStatuses = ['creado', 'en curso', 'completado', 'cancelado'];
+        $statusFilters = collect(Arr::wrap($request->input('status')))
+            ->flatMap(fn ($value) => explode(',', (string) $value))
+            ->map(fn ($value) => trim($value))
+            ->filter()
+            ->unique()
+            ->intersect($allowedStatuses)
+            ->values();
+
+        if ($statusFilters->isNotEmpty()) {
+            $query->whereIn('status', $statusFilters->all());
+        }
+
+        $tournaments = $query->paginate(
+            $request->get('per_page', 10),
+            ['*'],
+            'page',
+            $request->get('page', 1)
+        );
 
         return new TournamentCollection($tournaments);
     }
@@ -146,7 +167,10 @@ class TournamentController extends Controller
 
     public function getTournamentFormats(): JsonResponse
     {
-        $tournamentFormats = TournamentFormat::query()->select('id', 'name', 'description')->get();
+        $tournamentFormats = TournamentFormat::query()
+            ->select('id', 'name', 'description')
+            ->whereNot('name','Sistema suizo')
+            ->get();
 
         return response()->json($tournamentFormats);
     }
@@ -564,20 +588,98 @@ class TournamentController extends Controller
     public function updateTournamentRound(UpdateTournamentRoundRequest $request, Tournament $tournament, int $roundId): JsonResponse
     {
         $data = $request->validated();
-        $matches = $data['matches'];
+        $matches = $data['matches'] ?? [];
+
         foreach ($matches as $match) {
             $game = $tournament->games()
+                ->with(['tournament', 'tournamentPhase.phase'])
                 ->where('round', $roundId)
                 ->where('id', $match['id'])
                 ->first();
-            if ($game){
-                $game->home_goals = $match['home']['goals'];
-                $game->away_goals = $match['away']['goals'];
-                $game->status = Game::STATUS_COMPLETED;
-                $game->save(); // ← this will trigger GameObserver::updating / updated / saving / saved
+
+            if (!$game) {
+                continue;
             }
+
+            $homeGoals = (int) data_get($match, 'home.goals', 0);
+            $awayGoals = (int) data_get($match, 'away.goals', 0);
+            $penalties = data_get($match, 'penalties');
+            $applyPenaltyRule = $game->tournament->penalty_draw_enabled && !$this->isEliminationPhase($game);
+
+            $game->home_goals = $homeGoals;
+            $game->away_goals = $awayGoals;
+            $game->status = Game::STATUS_COMPLETED;
+
+            if ($applyPenaltyRule && $homeGoals === $awayGoals) {
+                $decided = (bool) data_get($penalties, 'decided', false);
+                if (!$decided) {
+                    throw ValidationException::withMessages([
+                        'matches' => ['Se requiere registrar el resultado de penales para los empates en este torneo.'],
+                    ]);
+                }
+
+                $winnerTeamId = (int) data_get($penalties, 'winner_team_id');
+                if (!in_array($winnerTeamId, [$game->home_team_id, $game->away_team_id], true)) {
+                    throw ValidationException::withMessages([
+                        'matches' => ['El equipo ganador en penales es inválido.'],
+                    ]);
+                }
+
+                $penaltyHomeGoals = data_get($penalties, 'home_goals');
+                $penaltyAwayGoals = data_get($penalties, 'away_goals');
+
+                if (!is_numeric($penaltyHomeGoals) || !is_numeric($penaltyAwayGoals)) {
+                    throw ValidationException::withMessages([
+                        'matches' => ['El marcador de penales es obligatorio.'],
+                    ]);
+                }
+
+                $penaltyHomeGoals = (int) $penaltyHomeGoals;
+                $penaltyAwayGoals = (int) $penaltyAwayGoals;
+
+                if ($winnerTeamId === $game->home_team_id && $penaltyHomeGoals <= $penaltyAwayGoals) {
+                    throw ValidationException::withMessages([
+                        'matches' => ['El marcador de penales no coincide con el equipo ganador.'],
+                    ]);
+                }
+
+                if ($winnerTeamId === $game->away_team_id && $penaltyAwayGoals <= $penaltyHomeGoals) {
+                    throw ValidationException::withMessages([
+                        'matches' => ['El marcador de penales no coincide con el equipo ganador.'],
+                    ]);
+                }
+
+                $game->decided_by_penalties = true;
+                $game->penalty_winner_team_id = $winnerTeamId;
+                $game->penalty_home_goals = $penaltyHomeGoals;
+                $game->penalty_away_goals = $penaltyAwayGoals;
+            } else {
+                $game->decided_by_penalties = false;
+                $game->penalty_winner_team_id = null;
+                $game->penalty_home_goals = null;
+                $game->penalty_away_goals = null;
+            }
+
+            $game->save(); // ← this will trigger GameObserver::updating / updated / saving / saved
         }
         return response()->json(['message' => 'Partido actualizado correctamente']);
+    }
+
+    private function isEliminationPhase(Game $game): bool
+    {
+        $phaseName = optional($game->tournamentPhase?->phase)->name;
+
+        if (!$phaseName) {
+            return false;
+        }
+
+        return in_array($phaseName, [
+            'Dieciseisavos de Final',
+            'Octavos de Final',
+            'Cuartos de Final',
+            'Semifinales',
+            'Final',
+        ], true);
     }
 
     public function updateGameStatus(Request $request, int $tournamentId, int $roundId): JsonResponse

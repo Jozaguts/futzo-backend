@@ -478,6 +478,7 @@ class TournamentController extends Controller
                 'referee',
                 'tournament',
                 'tournament.configuration',
+                'tournament.teams:id,name,image',
                 'tournamentPhase',
                 'tournamentPhase.phase',
             ])
@@ -719,6 +720,24 @@ class TournamentController extends Controller
            ->where('round', $round)
            ->get();
         $league = $tournament?->league;
+        $tournament->loadMissing('teams:id,name,image');
+
+        $byeTeam = null;
+        if ($tournament->teams->count() % 2 !== 0) {
+            $playingTeamIds = $games
+                ->flatMap(static fn($game) => [$game->home_team_id, $game->away_team_id])
+                ->filter()
+                ->unique();
+
+            $candidate = $tournament->teams->first(static function ($team) use ($playingTeamIds) {
+                return !$playingTeamIds->contains($team->id);
+            });
+
+            if ($candidate) {
+                $byeTeam = $candidate;
+            }
+        }
+
         $exportable = null;
        if ($type === self::IMG_EXPORT_TYPE){
 
@@ -726,7 +745,8 @@ class TournamentController extends Controller
                'games' => $games,
                'tournament' => $tournament,
                'round' => $round,
-               'league' => $league
+               'league' => $league,
+               'byeTeam' => $byeTeam,
            ])->render();
 
            $exportable =  SnappyImage::loadHTML($html)
@@ -738,14 +758,20 @@ class TournamentController extends Controller
                ->setOption('enable-local-file-access', true)
                ->download("jornada-$round-torneo-$tournament->slug.jpg");
        }
-        if ($type === self::XSL_EXPORT_TYPE){
+       if ($type === self::XSL_EXPORT_TYPE){
             sleep(2);
             $games = $games->map(function($game){
                 return [
                     $game->homeTeam->name, $game->match_time, $game->awayTeam->name,
                 ];
             })->toArray();
-            $export = new RoundExport($games, $round, $league->name,$tournament->name);
+            $export = new RoundExport(
+                $games,
+                $round,
+                $league->name,
+                $tournament->name,
+                $byeTeam?->name
+            );
             $exportable =  Excel::download($export,"jornada-$round-torneo-$tournament->slug.xlsx");
         }
         return $exportable;

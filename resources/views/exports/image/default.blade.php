@@ -124,6 +124,12 @@
             text-overflow: ellipsis;
             margin-left: 1rem;
         }
+        .bye-message{
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 0.75rem 0 0;
+        }
     </style>
 </head>
 <body>
@@ -137,6 +143,9 @@
     </aside>
     <section class="schedule">
         <h1>Jornada {{$round}}</h1>
+        @if($byeTeam)
+            <p class="bye-message">{{ $byeTeam->name }} descansa esta jornada.</p>
+        @endif
         @foreach( $games->groupBy(fn($game) => \Carbon\Carbon::parse($game->match_date)->format('l d F')) as $date => $games)
             <div class="day">
                 <p class="date">{{$date}}</p>

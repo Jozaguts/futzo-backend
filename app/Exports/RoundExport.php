@@ -15,21 +15,39 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class RoundExport implements FromArray, WithColumnFormatting, WithColumnWidths, WithDefaultStyles, WithStyles
 {
-    public function __construct(protected array $games, protected int $round, protected string $leagueName, protected string $tournamentName) {}
+    private const BLANK_ROWS = 4;
+
+    public function __construct(
+        protected array $games,
+        protected int $round,
+        protected string $leagueName,
+        protected string $tournamentName,
+        protected ?string $byeTeamName = null
+    ) {}
 
     public function array(): array
     {
-         return [
-             [ "Jornada $this->round",],
-             [ 'LOCAL', '', 'VISITANTE'],
-             $this->games,
-             [''],
-             [''],
-             [''],
-             [''],
-             [''],
-             ["$this->leagueName | $this->tournamentName" ],
-         ];
+        $rows = [];
+
+        $rows[] = ["Jornada {$this->round}", '', ''];
+
+        if ($this->byeTeamName) {
+            $rows[] = ["Descansa: {$this->byeTeamName}", '', ''];
+        }
+
+        $rows[] = ['LOCAL', '', 'VISITANTE'];
+
+        foreach ($this->games as $match) {
+            $rows[] = $match;
+        }
+
+        for ($i = 0; $i < self::BLANK_ROWS; $i++) {
+            $rows[] = ['', '', ''];
+        }
+
+        $rows[] = ["{$this->leagueName} | {$this->tournamentName}", '', ''];
+
+        return $rows;
     }
 
     public function title(): string
@@ -57,17 +75,26 @@ class RoundExport implements FromArray, WithColumnFormatting, WithColumnWidths, 
     public function styles(Worksheet $sheet): void
     {
         $sheet->mergeCells('A1:C1');
-        $headingRows = 1;
-        $titlesRows = 1;
-        $spreedRows = 5;
-        $dataRows = count($this->games);
-        $currentRow = 1;
-        $startAndEndLeagueRow = $headingRows + $titlesRows + $spreedRows +  $dataRows + $currentRow;
-        $sheet->mergeCells("A$startAndEndLeagueRow:C$startAndEndLeagueRow");
-        $sheet->getStyle("A$startAndEndLeagueRow:C$startAndEndLeagueRow")->applyFromArray([
+
+        $sheet->getStyle('A1:C1')->applyFromArray([
             'font' => ['bold' => true],
         ]);
-        $sheet->getStyle("A1:C1")->applyFromArray([
+
+        $columnHeaderRow = 2;
+
+        if ($this->byeTeamName) {
+            $sheet->mergeCells('A2:C2');
+            $sheet->getStyle('A2:C2')->applyFromArray([
+                'font' => ['italic' => true],
+            ]);
+            $columnHeaderRow = 3;
+        }
+
+        $dataRows = count($this->games);
+        $footerRow = $columnHeaderRow + $dataRows + self::BLANK_ROWS + 1;
+
+        $sheet->mergeCells("A{$footerRow}:C{$footerRow}");
+        $sheet->getStyle("A{$footerRow}:C{$footerRow}")->applyFromArray([
             'font' => ['bold' => true],
         ]);
     }

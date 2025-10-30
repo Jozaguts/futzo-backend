@@ -143,6 +143,7 @@
     </aside>
     <section class="schedule">
         <h1>Jornada {{$round}}</h1>
+        {{-- Cuando el torneo tiene equipos impares, mostramos quién descansa esa jornada. --}}
         @if($byeTeam)
             <p class="bye-message">{{ $byeTeam->name }} descansa esta jornada.</p>
         @endif

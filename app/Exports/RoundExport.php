@@ -15,6 +15,7 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class RoundExport implements FromArray, WithColumnFormatting, WithColumnWidths, WithDefaultStyles, WithStyles
 {
+    // Dejamos un pequeño bloque vacío entre la lista de partidos y el pie informativo.
     private const BLANK_ROWS = 4;
 
     public function __construct(

@@ -133,7 +133,7 @@ class TournamentController extends Controller
             $requestLocation = json_decode($data->get('location'), true);
 
             $location = Location::updateOrCreate([
-                'autocomplete_prediction->place_id' => $requestLocation['place_id']
+                'place_id' => $requestLocation['place_id']
             ], [
                 'name' => $requestLocation['structured_formatting']['main_text'],
                 'address' => $requestLocation['description'],
@@ -371,7 +371,7 @@ class TournamentController extends Controller
     {
         $requestLocation = $request->location['location'];
         $location = $tournament->locations()->save(Location::updateOrCreate([
-            'autocomplete_prediction->place_id' => $requestLocation['place_id']
+            'place_id' => $requestLocation['place_id']
         ], [
             'name' => $requestLocation['structured_formatting']['main_text'],
             'address' => $requestLocation['description'],
@@ -478,6 +478,7 @@ class TournamentController extends Controller
                 'referee',
                 'tournament',
                 'tournament.configuration',
+                // Pre-cargamos la plantilla de equipos para identificar al club que descansa en jornadas impares.
                 'tournament.teams:id,name,image',
                 'tournamentPhase',
                 'tournamentPhase.phase',
@@ -720,6 +721,7 @@ class TournamentController extends Controller
            ->where('round', $round)
            ->get();
         $league = $tournament?->league;
+        // Al exportar necesitamos saber qué equipo queda libre en rondas con número impar de participantes.
         $tournament->loadMissing('teams:id,name,image');
 
         $byeTeam = null;
@@ -758,7 +760,7 @@ class TournamentController extends Controller
                ->setOption('enable-local-file-access', true)
                ->download("jornada-$round-torneo-$tournament->slug.jpg");
        }
-       if ($type === self::XSL_EXPORT_TYPE){
+        if ($type === self::XSL_EXPORT_TYPE){
             sleep(2);
             $games = $games->map(function($game){
                 return [

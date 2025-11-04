@@ -3,6 +3,8 @@
 namespace App\Http\Resources;
 
 use App\Services\GroupConfigurationOptionService;
+use App\Models\Game;
+use App\Models\ScheduleRegenerationLog;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -18,6 +20,13 @@ class ScheduleSettingsResource extends JsonResource
             $groupOptions = $optionsService->buildOptions($teamCount);
         }
 
+        $pendingManualMatches = Game::query()
+            ->where('tournament_id', $this->resource->id)
+            ->where(static function ($query) {
+                $query->whereNull('match_date')
+                    ->orWhereNull('field_id');
+            })
+            ->count();
         $selectedOptionId = null;
         $groupConfiguration = $this->resource->groupConfiguration;
         if ($groupConfiguration && !empty($groupOptions) && is_array($groupConfiguration->group_sizes)) {
@@ -48,6 +57,44 @@ class ScheduleSettingsResource extends JsonResource
 
         $configuration = $this->resource->configuration;
         $defaultRoundTrip = (bool)($configuration?->elimination_round_trip ?? false);
+
+        $teamsCollection = $this->resource->teams;
+        if ($teamsCollection instanceof \Illuminate\Database\Eloquent\Collection) {
+            $teamsCollection->loadCount([
+                'homeGames as home_games_count' => fn($query) => $query->where('tournament_id', $this->resource->id),
+                'awayGames as away_games_count' => fn($query) => $query->where('tournament_id', $this->resource->id),
+            ]);
+        } else {
+            $teamsCollection = collect();
+        }
+        $teamsWithoutGames = [];
+        $gamesCount = $this->resource->games->count();
+        if ($gamesCount > 0){
+            $teamsWithoutGames = $teamsCollection
+                ->map(function ($team) {
+                    $home = (int) ($team->home_games_count ?? 0);
+                    $away = (int) ($team->away_games_count ?? 0);
+
+                    if (($home + $away) > 0) {
+                        return null;
+                    }
+
+                    return [
+                        'id' => $team->id,
+                        'name' => $team->name,
+                        'image' => $team->image,
+                    ];
+                })
+                ->filter()
+                ->values()
+                ->all();
+        }
+
+
+        $latestLog = ScheduleRegenerationLog::query()
+            ->where('tournament_id', $this->resource->id)
+            ->latest()
+            ->first();
 
         return [
             'tournament_id' => $this->resource->id,
@@ -120,6 +167,14 @@ class ScheduleSettingsResource extends JsonResource
             ] : null,
             'group_phase_option_id' => $selectedOptionId,
             'group_configuration_options' => $groupOptions,
+            'teams_without_games' => $teamsWithoutGames,
+            'pending_manual_matches' => $pendingManualMatches,
+            'last_regeneration' => $latestLog ? [
+                'mode' => $latestLog->mode,
+                'cutoff_round' => $latestLog->cutoff_round,
+                'executed_at' => optional($latestLog->created_at)->toIso8601String(),
+                'matches_created' => $latestLog->matches_created,
+            ] : null,
         ];
     }
 

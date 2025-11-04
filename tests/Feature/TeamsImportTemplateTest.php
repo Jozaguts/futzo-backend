@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\TournamentFormatId;
+use App\Models\Location;
 use App\Models\Team;
 use Illuminate\Http\UploadedFile;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -25,7 +26,7 @@ it('descarga la plantilla de equipos sin columnas obsoletas', function () {
     $header = $dataSheet->rangeToArray('A1:L1', null, true, true, true)[1];
     expect(array_values($header))->toBe([
         'Nombre del equipo',
-        'Dirección',
+        'Sede',
         'Color local primario',
         'Color local secundario',
         'Color visitante primario',
@@ -49,9 +50,15 @@ it('descarga la plantilla de equipos sin columnas obsoletas', function () {
 it('importa equipos utilizando la plantilla actualizada', function () {
     [$tournament] = createTournamentViaApi(TournamentFormatId::League->value, 1, null, null);
 
+    $league = $tournament->league;
+    $location = Location::factory()->create(['name' => 'Av. Siempre Viva 742']);
+    if ($league) {
+        $league->locations()->syncWithoutDetaching([$location->id]);
+    }
+
     $headers = [
         'Nombre del equipo',
-        'Dirección',
+        'Sede',
         'Color local primario',
         'Color local secundario',
         'Color visitante primario',
@@ -118,7 +125,7 @@ it('importa equipos utilizando la plantilla actualizada', function () {
     expect($team)->not->toBeNull();
     expect($team->colors['home']['primary'])->toBe('#111111');
     expect($team->colors['away']['primary'])->toBe('#333333');
-    expect($team->address['description'])->toBe('Av. Siempre Viva 742');
+    expect($team->home_location_id)->toBe($location->id);
 
     $this->assertDatabaseHas('team_tournament', [
         'team_id' => $team->id,

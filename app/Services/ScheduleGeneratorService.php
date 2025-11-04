@@ -6,6 +6,7 @@ use App\Models\Game;
 use App\Models\LeagueField;
 use App\Models\Location;
 use App\Models\Field;
+use App\Models\Team;
 use App\Models\Tournament;
 use App\Models\TournamentConfiguration;
 use App\Models\TournamentField;
@@ -166,6 +167,7 @@ class ScheduleGeneratorService
                             'match_time' => $matchTime->format('H:i:s'),
                             'round' => $matchRound,
                             'status' => 'programado',
+                            'slot_status' => Game::SLOT_STATUS_SCHEDULED,
                         ];
                         $globalIndex++;
                         $assigned = true;
@@ -308,6 +310,7 @@ class ScheduleGeneratorService
                             'match_time' => $matchTime->format('H:i:s'),
                             'round' => $matchRound,
                             'status' => 'programado',
+                            'slot_status' => Game::SLOT_STATUS_SCHEDULED,
                             'group_key' => $fixture['group_key'],
                         ];
                         $globalIndex++;
@@ -497,6 +500,7 @@ class ScheduleGeneratorService
                             'match_time' => $matchTime->format('H:i:s'),
                             'round' => $leg, // ida/vuelta como rounds 1 y 2
                             'status' => 'programado',
+                            'slot_status' => Game::SLOT_STATUS_SCHEDULED,
                         ];
                         $globalIndex++;
                         $assigned = true; break;
@@ -650,19 +654,50 @@ class ScheduleGeneratorService
             return;
         }
 
+        $teamIds = $this->tournament->teams()->pluck('teams.id');
+        $baseline = Team::whereIn('id', $teamIds)
+            ->get(['id', 'home_location_id', 'home_day_of_week', 'home_start_time'])
+            ->keyBy('id')
+            ->map(function ($team) {
+                return [
+                    'home_field_id' => null,
+                    'home_location_id' => $team->home_location_id ? (int) $team->home_location_id : null,
+                    'home_day_of_week' => is_null($team->home_day_of_week) ? null : (int) $team->home_day_of_week,
+                    'home_start_time' => $team->home_start_time ? Carbon::parse($team->home_start_time)->format('H:i') : null,
+                ];
+            })
+            ->toArray();
+
+        $this->homeDefaults = $baseline;
+
         $rows = DB::table('team_tournament')
             ->where('tournament_id', $this->tournament->id)
             ->select(['team_id', 'home_field_id', 'home_location_id', 'home_day_of_week', 'home_start_time'])
             ->get();
 
-        $this->homeDefaults = $rows->keyBy('team_id')->map(function ($row) {
-            return [
-                'home_field_id' => $row->home_field_id ? (int)$row->home_field_id : null,
-                'home_location_id' => $row->home_location_id ? (int)$row->home_location_id : null,
-                'home_day_of_week' => is_null($row->home_day_of_week) ? null : (int)$row->home_day_of_week,
+        foreach ($rows as $row) {
+            $existing = $this->homeDefaults[$row->team_id] ?? [
+                'home_field_id' => null,
+                'home_location_id' => null,
+                'home_day_of_week' => null,
+                'home_start_time' => null,
+            ];
+
+            $overrides = [
+                'home_field_id' => $row->home_field_id ? (int) $row->home_field_id : null,
+                'home_location_id' => $row->home_location_id ? (int) $row->home_location_id : null,
+                'home_day_of_week' => is_null($row->home_day_of_week) ? null : (int) $row->home_day_of_week,
                 'home_start_time' => $row->home_start_time ? Carbon::parse($row->home_start_time)->format('H:i') : null,
             ];
-        })->toArray();
+
+            foreach ($overrides as $key => $value) {
+                if (!is_null($value)) {
+                    $existing[$key] = $value;
+                }
+            }
+
+            $this->homeDefaults[$row->team_id] = $existing;
+        }
     }
 
     private function hydrateFieldLocationMap(array $matches): void
@@ -923,6 +958,11 @@ class ScheduleGeneratorService
         }
 
         return $fixtures;
+    }
+
+    public function generateFixturesForTeams(array $teamIds, bool $roundTrip = false): array
+    {
+        return $this->generateFixtures($teamIds, $roundTrip);
     }
 
     private function generateAvailableSlots($fields, $startDate, $matchDuration, $weeksToGenerate): array

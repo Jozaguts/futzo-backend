@@ -41,5 +41,7 @@ Route::prefix('tournaments')->group(function () {
     Route::post('{tournament}/locations', [TournamentController::class, 'storeTournamentLocations']);
     Route::post('{tournament}/rounds/{roundId}', [TournamentController::class, 'updateTournamentRound']);
     Route::post('{tournament}/bracket/confirm', [BracketController::class, 'confirm']);
+    Route::post('{tournament}/regenerate-calendar', [TournamentController::class, 'analyzeScheduleRegeneration']);
+    Route::post('{tournament}/confirm-regeneration', [TournamentController::class, 'confirmScheduleRegeneration']);
 
 });

@@ -22,10 +22,12 @@ class TeamFactory extends Factory
     {
         return [
             'name' => $name = Fake::domainWord() . ' FC',
-            'address' => config('constants.address'),
             'description' => Fake::sentence(10),
             'image' => 'https://ui-avatars.com/api/?name=' . $name,
             'colors' => config('constants.colors'),
+            'home_location_id' => null,
+            'home_day_of_week' => null,
+            'home_start_time' => null,
             'created_at' => Fake::randomElement([now()->startOfMonth(), now()->endOfMonth()]),
         ];
     }

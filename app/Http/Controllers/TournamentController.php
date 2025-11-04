@@ -24,12 +24,14 @@ use App\Models\Game;
 use App\Models\GameEvent;
 use App\Models\Location;
 use App\Models\QrConfiguration;
+use App\Models\ScheduleRegenerationLog;
 use App\Models\Team;
 use App\Models\Tournament;
 use App\Models\TournamentFormat;
 use App\Models\TournamentPhase;
 use App\Models\TournamentFieldReservation;
 use App\Services\ScheduleGeneratorService;
+use App\Services\TournamentScheduleRegenerationService;
 use Barryvdh\Snappy\Facades\SnappyImage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -37,6 +39,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Arr;
 use Illuminate\Validation\ValidationException;
+use RuntimeException;
 use Maatwebsite\Excel\Facades\Excel;
 use PhpOffice\PhpSpreadsheet\Exception;
 use Spatie\MediaLibrary\MediaCollections\Exceptions\FileDoesNotExist;
@@ -554,6 +557,19 @@ class TournamentController extends Controller
                 return $game;
             });
         }
+        $latestLog = ScheduleRegenerationLog::query()
+            ->where('tournament_id', $tournamentId)
+            ->latest()
+            ->first();
+
+        $pendingManualMatches = Game::query()
+            ->where('tournament_id', $tournamentId)
+            ->where(static function ($query) {
+                $query->whereNull('match_date')
+                    ->orWhereNull('field_id');
+            })
+            ->count();
+
         return response()->json([
             'rounds' => TournamentScheduleCollection::make($schedule)->toArray($request),
             'pagination' => [
@@ -572,7 +588,43 @@ class TournamentController extends Controller
                     ->distinct('round')->count('round'),
             ],
             'hasSchedule' => $hasSchedule,
+            'regeneration' => $latestLog ? [
+                'mode' => $latestLog->mode,
+                'cutoff_round' => $latestLog->cutoff_round,
+                'executed_at' => optional($latestLog->created_at)->toIso8601String(),
+            ] : null,
+            'pending_manual_matches' => $pendingManualMatches,
         ]);
+    }
+
+    public function analyzeScheduleRegeneration(
+        Request $request,
+        Tournament $tournament,
+        TournamentScheduleRegenerationService $service
+    ): JsonResponse {
+        $analysis = $service->analyze($tournament);
+
+        return response()->json($analysis);
+    }
+
+    public function confirmScheduleRegeneration(
+        Request $request,
+        Tournament $tournament,
+        TournamentScheduleRegenerationService $service
+    ): JsonResponse {
+        try {
+            $analysis = $service->analyze($tournament);
+            $result = $service->regenerate($tournament, $analysis);
+            $postAnalysis = $service->analyze($tournament);
+
+            return response()->json(array_merge($result, [
+                'analysis' => $postAnalysis,
+            ]));
+        } catch (RuntimeException $exception) {
+            throw ValidationException::withMessages([
+                'regeneration' => [$exception->getMessage()],
+            ]);
+        }
     }
 
     public function schedule(CreateTournamentScheduleRequest $request, Tournament $tournament): JsonResponse

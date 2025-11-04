@@ -28,7 +28,7 @@ class TeamsInstructionsSheet implements FromCollection, WithTitle, WithColumnWid
             ['', '', '', ''],
             ['Campo', 'Descripción', '¿Obligatorio?', 'Ejemplo'],
             ['Nombre del equipo', 'Nombre completo del equipo', 'Sí', 'Tigres FC'],
-            ['Dirección', 'Dirección física del equipo', 'No', 'Calle 123, Ciudad'],
+            ['Sede', 'Locación registrada'],
             ['Color local primario', 'Color principal del uniforme de local en HEX', 'No', '#FF0000'],
             ['Color local secundario', 'Color secundario del uniforme de local en HEX', 'No', '#00FF00'],
             ['Color visitante primario', 'Color principal del uniforme visitante en HEX', 'No', '#0000FF'],
@@ -46,7 +46,7 @@ class TeamsInstructionsSheet implements FromCollection, WithTitle, WithColumnWid
             ['', '', '', ''],
             [
                 'Nombre del equipo',
-                'Dirección',
+                'Sede',
                 'Color local primario',
                 'Color local secundario',
                 'Color visitante primario',
@@ -112,7 +112,7 @@ class TeamsInstructionsSheet implements FromCollection, WithTitle, WithColumnWid
     {
         return [
             'A' => 30, // Nombre del equipo
-            'B' => 40, // Dirección
+            'B' => 40, // Sede
             'C' => 30, // Color local primario
             'D' => 30, // Color local secundario
             'E' => 30, // Color visitante primario

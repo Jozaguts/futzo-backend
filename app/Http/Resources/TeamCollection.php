@@ -19,11 +19,11 @@ class TeamCollection extends ResourceCollection
     {
         return $this->collection->map(function ($team) {
             $tournament = $team->tournaments()->where('team_id', $team->id)->first();
-            $defaultHome = null;
+            $dayNames = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 
+            $defaultHome = null;
             if ($tournament && $tournament->pivot) {
                 $pivot = $tournament->pivot;
-                $dayNames = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
                 $defaultHome = [
                     'location_id' => $pivot->home_location_id,
                     'field_id' => $pivot->home_field_id,
@@ -33,10 +33,21 @@ class TeamCollection extends ResourceCollection
                 ];
             }
 
+            $homeLocation = $team->homeLocation;
+            $homePreferences = [
+                'location_id' => $team->home_location_id,
+                'location' => $homeLocation ? [
+                    'id' => $homeLocation->id,
+                    'name' => $homeLocation->name,
+                ] : null,
+                'day_of_week' => $team->home_day_of_week,
+                'day_label' => is_null($team->home_day_of_week) ? null : $dayNames[$team->home_day_of_week] ?? null,
+                'start_time' => $team->home_start_time,
+            ];
+
             return [
                 'id' => $team->id,
                 'name' => $team->name,
-                'address' => $team->address,
                 'slug' => $team->slug,
                 'description' => $team->description,
                 'image' => $team->image,
@@ -44,6 +55,7 @@ class TeamCollection extends ResourceCollection
                 'coach' => $team->coach,
                 'category' => $team->categories()->where('team_id', $team->id)->first(),
                 'tournament' => $tournament,
+                'home_preferences' => $homePreferences,
                 'default_home' => $defaultHome,
                 'colors' => $team->colors,
                 'register_link' => $team->registerLink,

@@ -32,7 +32,6 @@ class TeamStoreRequest extends FormRequest
         return
             [
                 'team.name' => 'required',
-                'team.address' => 'nullable|array',
                 'team.image' => 'nullable|image|mimes:jpg,png,svg',
                 'team.colors' => 'nullable|array',
                 'team.colors.home' => 'nullable|array',
@@ -45,6 +44,9 @@ class TeamStoreRequest extends FormRequest
                 'team.phone' => 'nullable|string',
                 'team.category_id' => 'required|exists:categories,id',
                 'team.tournament_id' => 'required|exists:tournaments,id',
+                'team.home_location_id' => 'nullable|integer|exists:locations,id',
+                'team.home_day_of_week' => 'nullable|integer|min:0|max:6',
+                'team.home_start_time' => 'nullable|date_format:H:i',
                 'team.default_home' => 'nullable|array',
                 'team.default_home.location_id' => 'nullable|integer|exists:locations,id',
                 'team.default_home.field_id' => 'nullable|integer|exists:fields,id',
@@ -94,7 +96,6 @@ class TeamStoreRequest extends FormRequest
     {
         return [
             'team.name.required' => 'El nombre del equipo es requerido',
-            'team.address.string' => 'La dirección del equipo debe ser una cadena de texto',
             'team.image.image' => 'La imagen del equipo debe ser un archivo de imagen',
             'team.image.mimes' => 'La imagen del equipo debe ser un archivo de imagen con formato jpg, png o svg',
             'team.colors.home.primary.string' => 'El color de la camiseta de local debe ser una cadena de texto',
@@ -127,10 +128,6 @@ class TeamStoreRequest extends FormRequest
 
         if (isset($team['colors']) && is_string($team['colors'])) {
             $team['colors'] = json_decode($team['colors'], true, 512, JSON_THROW_ON_ERROR);
-        }
-
-        if (isset($team['address']) && is_string($team['address'])) {
-            $team['address'] = json_decode($team['address'], true, 512, JSON_THROW_ON_ERROR);
         }
 
         if (isset($team['default_home']) && is_string($team['default_home'])) {

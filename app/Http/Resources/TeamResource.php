@@ -16,11 +16,11 @@ class TeamResource extends JsonResource
     {
 
         $tournament = $this->resource->tournaments()->first();
-        $defaultHome = null;
+        $dayNames = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 
+        $defaultHome = null;
         if ($tournament && $tournament->pivot) {
             $pivot = $tournament->pivot;
-            $dayNames = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
             $defaultHome = [
                 'location_id' => $pivot->home_location_id,
                 'field_id' => $pivot->home_field_id,
@@ -30,6 +30,18 @@ class TeamResource extends JsonResource
             ];
         }
 
+        $homeLocation = $this->resource->homeLocation;
+        $homePreferences = [
+            'location_id' => $this->resource->home_location_id,
+            'location' => $homeLocation ? [
+                'id' => $homeLocation->id,
+                'name' => $homeLocation->name,
+            ] : null,
+            'day_of_week' => $this->resource->home_day_of_week,
+            'day_label' => is_null($this->resource->home_day_of_week) ? null : $dayNames[$this->resource->home_day_of_week] ?? null,
+            'start_time' => $this->resource->home_start_time,
+        ];
+
         return [
             'id' => $this->resource->id,
             'name' => $this->resource->name,
@@ -37,7 +49,7 @@ class TeamResource extends JsonResource
             'image'=> $this->resource->image,
             'president' => $this->resource->president()->select('id', 'name', 'email', 'phone')->first(),
             'coach' => $this->resource->coach()->select('id', 'name', 'email', 'phone')->first(),
-            'address' => !empty($this->resource->address['place_id']) ? $this->resource->address : null,
+            'home_preferences' => $homePreferences,
             'tournament' => $tournament,
             'default_home' => $defaultHome,
             'category' => $this->resource->category()->select('id', 'name')->first(),

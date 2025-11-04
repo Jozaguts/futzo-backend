@@ -28,17 +28,20 @@ class Team extends Model implements HasMedia
 
     protected $fillable = [
         'name',
-        'address',
         'description',
         'image',
         'president_id',
         'coach_id',
         'colors',
+        'home_location_id',
+        'home_day_of_week',
+        'home_start_time',
         'slug'
     ];
     protected $casts = [
-        'address' => 'array',
-        'colors' => 'array'
+        'colors' => 'array',
+        'home_day_of_week' => 'integer',
+        'home_start_time' => 'datetime:H:i:s'
     ];
     protected $attributes = [
         'colors' => '{"home":{"primary":"#FFF","secondary":"#FFF"},"away":{"primary":"#FFF","secondary":"#FFF"}}',
@@ -50,6 +53,18 @@ class Team extends Model implements HasMedia
         static::creating(static function ($team) {
             $team->colors = $team->colors ?? config('constants.colors');
         });
+    }
+
+    public function homeLocation(): BelongsTo
+    {
+        return $this->belongsTo(Location::class, 'home_location_id');
+    }
+
+    protected function homeStartTime(): Attribute
+    {
+        return Attribute::make(
+            get: fn($value) => $value ? \Carbon\Carbon::parse($value)->format('H:i') : null,
+        );
     }
 
     protected function image(): Attribute

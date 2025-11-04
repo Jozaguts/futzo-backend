@@ -27,7 +27,6 @@ class TeamUpdateRequest extends FormRequest
         $request = $this;
         return [
             'team.name' => 'required',
-            'team.address' => 'nullable|json',
             'team.image' => [
                 'nullable',
                 new IsImageOrUrl,
@@ -41,6 +40,9 @@ class TeamUpdateRequest extends FormRequest
             'team.colors.away.secondary' => 'nullable|string',
             'team.category_id' => 'required|exists:categories,id',
             'team.tournament_id' => 'required|exists:tournaments,id',
+            'team.home_location_id' => 'nullable|integer|exists:locations,id',
+            'team.home_day_of_week' => 'nullable|integer|min:0|max:6',
+            'team.home_start_time' => 'nullable|date_format:H:i',
             'team.default_home' => 'nullable|array',
             'team.default_home.location_id' => 'nullable|integer|exists:locations,id',
             'team.default_home.field_id' => 'nullable|integer|exists:fields,id',

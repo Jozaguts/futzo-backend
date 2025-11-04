@@ -26,11 +26,14 @@ use App\Models\Player;
 use App\Models\Position;
 use App\Models\QrConfiguration;
 use App\Models\Team;
+use App\Models\Location;
 use App\Models\Tournament;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 use JsonException;
 use Maatwebsite\Excel\Facades\Excel;
 use PhpOffice\PhpSpreadsheet\Exception;
@@ -86,22 +89,24 @@ class TeamsController extends Controller
             unset($teamPayload['default_home']);
 
             $colors = $teamPayload['colors'] ?? null;
-            $address = $teamPayload['address'] ?? null;
-
             if (is_string($colors)) {
                 $colors = json_decode($colors, true, 512, JSON_THROW_ON_ERROR);
             }
 
-            if (is_string($address)) {
-                $address = json_decode($address, true, 512, JSON_THROW_ON_ERROR);
-            }
+            $homeLocationId = $this->normalizeHomeLocation($teamPayload['home_location_id'] ?? null);
+            $homeDayOfWeek = array_key_exists('home_day_of_week', $teamPayload)
+                ? $this->normalizeHomeDay($teamPayload['home_day_of_week'])
+                : null;
+            $homeStartTime = $this->normalizeHomeStartTime($teamPayload['home_start_time'] ?? null);
 
             $teamModel = Team::create([
                 'name' => $teamPayload['name'],
                 'president_id' => $president?->id,
                 'coach_id' => $coach?->id,
-                'address' => $address,
                 'colors' => $colors,
+                'home_location_id' => $homeLocationId,
+                'home_day_of_week' => $homeDayOfWeek,
+                'home_start_time' => $homeStartTime,
             ]);
             if ($request->hasFile('team.image')) {
                 $media = $teamModel
@@ -178,22 +183,30 @@ class TeamsController extends Controller
                     ]);
                 }
             }
-            $address = !empty($teamPayload['address'])
-                ? (is_array($teamPayload['address'])
-                    ? $teamPayload['address']
-                    : json_decode($teamPayload['address'], true, 512, JSON_THROW_ON_ERROR))
-                : null;
             $colors = !empty($teamPayload['colors'])
                 ? (is_array($teamPayload['colors'])
                     ? $teamPayload['colors']
                     : json_decode($teamPayload['colors'], true, 512, JSON_THROW_ON_ERROR))
                 : null;
 
-            $team->update([
+            $updatePayload = [
                 'name' => $teamPayload['name'],
-                'address' => $address,
                 'colors' => $colors,
-            ]);
+            ];
+
+            if (array_key_exists('home_location_id', $teamPayload)) {
+                $updatePayload['home_location_id'] = $this->normalizeHomeLocation($teamPayload['home_location_id']);
+            }
+
+            if (array_key_exists('home_day_of_week', $teamPayload)) {
+                $updatePayload['home_day_of_week'] = $this->normalizeHomeDay($teamPayload['home_day_of_week']);
+            }
+
+            if (array_key_exists('home_start_time', $teamPayload)) {
+                $updatePayload['home_start_time'] = $this->normalizeHomeStartTime($teamPayload['home_start_time']);
+            }
+
+            $team->update($updatePayload);
             if ($request->hasFile('team.image')) {
 
                 $media = $team
@@ -332,7 +345,7 @@ class TeamsController extends Controller
     {
         $expected = [
             'A' => 'Nombre del equipo',
-            'B' => 'Dirección',
+            'B' => 'Sede',
             'C' => 'Color local primario',
             'D' => 'Color local secundario',
             'E' => 'Color visitante primario',
@@ -358,10 +371,31 @@ class TeamsController extends Controller
      */
     private function storeTeamFromRow($row, $tournament): void
     {
+        $locationName = trim((string) ($row['B'] ?? ''));
+        $homeLocationId = null;
+        if ($locationName !== '') {
+            $query = Location::query()
+                ->whereRaw('LOWER(name) = ?', [Str::lower($locationName)]);
+
+            if ($tournament?->league_id) {
+                $query->whereHas('leagues', static function ($q) use ($tournament) {
+                    $q->where('league_id', $tournament->league_id);
+                });
+            }
+
+            $homeLocationId = $query->value('id');
+
+            if (!$homeLocationId) {
+                $homeLocationId = Location::query()
+                    ->whereRaw('LOWER(name) = ?', [Str::lower($locationName)])
+                    ->value('id');
+            }
+        }
+
         $data = [
             'team' => [
                 'name' => $row['A'],
-                'address' => $this->normalizeAddress($row['B']),
+                'home_location_id' => $homeLocationId,
                 'colors' => json_encode([
                     'home' => [
                         'primary' => $row['C'],
@@ -416,10 +450,10 @@ class TeamsController extends Controller
             'name' => $data['team']['name'],
             'president_id' => $president?->id,
             'coach_id' => $coach?->id,
-            'address' => json_decode($data['team']['address'], false, 512, JSON_THROW_ON_ERROR),
-            'colors' => json_decode($data['team']['colors'], false, 512, JSON_THROW_ON_ERROR)
+            'home_location_id' => $data['team']['home_location_id'],
+            'colors' => json_decode($data['team']['colors'], false, 512, JSON_THROW_ON_ERROR),
         ]);
-        $team->leagues()->attach( auth()?->user()?->league_id);
+        $team->leagues()->attach(auth()?->user()?->league_id);
         $team->categories()->attach($data['team']['category_id']);
         $team->tournaments()->attach($data['team']['tournament_id']);
     }
@@ -441,15 +475,11 @@ class TeamsController extends Controller
         $payload = [
             'home_location_id' => $defaults['location_id'] ?? null,
             'home_field_id' => $defaults['field_id'] ?? null,
-            'home_day_of_week' => array_key_exists('day_of_week', $defaults) && $defaults['day_of_week'] !== null
-                ? (int) $defaults['day_of_week']
+            'home_day_of_week' => array_key_exists('day_of_week', $defaults)
+                ? $this->normalizeHomeDay($defaults['day_of_week'])
                 : null,
-            'home_start_time' => $defaults['start_time'] ?? null,
+            'home_start_time' => $this->normalizeHomeStartTime($defaults['start_time'] ?? null),
         ];
-
-        if (!empty($payload['home_start_time'])) {
-            $payload['home_start_time'] = substr((string) $payload['home_start_time'], 0, 5);
-        }
 
         if (!$includeNulls) {
             foreach ($payload as $key => $value) {
@@ -462,42 +492,41 @@ class TeamsController extends Controller
         return $payload;
     }
 
-    private function normalizeAddress($value)
+    private function normalizeHomeLocation(mixed $value): ?int
     {
-        $value = trim($value);
-        return json_encode([
-            'terms' => [
-                [
-                    'value' => $value,
-                    'offset' => 0,
-                ],
-            ],
-            'types' => [
-                'establishment',
-                'tourist_attraction',
-                'point_of_interest',
-                'park',
-            ],
-            'place_id' => null,
-            'reference' => null,
-            'description' => $value,
-            'matched_substrings' => [
-                [
-                    'length' => strlen($value),
-                    'offset' => 0,
-                ],
-            ],
-            'structured_formatting' => [
-                'main_text' => $value,
-                'secondary_text' => null,
-                'main_text_matched_substrings' => [
-                    [
-                        'length' => strlen($value),
-                        'offset' => 0,
-                    ],
-                ],
-            ],
-        ], JSON_THROW_ON_ERROR);
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return (int) $value;
+    }
+
+    private function normalizeHomeDay(mixed $value): ?int
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        $day = (int) $value;
+
+        return ($day >= 0 && $day <= 6) ? $day : null;
+    }
+
+    private function normalizeHomeStartTime(mixed $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        try {
+            return Carbon::createFromFormat('H:i', (string) $value)->format('H:i:s');
+        } catch (\Throwable) {
+            try {
+                return Carbon::createFromFormat('H:i:s', (string) $value)->format('H:i:s');
+            } catch (\Throwable) {
+                return null;
+            }
+        }
     }
 
     public function search(Request $request): TeamCollection

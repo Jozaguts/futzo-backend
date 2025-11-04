@@ -23,10 +23,9 @@ it('descarga la plantilla de equipos sin columnas obsoletas', function () {
     $dataSheet = $spreadsheet->getSheetByName('Datos');
     expect($dataSheet)->not->toBeNull();
 
-    $header = $dataSheet->rangeToArray('A1:L1', null, true, true, true)[1];
+    $header = $dataSheet->rangeToArray('A1:K1', null, true, true, true)[1];
     expect(array_values($header))->toBe([
         'Nombre del equipo',
-        'Sede',
         'Color local primario',
         'Color local secundario',
         'Color visitante primario',
@@ -51,14 +50,16 @@ it('importa equipos utilizando la plantilla actualizada', function () {
     [$tournament] = createTournamentViaApi(TournamentFormatId::League->value, 1, null, null);
 
     $league = $tournament->league;
-    $location = Location::factory()->create(['name' => 'Av. Siempre Viva 742']);
-    if ($league) {
-        $league->locations()->syncWithoutDetaching([$location->id]);
-    }
+//    $location = Location::first();
+//    if (!$location){
+//        $location = Location::factory()->create(['name' => 'Av. Siempre Viva 742']);
+//    }
+//    if ($league) {
+//        $league->locations()->syncWithoutDetaching([$location->id]);
+//    }
 
     $headers = [
         'Nombre del equipo',
-        'Sede',
         'Color local primario',
         'Color local secundario',
         'Color visitante primario',
@@ -73,7 +74,6 @@ it('importa equipos utilizando la plantilla actualizada', function () {
 
     $row = [
         'Atlas Juvenil',
-        'Av. Siempre Viva 742',
         '#111111',
         '#222222',
         '#333333',
@@ -125,7 +125,7 @@ it('importa equipos utilizando la plantilla actualizada', function () {
     expect($team)->not->toBeNull();
     expect($team->colors['home']['primary'])->toBe('#111111');
     expect($team->colors['away']['primary'])->toBe('#333333');
-    expect($team->home_location_id)->toBe($location->id);
+//    expect($team->home_location_id)->toBe($location->id);
 
     $this->assertDatabaseHas('team_tournament', [
         'team_id' => $team->id,

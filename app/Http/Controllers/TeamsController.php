@@ -345,17 +345,17 @@ class TeamsController extends Controller
     {
         $expected = [
             'A' => 'Nombre del equipo',
-            'B' => 'Sede',
-            'C' => 'Color local primario',
-            'D' => 'Color local secundario',
-            'E' => 'Color visitante primario',
-            'F' => 'Color visitante secundario',
-            'G' => 'Nombre del presidente',
-            'H' => 'Teléfono del presidente',
-            'I' => 'Correo del presidente',
-            'J' => 'Nombre del entrenador',
-            'K' => 'Teléfono del entrenador',
-            'L' => 'Correo del entrenador',
+//            'B' => 'Sede',
+            'B' => 'Color local primario',
+            'C' => 'Color local secundario',
+            'D' => 'Color visitante primario',
+            'E' => 'Color visitante secundario',
+            'F' => 'Nombre del presidente',
+            'G' => 'Teléfono del presidente',
+            'H' => 'Correo del presidente',
+            'I' => 'Nombre del entrenador',
+            'J' => 'Teléfono del entrenador',
+            'K' => 'Correo del entrenador',
         ];
 
         foreach ($expected as $column => $expectedValue) {
@@ -371,53 +371,53 @@ class TeamsController extends Controller
      */
     private function storeTeamFromRow($row, $tournament): void
     {
-        $locationName = trim((string) ($row['B'] ?? ''));
-        $homeLocationId = null;
-        if ($locationName !== '') {
-            $query = Location::query()
-                ->whereRaw('LOWER(name) = ?', [Str::lower($locationName)]);
-
-            if ($tournament?->league_id) {
-                $query->whereHas('leagues', static function ($q) use ($tournament) {
-                    $q->where('league_id', $tournament->league_id);
-                });
-            }
-
-            $homeLocationId = $query->value('id');
-
-            if (!$homeLocationId) {
-                $homeLocationId = Location::query()
-                    ->whereRaw('LOWER(name) = ?', [Str::lower($locationName)])
-                    ->value('id');
-            }
-        }
+//        $locationName = trim((string) ($row['B'] ?? ''));
+//        $homeLocationId = null;
+//        if ($locationName !== '') {
+//            $query = Location::query()
+//                ->whereRaw('LOWER(name) = ?', [Str::lower($locationName)]);
+//
+//            if ($tournament?->league_id) {
+//                $query->whereHas('leagues', static function ($q) use ($tournament) {
+//                    $q->where('league_id', $tournament->league_id);
+//                });
+//            }
+//
+//            $homeLocationId = $query->value('id');
+//
+//            if (!$homeLocationId) {
+//                $homeLocationId = Location::query()
+//                    ->whereRaw('LOWER(name) = ?', [Str::lower($locationName)])
+//                    ->value('id');
+//            }
+//        }
 
         $data = [
             'team' => [
                 'name' => $row['A'],
-                'home_location_id' => $homeLocationId,
+//                'home_location_id' => $homeLocationId,
                 'colors' => json_encode([
                     'home' => [
-                        'primary' => $row['C'],
-                        'secondary' => $row['D'],
+                        'primary' => $row['B'],
+                        'secondary' => $row['C'],
                     ],
                     'away' => [
-                        'primary' => $row['E'],
-                        'secondary' => $row['F'],
+                        'primary' => $row['D'],
+                        'secondary' => $row['E'],
                     ],
                 ], JSON_THROW_ON_ERROR),
                 'category_id' => $tournament->category->id,
                 'tournament_id' => $tournament->id,
             ],
             'president' => [
-                'name' => $row['G'],
-                'phone' => $row['H'],
-                'email' => $row['I'],
+                'name' => $row['F'],
+                'phone' => $row['G'],
+                'email' => $row['H'],
             ],
             'coach' => [
-                'name' => $row['J'],
-                'phone' => $row['K'],
-                'email' => $row['L'],
+                'name' => $row['I'],
+                'phone' => $row['J'],
+                'email' => $row['K'],
             ],
         ];
         $formRequest = TeamStoreRequest::create('', 'POST', $data);
@@ -450,7 +450,7 @@ class TeamsController extends Controller
             'name' => $data['team']['name'],
             'president_id' => $president?->id,
             'coach_id' => $coach?->id,
-            'home_location_id' => $data['team']['home_location_id'],
+//            'home_location_id' => $data['team']['home_location_id'],
             'colors' => json_decode($data['team']['colors'], false, 512, JSON_THROW_ON_ERROR),
         ]);
         $team->leagues()->attach(auth()?->user()?->league_id);

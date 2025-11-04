@@ -35,7 +35,6 @@ class TeamsDataSheet implements FromCollection, WithHeadings, WithTitle, WithCol
     {
         return [
             'Nombre del equipo',
-            'Sede',
             'Color local primario',
             'Color local secundario',
             'Color visitante primario',
@@ -68,7 +67,6 @@ class TeamsDataSheet implements FromCollection, WithHeadings, WithTitle, WithCol
             'I' => 30,
             'J' => 25,
             'K' => 20,
-            'L' => 30,
         ];
     }
 

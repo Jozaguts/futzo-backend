@@ -28,7 +28,6 @@ class TeamsInstructionsSheet implements FromCollection, WithTitle, WithColumnWid
             ['', '', '', ''],
             ['Campo', 'Descripción', '¿Obligatorio?', 'Ejemplo'],
             ['Nombre del equipo', 'Nombre completo del equipo', 'Sí', 'Tigres FC'],
-            ['Sede', 'Locación registrada'],
             ['Color local primario', 'Color principal del uniforme de local en HEX', 'No', '#FF0000'],
             ['Color local secundario', 'Color secundario del uniforme de local en HEX', 'No', '#00FF00'],
             ['Color visitante primario', 'Color principal del uniforme visitante en HEX', 'No', '#0000FF'],
@@ -44,9 +43,11 @@ class TeamsInstructionsSheet implements FromCollection, WithTitle, WithColumnWid
             ['', '', '', ''],
             ['Ejemplo'],
             ['', '', '', ''],
+            ['', '', '', ''],
+            ['', '', '', ''],
+            ['', '', '', ''],
             [
                 'Nombre del equipo',
-                'Sede',
                 'Color local primario',
                 'Color local secundario',
                 'Color visitante primario',
@@ -60,7 +61,6 @@ class TeamsInstructionsSheet implements FromCollection, WithTitle, WithColumnWid
             ],
             [
                 'Leones Negros',
-                'Av. Universidad 1200',
                 '#123456',
                 '#654321',
                 '#ABCDEF',
@@ -74,7 +74,6 @@ class TeamsInstructionsSheet implements FromCollection, WithTitle, WithColumnWid
             ],
             [
                 'Águilas Doradas',
-                'Calle Palmas 200',
                 '#FFAA00',
                 '#AA00FF',
                 '#00FFAA',
@@ -88,7 +87,6 @@ class TeamsInstructionsSheet implements FromCollection, WithTitle, WithColumnWid
             ],
             [
                 'Tiburones Rojos',
-                'Malecón Costero 500',
                 '#CC0000',
                 '#0033CC',
                 '#66FF66',
@@ -112,7 +110,7 @@ class TeamsInstructionsSheet implements FromCollection, WithTitle, WithColumnWid
     {
         return [
             'A' => 30, // Nombre del equipo
-            'B' => 40, // Sede
+            'B' => 30,
             'C' => 30, // Color local primario
             'D' => 30, // Color local secundario
             'E' => 30, // Color visitante primario
@@ -122,7 +120,6 @@ class TeamsInstructionsSheet implements FromCollection, WithTitle, WithColumnWid
             'I' => 30, // Correo del presidente
             'J' => 30, // Nombre del entrenador
             'K' => 30, // Teléfono del entrenador
-            'L' => 30, // Correo del entrenador
         ];
     }
 

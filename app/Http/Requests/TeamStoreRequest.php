@@ -45,6 +45,11 @@ class TeamStoreRequest extends FormRequest
                 'team.phone' => 'nullable|string',
                 'team.category_id' => 'required|exists:categories,id',
                 'team.tournament_id' => 'required|exists:tournaments,id',
+                'team.default_home' => 'nullable|array',
+                'team.default_home.location_id' => 'nullable|integer|exists:locations,id',
+                'team.default_home.field_id' => 'nullable|integer|exists:fields,id',
+                'team.default_home.day_of_week' => 'nullable|integer|min:0|max:6',
+                'team.default_home.start_time' => 'nullable|date_format:H:i',
 
                 'president.name' => 'nullable|string',
                 'president.phone' => 'nullable|string|unique:users,phone',
@@ -126,6 +131,10 @@ class TeamStoreRequest extends FormRequest
 
         if (isset($team['address']) && is_string($team['address'])) {
             $team['address'] = json_decode($team['address'], true, 512, JSON_THROW_ON_ERROR);
+        }
+
+        if (isset($team['default_home']) && is_string($team['default_home'])) {
+            $team['default_home'] = json_decode($team['default_home'], true, 512, JSON_THROW_ON_ERROR);
         }
 
         $this->merge([

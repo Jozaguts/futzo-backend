@@ -81,38 +81,45 @@ class TeamsController extends Controller
 
             $president = $this->createOrUpdateUser($data['president'] ?? null, $request, 'president', 'dueño de equipo', RegisteredTeamPresident::class);
             $coach = $this->createOrUpdateUser($data['coach'] ?? null, $request, 'coach', 'entrenador', RegisteredTeamCoach::class);
-            $team = $data['team'];
-            $colors = $team['colors'] ?? null;
-            $address = $team['address'] ?? null;
+            $teamPayload = $data['team'];
+            $defaultHome = $teamPayload['default_home'] ?? null;
+            unset($teamPayload['default_home']);
+
+            $colors = $teamPayload['colors'] ?? null;
+            $address = $teamPayload['address'] ?? null;
+
+            if (is_string($colors)) {
+                $colors = json_decode($colors, true, 512, JSON_THROW_ON_ERROR);
+            }
 
             if (is_string($address)) {
                 $address = json_decode($address, true, 512, JSON_THROW_ON_ERROR);
             }
 
-            $team = Team::create([
-                'name' => $data['team']['name'],
+            $teamModel = Team::create([
+                'name' => $teamPayload['name'],
                 'president_id' => $president?->id,
                 'coach_id' => $coach?->id,
                 'address' => $address,
                 'colors' => $colors,
             ]);
             if ($request->hasFile('team.image')) {
-                $media = $team
+                $media = $teamModel
                     ->addMedia($request->file('team.image'))
                     ->toMediaCollection('team');
-                $team->update([
+                $teamModel->update([
                     'image' => $media->getUrl('default'),
                 ]);
             }
             $league_id = auth()?->user()?->league_id;
             if (!$league_id) {
-                $league_id = Tournament::where('id', $data['team']['tournament_id'])->firstOrFail()->league?->id;
+                $league_id = Tournament::where('id', $teamPayload['tournament_id'])->firstOrFail()->league?->id;
             }
-            $team->leagues()->attach($league_id);
-            $team->categories()->attach($data['team']['category_id']);
-            $team->tournaments()->attach($data['team']['tournament_id']);
+            $teamModel->leagues()->attach($league_id);
+            $teamModel->categories()->attach($teamPayload['category_id']);
+            $teamModel->tournaments()->attach($teamPayload['tournament_id'], $this->buildHomeDefaults($defaultHome));
             DB::commit();
-            return new TeamResource($team);
+            return new TeamResource($teamModel);
         } catch (\Exception $e) {
             DB::rollBack();
             logger('error', [
@@ -133,6 +140,18 @@ class TeamsController extends Controller
             $data = $request->validated();
             DB::beginTransaction();
             $team = Team::findOrFail($id);
+            $teamPayload = $data['team'];
+            $hasDefaultHomeKey = array_key_exists('default_home', $teamPayload);
+            $defaultHomeRaw = $hasDefaultHomeKey ? $teamPayload['default_home'] : null;
+            if (is_string($defaultHomeRaw)) {
+                $defaultHome = json_decode($defaultHomeRaw, true, 512, JSON_THROW_ON_ERROR);
+            } elseif (is_array($defaultHomeRaw)) {
+                $defaultHome = $defaultHomeRaw;
+            } else {
+                $defaultHome = null;
+            }
+            unset($teamPayload['default_home']);
+
             if (!empty($data['president'])) {
                 $team->president->update(['name' => $data['president']['name']]);
                 if ($request->hasFile('president.image')) {
@@ -159,12 +178,21 @@ class TeamsController extends Controller
                     ]);
                 }
             }
-            $address = !empty($data['team']['address']) ?  json_decode( $data['team']['address'] , true, 512, JSON_THROW_ON_ERROR) : null;
-            $colors = !empty($data['team']['colors']) ? json_decode($data['team']['colors'],true, 512, JSON_THROW_ON_ERROR) : null;
+            $address = !empty($teamPayload['address'])
+                ? (is_array($teamPayload['address'])
+                    ? $teamPayload['address']
+                    : json_decode($teamPayload['address'], true, 512, JSON_THROW_ON_ERROR))
+                : null;
+            $colors = !empty($teamPayload['colors'])
+                ? (is_array($teamPayload['colors'])
+                    ? $teamPayload['colors']
+                    : json_decode($teamPayload['colors'], true, 512, JSON_THROW_ON_ERROR))
+                : null;
+
             $team->update([
-                'name' => $data['team']['name'],
+                'name' => $teamPayload['name'],
                 'address' => $address,
-                'colors' =>$colors,
+                'colors' => $colors,
             ]);
             if ($request->hasFile('team.image')) {
 
@@ -175,8 +203,15 @@ class TeamsController extends Controller
                     'image' => $media->getUrl('default'),
                 ]);
             }
-            $team->categories()->attach($data['team']['category_id']);
-            $team->tournaments()->attach($data['team']['tournament_id']);
+            $team->categories()->syncWithoutDetaching([$teamPayload['category_id']]);
+
+            if ($hasDefaultHomeKey) {
+                $team->tournaments()->syncWithoutDetaching([
+                    $teamPayload['tournament_id'] => $this->buildHomeDefaults($defaultHome, true),
+                ]);
+            } else {
+                $team->tournaments()->syncWithoutDetaching([$teamPayload['tournament_id']]);
+            }
             $team->refresh();
             DB::commit();
             return new TeamResource($team);
@@ -392,6 +427,41 @@ class TeamsController extends Controller
     /**
      * @throws JsonException
      */
+    private function buildHomeDefaults(?array $defaults, bool $includeNulls = false): array
+    {
+        if ($defaults === null) {
+            return $includeNulls ? [
+                'home_location_id' => null,
+                'home_field_id' => null,
+                'home_day_of_week' => null,
+                'home_start_time' => null,
+            ] : [];
+        }
+
+        $payload = [
+            'home_location_id' => $defaults['location_id'] ?? null,
+            'home_field_id' => $defaults['field_id'] ?? null,
+            'home_day_of_week' => array_key_exists('day_of_week', $defaults) && $defaults['day_of_week'] !== null
+                ? (int) $defaults['day_of_week']
+                : null,
+            'home_start_time' => $defaults['start_time'] ?? null,
+        ];
+
+        if (!empty($payload['home_start_time'])) {
+            $payload['home_start_time'] = substr((string) $payload['home_start_time'], 0, 5);
+        }
+
+        if (!$includeNulls) {
+            foreach ($payload as $key => $value) {
+                if (is_null($value)) {
+                    unset($payload[$key]);
+                }
+            }
+        }
+
+        return $payload;
+    }
+
     private function normalizeAddress($value)
     {
         $value = trim($value);

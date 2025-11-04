@@ -41,6 +41,11 @@ class TeamUpdateRequest extends FormRequest
             'team.colors.away.secondary' => 'nullable|string',
             'team.category_id' => 'required|exists:categories,id',
             'team.tournament_id' => 'required|exists:tournaments,id',
+            'team.default_home' => 'nullable|array',
+            'team.default_home.location_id' => 'nullable|integer|exists:locations,id',
+            'team.default_home.field_id' => 'nullable|integer|exists:fields,id',
+            'team.default_home.day_of_week' => 'nullable|integer|min:0|max:6',
+            'team.default_home.start_time' => 'nullable|date_format:H:i',
 
             'president.name' => 'nullable|string',
             'president.image' => ['nullable', new IsImageOrUrl],

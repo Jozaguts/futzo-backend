@@ -12,7 +12,7 @@ class SyncQrConfigurationsCommand extends Command
 
     protected $description = 'Sincroniza las configuraciones de QR para todas las ligas existentes según los tipos disponibles.';
 
-    public function handle()
+    public function handle(): int
     {
         $leagues = DB::table('leagues')->pluck('id');
         $qrTypes = DB::table('qr_types')->get();

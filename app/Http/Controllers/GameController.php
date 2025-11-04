@@ -122,6 +122,7 @@ class GameController extends Controller
             'starts_at_utc' => $startsAtUtc,
             'ends_at_utc' => $endsAtUtc,
             'field_id' => (int)$data['field_id'],
+            'slot_status' => Game::SLOT_STATUS_SCHEDULED,
         ]);
 
         $game->loadMissing(['tournament.locations.fields', 'penalties.player.user']);

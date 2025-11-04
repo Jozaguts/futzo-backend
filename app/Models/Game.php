@@ -25,6 +25,8 @@ class Game extends Model
     const string STATUS_COMPLETED = 'completado';
     const string STATUS_POSTPONED = 'aplazado';
     const string STATUS_CANCELED = 'cancelado';
+    const string SLOT_STATUS_PENDING = 'pending';
+    const string SLOT_STATUS_SCHEDULED = 'scheduled';
 
     protected $fillable = [
         'home_team_id',
@@ -33,6 +35,7 @@ class Game extends Model
         'winner_team_id',
         'league_id',
         'status',
+        'slot_status',
         'field_id',
         'location_id',
         'referee_id',
@@ -62,14 +65,20 @@ class Game extends Model
         'penalty_home_goals' => 'integer',
         'penalty_away_goals' => 'integer',
         'penalty_winner_team_id' => 'integer',
+        'slot_status' => 'string',
 
+    ];
+
+    protected $attributes = [
+        'slot_status' => self::SLOT_STATUS_PENDING,
     ];
 
     public function getSlugOptions(): SlugOptions
     {
         return SlugOptions::create()
             ->generateSlugsFrom(function (Game $game) {
-                return $game->homeTeam->name . ' vs ' . $game->awayTeam->name . ' - ' . $game->match_date->format('Y-m-d');
+                $datePart = $game->match_date?->format('Y-m-d') ?? now()->format('Y-m-d');
+                return $game->homeTeam->name . ' vs ' . $game->awayTeam->name . ' - ' . $datePart;
             })
             ->saveSlugsTo('slug');
     }
@@ -77,7 +86,9 @@ class Game extends Model
     protected function matchTime(): Attribute
     {
         return Attribute::make(
-            get: fn($value, $attributes) => \Carbon\Carbon::parse($attributes['match_time'])->format('H:i')
+            get: fn($value, $attributes) => empty($attributes['match_time'])
+                ? null
+                : \Carbon\Carbon::parse($attributes['match_time'])->format('H:i')
         );
     }
 

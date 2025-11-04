@@ -22,9 +22,15 @@ class GameResource extends JsonResource
     public function toArray(Request $request): array
     {
         // 1) Fecha base: selección o fecha de partido
-        $selectedDate = $request->has('date')
-            ? Carbon::parse($request->input('date'))->startOfDay()
-            : $this->resource->match_date->copy()->startOfDay();
+        if ($request->has('date')) {
+            $selectedDate = Carbon::parse($request->input('date'))->startOfDay();
+        } elseif ($this->resource->match_date) {
+            $selectedDate = $this->resource->match_date->copy()->startOfDay();
+        } elseif ($this->resource->tournament->start_date) {
+            $selectedDate = $this->resource->tournament->start_date->copy()->startOfDay();
+        } else {
+            $selectedDate = Carbon::now()->startOfDay();
+        }
         $dayOfWeek = strtolower($selectedDate->format('l'));
 
         // 2) Campo específico: del request o el original del juego
@@ -38,8 +44,11 @@ class GameResource extends JsonResource
         $phaseStart = $phaseGamesQuery->min('match_date');
         $phaseEnd = $phaseGamesQuery->max('match_date');
 
+        $phaseStart = $phaseStart ? Carbon::parse($phaseStart) : null;
+        $phaseEnd = $phaseEnd ? Carbon::parse($phaseEnd) : null;
+
         // 4) Si la fecha solicitada está fuera de la ventana de la fase, no hay opciones
-        if ($request->has('date') && ($selectedDate->lt($phaseStart) || $selectedDate->gt($phaseEnd))) {
+        if ($request->has('date') && $phaseStart && $phaseEnd && ($selectedDate->lt($phaseStart) || $selectedDate->gt($phaseEnd))) {
             $options = [];
         } else {
             // 5) Duración total a reservar (tiempo de juego + gap admin + buffer según modalidad)
@@ -164,6 +173,12 @@ class GameResource extends JsonResource
             collect($penaltyRelation)->where('team_id', $this->resource->away_team_id)->values()
         );
 
+        $lastScheduledGame = $this->resource->tournament
+            ->games()
+            ->whereNotNull('match_date')
+            ->orderBy('match_date', 'desc')
+            ->first();
+
         return [
             'id' => $this->resource->id,
             'home' => [
@@ -181,12 +196,12 @@ class GameResource extends JsonResource
                 'group_key' => $this->when(!is_null($awayGroupKey) || $resolvedGroupKey, $awayGroupKey ?? $resolvedGroupKey),
             ],
             'details' => [
-                'date' => $this->resource->match_date->translatedFormat('D j/n'),
-                'raw_date' => $this->resource->match_date->toDateTimeString(),
+                'date' => $this->resource->match_date?->translatedFormat('D j/n'),
+                'raw_date' => $this->resource->match_date?->toDateTimeString(),
                 'raw_time' => $this->resource->match_time,
                 'time' => $this->resource->match_time ? [
-                    'hours' => Carbon::createFromFormat('H:i', $this->resource->match_time)->hour,
-                    'minutes' => Carbon::createFromFormat('H:i', $this->resource->match_time)->minute,
+                    'hours' => Carbon::parse($this->resource->match_time)->hour,
+                    'minutes' => Carbon::parse($this->resource->match_time)->minute,
                 ] : null,
                 'field' => [
                     'id' => $this->resource->field_id,
@@ -202,9 +217,10 @@ class GameResource extends JsonResource
             ],
             'round' => $this->resource->round,
             'status' => $this->resource->status,
+            'slot_status' => $this->resource->slot_status,
             'result' => $this->resource->result,
             'start_date' => $this->resource->tournament->start_date,
-            'end_date' => $this->resource->tournament->games()->orderBy('match_date', 'desc')->first()->match_date,
+            'end_date' => $lastScheduledGame?->match_date,
             'options' => $options,
             'penalties' => [
                 'decided' => (bool)$this->resource->decided_by_penalties,

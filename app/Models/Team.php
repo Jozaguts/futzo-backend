@@ -122,7 +122,16 @@ class Team extends Model implements HasMedia
 
     public function tournaments(): BelongsToMany
     {
-        return $this->belongsToMany(Tournament::class, 'team_tournament')->using(TeamTournament::class);
+        return $this->belongsToMany(Tournament::class, 'team_tournament')
+            ->using(TeamTournament::class)
+            ->withPivot([
+                'group_key',
+                'home_location_id',
+                'home_field_id',
+                'home_day_of_week',
+                'home_start_time',
+            ])
+            ->withTimestamps();
     }
 
     public function categories(): BelongsToMany

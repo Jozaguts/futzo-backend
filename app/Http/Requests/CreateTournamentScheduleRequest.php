@@ -51,9 +51,9 @@ class CreateTournamentScheduleRequest extends FormRequest
                 'min:' . $minTeams,
                 'max:' . $maxTeams,
             ],
-            'general.locations' => 'required|array',
+            'general.locations' => 'nullable|array',
             'general.locations.*.id' => [
-                'required',
+                'nullable',
                 'integer',
                 'exists:locations,id',
                 Rule::exists('location_tournament', 'location_id')->where(function ($query) use ($tournamentId) {
@@ -65,7 +65,7 @@ class CreateTournamentScheduleRequest extends FormRequest
                     });
                 }),
             ],
-            'general.locations.*.name' => 'required|string',
+            'general.locations.*.name' => 'nullable|string',
 
             // Validación de "rules_phase"
             'rules_phase' => 'required|array',
@@ -96,16 +96,16 @@ class CreateTournamentScheduleRequest extends FormRequest
             'elimination_phase.phases.*.rules.advance_if_tie' => 'sometimes|in:better_seed,none',
 
 
-            'fields_phase' => 'required|array',
-            'fields_phase.*.field_id' => 'required|integer',
-            'fields_phase.*.step' => 'required|integer',
-            'fields_phase.*.field_name' => 'required|string',
-            'fields_phase.*.location_name' => 'required|string',
-            'fields_phase.*.location_id' => 'required|integer',
-            'fields_phase.*.disabled' => 'required|boolean',
+            'fields_phase' => 'nullable|array',
+            'fields_phase.*.field_id' => 'nullable|integer',
+            'fields_phase.*.step' => 'nullable|integer',
+            'fields_phase.*.field_name' => 'nullable|string',
+            'fields_phase.*.location_name' => 'nullable|string',
+            'fields_phase.*.location_id' => 'nullable|integer',
+            'fields_phase.*.disabled' => 'nullable|boolean',
 
-            'fields_phase.*.availability' => 'required|array',
-            'fields_phase.*.availability.isCompleted' => 'required|boolean',
+            'fields_phase.*.availability' => 'nullable|array',
+            'fields_phase.*.availability.isCompleted' => 'nullable|boolean',
 
             'fields_phase.*.availability.monday' => 'nullable|array',
             'fields_phase.*.availability.monday.enabled' => 'sometimes|required|boolean',

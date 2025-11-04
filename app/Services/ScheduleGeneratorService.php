@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Game;
 use App\Models\LeagueField;
 use App\Models\Location;
+use App\Models\Field;
 use App\Models\Tournament;
 use App\Models\TournamentConfiguration;
 use App\Models\TournamentField;
@@ -21,6 +22,9 @@ class ScheduleGeneratorService
 {
     private Tournament $tournament;
     private bool $forceGroupStage = false;
+    private array $homeDefaults = [];
+    private array $fieldLocationMap = [];
+    private ?int $fallbackLocationId = null;
 
 
     public function setTournament(Tournament $tournament): self
@@ -77,6 +81,10 @@ class ScheduleGeneratorService
         $totalRounds = count($fixturesByRound);
         $weeksToGenerate = $totalRounds; // 3) una semana por ronda
 
+        if ($fields->isEmpty()) {
+            $matches = $this->makePendingSchedule($fixturesByRound);
+            return $this->finalizeMatches($matches, $matchDuration);
+        }
 
         $availableSlots = $this->generateAvailableSlots(
             $fields,
@@ -84,6 +92,11 @@ class ScheduleGeneratorService
             $matchDuration,
             $weeksToGenerate
         );
+
+        if (empty($availableSlots)) {
+            $matches = $this->makePendingSchedule($fixturesByRound);
+            return $this->finalizeMatches($matches, $matchDuration);
+        }
 
         // 5) agrupar por semana y campo
         $startOfWeekDay = Carbon::parse($this->tournament->start_date)->dayOfWeek;
@@ -171,7 +184,7 @@ class ScheduleGeneratorService
             $weekStart->addWeek();
         }
 
-        return $matches;
+        return $this->finalizeMatches($matches, $matchDuration);
     }
 
     private function makeGroupStageScheduleInternal(array $teams, $fields, int $matchDuration,  bool $roundTrip = false): array
@@ -205,12 +218,22 @@ class ScheduleGeneratorService
         }
 
         // 3) Intercalar rondas: semana 1 = ronda 1 de todos los grupos, etc.
+        if ($fields->isEmpty()) {
+            $matches = $this->makePendingGroupSchedule($groupFixtures);
+            return $this->finalizeMatches($matches, $matchDuration);
+        }
+
         $availableSlots = $this->generateAvailableSlots(
             $fields,
             $this->tournament->start_date,
             $matchDuration,
             $maxRounds
         );
+
+        if (empty($availableSlots)) {
+            $matches = $this->makePendingGroupSchedule($groupFixtures);
+            return $this->finalizeMatches($matches, $matchDuration);
+        }
 
         // 4) agrupar slots por semana y campo
         $startOfWeekDay = Carbon::parse($this->tournament->start_date)->dayOfWeek;
@@ -299,7 +322,7 @@ class ScheduleGeneratorService
 
             $weekStart->addWeek();
         }
-        return $matches;
+        return $this->finalizeMatches($matches, $matchDuration);
     }
 
     private function makeEliminationScheduleInternal($fields, int $matchDuration, $activePhase): array
@@ -404,7 +427,19 @@ class ScheduleGeneratorService
 
         // 3) slots por semana
         $weeksToGenerate = $roundTrip ? 2 : 1;
+        $legs = $roundTrip ? 2 : 1;
+
+        if ($fields->isEmpty()) {
+            $matches = $this->makePendingEliminationSchedule($pairs, $legs, $activePhase?->id ?? null);
+            return $this->finalizeMatches($matches, $matchDuration);
+        }
+
         $availableSlots = $this->generateAvailableSlots($fields, $this->tournament->start_date, $matchDuration, $weeksToGenerate);
+
+        if (empty($availableSlots)) {
+            $matches = $this->makePendingEliminationSchedule($pairs, $legs, $activePhase?->id ?? null);
+            return $this->finalizeMatches($matches, $matchDuration);
+        }
         $startOfWeekDay = Carbon::parse($this->tournament->start_date)->dayOfWeek;
         $slotsByWeekAndField = collect($availableSlots)
             ->groupBy(fn($slot) => $slot['match_time']
@@ -419,7 +454,6 @@ class ScheduleGeneratorService
 
         $matches = [];
         $globalIndex = 0;
-        $legs = $roundTrip ? 2 : 1;
         for ($leg = 1; $leg <= $legs; $leg++) {
             $weekKey = $weekStart->toDateString();
             if (!isset($slotsByWeekAndField[$weekKey])) {
@@ -476,7 +510,248 @@ class ScheduleGeneratorService
             // siguiente semana para la vuelta
             $weekStart->addWeek();
         }
+        return $this->finalizeMatches($matches, $matchDuration);
+    }
+
+    private function makePendingSchedule(array $fixturesByRound): array
+    {
+        $matches = [];
+        foreach ($fixturesByRound as $roundIndex => $fixtures) {
+            foreach ($fixtures as $pair) {
+                if (!is_array($pair) || count($pair) < 2) {
+                    continue;
+                }
+                [$home, $away] = $pair;
+                if (is_null($home) || is_null($away)) {
+                    continue;
+                }
+                $matches[] = [
+                    'tournament_id' => $this->tournament->id,
+                    'home_team_id' => $home,
+                    'away_team_id' => $away,
+                    'field_id' => null,
+                    'location_id' => null,
+                    'match_date' => null,
+                    'match_time' => null,
+                    'round' => $roundIndex + 1,
+                    'status' => Game::STATUS_SCHEDULED,
+                ];
+            }
+        }
         return $matches;
+    }
+
+    private function makePendingGroupSchedule(array $groupFixtures): array
+    {
+        $matches = [];
+        foreach ($groupFixtures as $groupKey => $rounds) {
+            $groupMatches = $this->makePendingSchedule($rounds);
+            foreach ($groupMatches as &$match) {
+                $match['group_key'] = $groupKey;
+            }
+            unset($match);
+            $matches = array_merge($matches, $groupMatches);
+        }
+        return $matches;
+    }
+
+    private function makePendingEliminationSchedule(array $pairs, int $legs, ?int $phaseId): array
+    {
+        $matches = [];
+        $legs = max(1, $legs);
+        for ($leg = 1; $leg <= $legs; $leg++) {
+            foreach ($pairs as $pair) {
+                if (!is_array($pair) || count($pair) < 2) {
+                    continue;
+                }
+                [$seedHigh, $seedLow] = $pair;
+                $home = ($leg === 1) ? $seedLow : $seedHigh;
+                $away = ($leg === 1) ? $seedHigh : $seedLow;
+
+                if (is_null($home) || is_null($away)) {
+                    continue;
+                }
+
+                $matches[] = [
+                    'tournament_id' => $this->tournament->id,
+                    'home_team_id' => $home,
+                    'away_team_id' => $away,
+                    'field_id' => null,
+                    'location_id' => null,
+                    'match_date' => null,
+                    'match_time' => null,
+                    'round' => $leg,
+                    'status' => Game::STATUS_SCHEDULED,
+                    'tournament_phase_id' => $phaseId,
+                ];
+            }
+        }
+
+        return $matches;
+    }
+
+    private function finalizeMatches(array $matches, int $matchDuration): array
+    {
+        if (empty($matches)) {
+            return [];
+        }
+
+        $this->loadHomeDefaults();
+        $this->hydrateFieldLocationMap($matches);
+        $fallbackLocationId = $this->resolveFallbackLocationId();
+
+        foreach ($matches as &$match) {
+            $homeDefaults = $this->homeDefaults[$match['home_team_id']] ?? null;
+
+            if ($homeDefaults) {
+                if (!empty($homeDefaults['home_field_id'])) {
+                    $match['field_id'] = $homeDefaults['home_field_id'];
+                }
+
+                if (!empty($homeDefaults['home_location_id'])) {
+                    $match['location_id'] = $homeDefaults['home_location_id'];
+                }
+
+                if (array_key_exists('home_day_of_week', $homeDefaults) && !is_null($homeDefaults['home_day_of_week'])) {
+                    if (empty($match['match_date'])) {
+                        $match['match_date'] = $this->resolveRoundDate($match['round'] ?? null, (int)$homeDefaults['home_day_of_week'], null);
+                    }
+                }
+
+                if (!empty($homeDefaults['home_start_time']) && empty($match['match_time'])) {
+                    $match['match_time'] = $this->normalizeMatchTime($homeDefaults['home_start_time']);
+                }
+            }
+
+            if (empty($match['match_date'])) {
+                $match['match_date'] = $this->resolveRoundDate($match['round'] ?? null, null, null);
+            }
+
+            if (empty($match['location_id']) && !empty($match['field_id'])) {
+                $match['location_id'] = $this->fieldLocationMap[$match['field_id']] ?? null;
+            }
+
+            if (empty($match['location_id'])) {
+                $match['location_id'] = $fallbackLocationId;
+            }
+
+            $match['match_time'] = $this->normalizeMatchTime($match['match_time'] ?? null);
+            $match['status'] = $match['status'] ?? Game::STATUS_SCHEDULED;
+            $match['slot_status'] = $this->resolveSlotStatus($match);
+        }
+        unset($match);
+
+        return $matches;
+    }
+
+    private function loadHomeDefaults(): void
+    {
+        if (!empty($this->homeDefaults)) {
+            return;
+        }
+
+        $rows = DB::table('team_tournament')
+            ->where('tournament_id', $this->tournament->id)
+            ->select(['team_id', 'home_field_id', 'home_location_id', 'home_day_of_week', 'home_start_time'])
+            ->get();
+
+        $this->homeDefaults = $rows->keyBy('team_id')->map(function ($row) {
+            return [
+                'home_field_id' => $row->home_field_id ? (int)$row->home_field_id : null,
+                'home_location_id' => $row->home_location_id ? (int)$row->home_location_id : null,
+                'home_day_of_week' => is_null($row->home_day_of_week) ? null : (int)$row->home_day_of_week,
+                'home_start_time' => $row->home_start_time ? Carbon::parse($row->home_start_time)->format('H:i') : null,
+            ];
+        })->toArray();
+    }
+
+    private function hydrateFieldLocationMap(array $matches): void
+    {
+        $fieldIds = [];
+        foreach ($matches as $match) {
+            if (!empty($match['field_id'])) {
+                $fieldIds[] = (int)$match['field_id'];
+            }
+        }
+        foreach ($this->homeDefaults as $defaults) {
+            if (!empty($defaults['home_field_id'])) {
+                $fieldIds[] = (int)$defaults['home_field_id'];
+            }
+        }
+        $fieldIds = array_values(array_unique(array_filter($fieldIds)));
+        if (empty($fieldIds)) {
+            return;
+        }
+
+        $this->fieldLocationMap = Field::whereIn('id', $fieldIds)
+            ->pluck('location_id', 'id')
+            ->map(fn($locationId) => $locationId ? (int)$locationId : null)
+            ->toArray();
+    }
+
+    private function resolveFallbackLocationId(): ?int
+    {
+        if (!is_null($this->fallbackLocationId)) {
+            return $this->fallbackLocationId;
+        }
+
+        $locationId = $this->tournament->locations()->value('locations.id');
+        if (!$locationId && $this->tournament->league) {
+            $locationId = $this->tournament->league->locations()->value('locations.id');
+        }
+
+        $this->fallbackLocationId = $locationId ? (int)$locationId : null;
+
+        return $this->fallbackLocationId;
+    }
+
+    private function resolveRoundDate(?int $round, ?int $preferredDayOfWeek, ?string $currentDate): ?string
+    {
+        if (!empty($currentDate)) {
+            return $currentDate;
+        }
+
+        if (empty($round) || !$this->tournament->start_date) {
+            return null;
+        }
+
+        $leagueTz = $this->tournament->league->timezone ?? config('app.timezone', 'America/Mexico_City');
+        $date = Carbon::parse($this->tournament->start_date, $leagueTz)->startOfDay()->addWeeks(max($round - 1, 0));
+
+        if (!is_null($preferredDayOfWeek)) {
+            $preferred = (int)$preferredDayOfWeek;
+            for ($i = 0; $i < 7 && $date->dayOfWeek !== $preferred; $i++) {
+                $date->addDay();
+            }
+        }
+
+        return $date->toDateString();
+    }
+
+    private function normalizeMatchTime(?string $time): ?string
+    {
+        if (empty($time)) {
+            return null;
+        }
+
+        try {
+            return Carbon::createFromFormat('H:i:s', $time)->format('H:i:s');
+        } catch (\Throwable) {
+            try {
+                return Carbon::createFromFormat('H:i', $time)->format('H:i:s');
+            } catch (\Throwable) {
+                return null;
+            }
+        }
+    }
+
+    private function resolveSlotStatus(array $match): string
+    {
+        if (!empty($match['field_id']) && !empty($match['match_time']) && !empty($match['match_date'])) {
+            return Game::SLOT_STATUS_SCHEDULED;
+        }
+
+        return Game::SLOT_STATUS_PENDING;
     }
 
     private function assignGroups(array $teams, int $teamsPerGroup, ?array $groupSizes = null): array
@@ -566,17 +841,25 @@ class ScheduleGeneratorService
 
         DB::transaction(static function () use ($matches, $phase, $leagueTz, $matchDuration) {
             foreach ($matches as $match) {
-                // Calcular UTC a partir de fecha/hora local de liga
-                $localStart = \Carbon\Carbon::parse($match['match_date'] . ' ' . $match['match_time'], $leagueTz);
-                $startsAtUtc = $localStart->clone()->setTimezone('UTC');
-                $endsAtUtc = $startsAtUtc->clone()->addMinutes($matchDuration);
+                $matchDate = $match['match_date'] ?? null;
+                $matchTime = $match['match_time'] ?? null;
+
+                $startsAtUtc = null;
+                $endsAtUtc = null;
+
+                if ($matchDate && $matchTime) {
+                    $localStart = \Carbon\Carbon::parse($matchDate . ' ' . $matchTime, $leagueTz);
+                    $startsAtUtc = $localStart->clone()->setTimezone('UTC');
+                    $endsAtUtc = $startsAtUtc->clone()->addMinutes($matchDuration);
+                }
+
                 Game::updateOrCreate(
                     [
                         'tournament_id' => $match['tournament_id'],
                         'home_team_id'  => $match['home_team_id'],
                         'away_team_id'  => $match['away_team_id'],
-                        'match_date'    => $match['match_date'],
-                        'match_time'    => $match['match_time'],
+                        'match_date'    => $matchDate,
+                        'match_time'    => $matchTime,
                         'round'         => $match['round'],
                         'field_id'      => $match['field_id'],
                         'league_id'     => auth()->user()->league->id,
@@ -586,6 +869,7 @@ class ScheduleGeneratorService
                         'starts_at_utc' => $startsAtUtc,
                         'ends_at_utc' => $endsAtUtc,
                         'group_key' => $match['group_key'] ?? null,
+                        'slot_status' => $match['slot_status'] ?? Game::SLOT_STATUS_PENDING,
                     ])
                 );
             }
@@ -693,21 +977,38 @@ class ScheduleGeneratorService
 
     public function saveConfiguration($data): self
     {
-        $groupStageEnabled = (int)$data['general']['tournament_format_id'] === TournamentFormatId::GroupAndElimination->value;
-        $this->saveTournamentConfiguration(array_merge($data['general'], [
-            'round_trip' => $data['rules_phase']['round_trip'],
+        $general = $data['general'] ?? [];
+        $rulesPhase = $data['rules_phase'] ?? [];
+        $eliminationPhase = $data['elimination_phase'] ?? [];
+        $groupStageEnabled = (int)($general['tournament_format_id'] ?? 0) === TournamentFormatId::GroupAndElimination->value;
+
+        $this->saveTournamentConfiguration(array_merge($general, [
+            'round_trip' => $rulesPhase['round_trip'] ?? false,
             'group_stage' => $groupStageEnabled,
-            'elimination_round_trip' => $data['elimination_phase']['elimination_round_trip']
+            'elimination_round_trip' => $eliminationPhase['elimination_round_trip'] ?? false,
         ]));
-        $this->saveTiebreakers($data['rules_phase']['tiebreakers']);
-        $this->saveEliminationPhase($data['elimination_phase']);
+
+        if (!empty($rulesPhase['tiebreakers'])) {
+            $this->saveTiebreakers($rulesPhase['tiebreakers']);
+        }
+
+        if (!empty($eliminationPhase)) {
+            $this->saveEliminationPhase($eliminationPhase);
+        }
+
         if (!empty($data['group_phase'])) {
             $this->saveGroupPhaseConfiguration(
                 $data['group_phase'],
-                (int)$data['general']['total_teams']
+                (int)($general['total_teams'] ?? 0)
             );
         }
-        $this->saveFieldsPhase($data['fields_phase']);
+
+        if (!empty($data['fields_phase'])) {
+            $this->saveFieldsPhase($data['fields_phase']);
+        } else {
+            $this->clearFieldsPhase();
+        }
+
         return $this;
     }
 
@@ -716,27 +1017,39 @@ class ScheduleGeneratorService
         $tournament = Tournament::where('id', $this->tournament->id)
             ->where('league_id', auth()->user()->league_id)
             ->firstOrFail();
-        $startDate = Carbon::parse($generalData['start_date']);
+
+        $startDateInput = $generalData['start_date'] ?? null;
+        $startDate = $startDateInput ? Carbon::parse($startDateInput) : null;
 
         $tournament->start_date = $startDate;
         $tournament->saveQuietly();
         $this->tournament = $tournament->refresh();
-        $locations = collect($generalData['locations'])->pluck('id');
 
-        $availableLocations = Location::whereIn('id', $locations)->get();
-        if ($availableLocations->isEmpty()) {
-            throw new RuntimeException('No hay locaciones disponibles para este torneo.');
+        $locationIds = collect($generalData['locations'] ?? [])
+            ->pluck('id')
+            ->filter()
+            ->map(static fn($id) => (int)$id)
+            ->values();
+
+        if ($locationIds->isNotEmpty()) {
+            $availableLocations = Location::whereIn('id', $locationIds)->pluck('id');
+            if ($availableLocations->count() !== $locationIds->count()) {
+                throw new RuntimeException('Las locaciones proporcionadas no pertenecen a la liga o torneo.');
+            }
+            $tournament->locations()->sync($availableLocations->all());
+        } else {
+            $tournament->locations()->detach();
         }
 
         $tournament->configuration()->save(
             TournamentConfiguration::updateOrCreate(
                 ['tournament_id' => $this->tournament->id],
                 [
-                    'tournament_format_id' => $generalData['tournament_format_id'],
-                    'football_type_id' => $generalData['football_type_id'],
-                    'game_time' => $generalData['game_time'],
-                    'time_between_games' => $generalData['time_between_games'],
-                    'round_trip' => $generalData['round_trip'],
+                    'tournament_format_id' => $generalData['tournament_format_id'] ?? $tournament->tournament_format_id,
+                    'football_type_id' => $generalData['football_type_id'] ?? $tournament->football_type_id,
+                    'game_time' => $generalData['game_time'] ?? $tournament->configuration?->game_time,
+                    'time_between_games' => $generalData['time_between_games'] ?? $tournament->configuration?->time_between_games,
+                    'round_trip' => $generalData['round_trip'] ?? false,
                     'group_stage' => $generalData['group_stage'] ?? false,
                     'elimination_round_trip' => $generalData['elimination_round_trip'] ?? false,
                 ]
@@ -1028,6 +1341,15 @@ class ScheduleGeneratorService
                 ]);
             }
         }
+    }
+
+    private function clearFieldsPhase(): void
+    {
+        DB::table('tournament_field_reservations')
+            ->where('tournament_id', $this->tournament->id)
+            ->delete();
+
+        TournamentField::where('tournament_id', $this->tournament->id)->delete();
     }
 
     private function findFirstAvailableWeekStart(array $slotsByWeekAndField, Carbon $startDate): Carbon

@@ -40,6 +40,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Arr;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
 use Maatwebsite\Excel\Facades\Excel;
@@ -796,31 +797,69 @@ class TournamentController extends Controller
 
     public function updateGameStatus(Request $request, int $tournamentId, int $roundId): JsonResponse
     {
-        $status = $request->input('status');
+        $data = $request->validate([
+            'status' => [
+                'required',
+                Rule::in([
+                    Game::STATUS_SCHEDULED,
+                    Game::STATUS_IN_PROGRESS,
+                    Game::STATUS_COMPLETED,
+                    Game::STATUS_POSTPONED,
+                    Game::STATUS_CANCELED,
+                ]),
+            ],
+        ]);
 
-        Game::where('tournament_id', $tournamentId)
+        $status = $data['status'];
+
+        $games = Game::where('tournament_id', $tournamentId)
             ->where('round', $roundId)
-            ->update(['status' => $status]);
+            ->get();
 
-        return response()->json(['message', 'Estado de partido actualizado correctamente']);
+        foreach ($games as $game) {
+            if ($game->status === $status) {
+                continue;
+            }
+
+            $game->status = $status;
+            $game->save();
+        }
+
+        return response()->json(['message' => 'Estado de partido actualizado correctamente']);
     }
 
-    public function fields(Tournament $tournament): AnonymousResourceCollection
+    public function fields(Request $request, Tournament $tournament): AnonymousResourceCollection
     {
-        $tournamentFields = $tournament->fields()->get();
-        $leagueFields = $tournament->league
-            ? $tournament->league->fields()->get()
-            : collect();
+        $locationId = $request->integer('location_id');
+
+        $tournamentFieldsQuery = $tournament->fields()->with('location');
+
+        if ($locationId) {
+            $tournamentFieldsQuery->where('fields.location_id', $locationId);
+        }
+
+        $tournamentFields = $tournamentFieldsQuery->get();
+
+        $fields = collect();
+        $fieldsSource = null;
 
         if ($tournamentFields->isNotEmpty()) {
             $fields = $tournamentFields;
             $fieldsSource = 'tournament';
-        } elseif ($leagueFields->isNotEmpty()) {
-            $fields = $leagueFields;
-            $fieldsSource = 'league';
         } else {
-            $fields = collect();
-            $fieldsSource = null;
+            $league = $tournament->league;
+            if ($league) {
+                $leagueFieldsQuery = $league->fields()->with('location');
+                if ($locationId) {
+                    $leagueFieldsQuery->where('fields.location_id', $locationId);
+                }
+                $leagueFields = $leagueFieldsQuery->get();
+
+                if ($leagueFields->isNotEmpty()) {
+                    $fields = $leagueFields;
+                    $fieldsSource = 'league';
+                }
+            }
         }
 
         return FieldResource::collection($fields)

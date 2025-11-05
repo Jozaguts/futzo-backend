@@ -8,6 +8,7 @@ use App\Http\Resources\GameTeamsPlayersCollection;
 use App\Http\Resources\LineupResource;
 use App\Models\DefaultLineup;
 use App\Models\Formation;
+use App\Models\Field;
 use App\Models\Game;
 use App\Models\GameEvent;
 use App\Models\Lineup;
@@ -49,6 +50,7 @@ class GameController extends Controller
             'day' => 'nullable|in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
         ]);
 
+        $field = Field::findOrFail($data['field_id']);
         $leagueTz = $game->tournament->league->timezone ?? config('app.timezone', 'America/Mexico_City');
         if (!empty($data['starts_at'])) {
             // Entrada ISO-8601 (con o sin TZ). Si no trae TZ, se asume TZ de la liga
@@ -122,6 +124,7 @@ class GameController extends Controller
             'starts_at_utc' => $startsAtUtc,
             'ends_at_utc' => $endsAtUtc,
             'field_id' => (int)$data['field_id'],
+            'location_id' => $field->location_id,
             'slot_status' => Game::SLOT_STATUS_SCHEDULED,
         ]);
 

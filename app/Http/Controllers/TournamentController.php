@@ -339,7 +339,9 @@ class TournamentController extends Controller
     public function scheduleSettings(Tournament $tournament): ScheduleSettingsResource
     {
         $formatName = $tournament->format->name;
-        $teamsCount = $tournament->teams->count();
+        $teamsCount = $tournament->teams()
+            ->withoutGlobalScopes()
+            ->count();
 
         $resource = $tournament->load([
             'configuration',
@@ -353,7 +355,8 @@ class TournamentController extends Controller
                         $q->where(function ($nested) use ($formatName, $teamsCount) {
                             $fallbackPhase = $formatName === 'Grupos y Eliminatoria' ? 'Fase de grupos' : 'Tabla general';
 
-                            $nested->where('phases.min_teams_for', '<=', $teamsCount)
+                            $nested->whereNull('phases.min_teams_for')
+                                ->orWhere('phases.min_teams_for', '<=', $teamsCount)
                                 ->orWhere('phases.name', $fallbackPhase);
                         });
                     }

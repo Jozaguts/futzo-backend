@@ -18,7 +18,7 @@ class TournamentPhase extends Model
 
     public function phase(): BelongsTo
     {
-        return $this->belongsTo(Phase::class);
+        return $this->belongsTo(Phase::class)->withTrashed();
     }
 
     public function tournament(): BelongsTo

@@ -38,7 +38,8 @@ class PurgeLeagueDataCommand extends Command
         {league : ID numérica o nombre exacto de la liga a limpiar}
         {--force : Ejecuta sin pedir confirmación}
         {--dry-run : Muestra el resumen sin eliminar datos}
-        {--keep-users : Conserva los usuarios y sólo los desacopla de la liga}';
+        {--keep-users : Conserva los usuarios y sólo los desacopla de la liga}
+        {--keep-locations : Conserva los locaciones de la liga}';
 
     protected $description = 'Elimina datos de prueba relacionados con una liga sin necesidad de ejecutar db:fresh.';
 
@@ -56,6 +57,7 @@ class PurgeLeagueDataCommand extends Command
 
         $dryRun = (bool) $this->option('dry-run');
         $force = (bool) $this->option('force');
+        $keepLocations = (bool) $this->option('keep-locations');
 
         if (!$dryRun && !$force) {
             $question = sprintf(
@@ -74,8 +76,8 @@ class PurgeLeagueDataCommand extends Command
         if ($dryRun) {
             $stats = $this->purgeLeague($league, false);
         } else {
-            DB::transaction(function () use ($league, &$stats) {
-                $stats = $this->purgeLeague($league, true);
+            DB::transaction(function () use ($league, &$stats, $keepLocations) {
+                $stats = $this->purgeLeague($league, true, $keepLocations);
             });
         }
 
@@ -103,7 +105,7 @@ class PurgeLeagueDataCommand extends Command
      *
      * @return array<string, int>
      */
-    private function purgeLeague(League $league, bool $commit): array
+    private function purgeLeague(League $league, bool $commit, bool $keepLocations = false): array
     {
         $leagueId = $league->id;
 
@@ -142,9 +144,9 @@ class PurgeLeagueDataCommand extends Command
                 ->count(),
             'teams' => $teamIds->count(),
             'players' => Player::withoutGlobalScopes()->withTrashed()->whereIn('team_id', $teamIds)->count(),
-            'league_fields' => $leagueFields->count(),
-            'fields' => Field::withTrashed()->whereIn('id', $fieldIds)->count(),
-            'locations' => Location::withTrashed()->whereIn('id', $locationIds)->count(),
+            'league_fields' => $leagueFields->count() . $keepLocations ? ' no se eliminaran': '',
+            'fields' => Field::withTrashed()->whereIn('id', $fieldIds)->count() . $keepLocations ? ' no se eliminaran': '',
+            'locations' => Location::withTrashed()->whereIn('id', $locationIds)->count() . $keepLocations ? ' no se eliminaran': '',
             'games' => (clone $gamesQuery)->count(),
             'standings' => (clone $standingsQuery)->count(),
             'qr_configurations' => (clone $qrQuery)->count(),
@@ -168,10 +170,15 @@ class PurgeLeagueDataCommand extends Command
 
         $this->purgeTournaments($tournaments);
         $this->purgeTeams($teamIds);
-        $fieldRemovalStats = $this->purgeFieldsAndLocations($leagueId, $leagueFields, $fieldIds, $locationIds);
-        $stats['fields_removed'] = $fieldRemovalStats['fields_removed'];
-        $stats['locations_removed'] = $fieldRemovalStats['locations_removed'];
-        $stats['league_fields_removed'] = $fieldRemovalStats['league_fields_removed'];
+        $stats['fields_removed']  = 0;
+        $stats['locations_removed']  = 0;
+        $stats['league_fields_removed']  = 0;
+        if (!$keepLocations){
+            $fieldRemovalStats = $this->purgeFieldsAndLocations($leagueId, $leagueFields, $fieldIds, $locationIds);
+            $stats['fields_removed'] = $fieldRemovalStats['fields_removed'];
+            $stats['locations_removed'] = $fieldRemovalStats['locations_removed'];
+            $stats['league_fields_removed'] = $fieldRemovalStats['league_fields_removed'];
+        }
 
         Standing::where('league_id', $leagueId)->delete();
         $stats['standings_removed'] = $stats['standings'];

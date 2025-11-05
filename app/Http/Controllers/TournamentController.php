@@ -689,7 +689,8 @@ class TournamentController extends Controller
 
     public function schedule(CreateTournamentScheduleRequest $request, Tournament $tournament): JsonResponse
     {
-        $service = new ScheduleGeneratorService();
+        /** @var ScheduleGeneratorService $service */
+        $service = app(ScheduleGeneratorService::class);
         $matches = $service->setTournament($tournament)
             ->enableGroupStageMode($request->has('group_phase'))
             ->saveConfiguration($request->validated())

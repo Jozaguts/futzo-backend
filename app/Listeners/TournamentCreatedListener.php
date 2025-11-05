@@ -4,23 +4,13 @@ namespace App\Listeners;
 
 use App\Events\TournamentCreatedEvent;
 use App\Models\DefaultTournamentConfiguration;
-use App\Models\Phase;
 use App\Models\Tournament;
 use App\Models\TournamentConfiguration;
-use App\Enums\TournamentFormatId;
+use App\Services\TournamentPhaseService;
 
 class TournamentCreatedListener
 {
-    private const FALLBACK_PHASE = 'Tabla general';
-    private const FORMAT_PHASES = [
-        TournamentFormatId::League->value => ['Tabla general'],
-        TournamentFormatId::LeagueAndElimination->value => ['Tabla general', 'Dieciseisavos de Final', 'Octavos de Final', 'Cuartos de Final', 'Semifinales', 'Final'],
-        TournamentFormatId::GroupAndElimination->value => ['Fase de grupos', 'Dieciseisavos de Final', 'Octavos de Final', 'Cuartos de Final', 'Semifinales', 'Final'],
-        TournamentFormatId::Elimination->value => ['Dieciseisavos de Final', 'Octavos de Final', 'Cuartos de Final', 'Semifinales', 'Final'],
-        TournamentFormatId::Swiss->value => ['Tabla general'],
-    ];
-
-    public function __construct()
+    public function __construct(private readonly TournamentPhaseService $phaseService)
     {
     }
 
@@ -56,28 +46,6 @@ class TournamentCreatedListener
             $tieBreaker['tournament_configuration_id'] = $event->tournament->configuration->id;
             $event->tournament->configuration->tiebreakers()->create($tieBreaker);
         }
-        $this->assignPhases($event->tournament);
-    }
-
-    private function assignPhases(Tournament $tournament): void
-    {
-        $phaseNames = collect(self::FORMAT_PHASES[$tournament->tournament_format_id] ?? [self::FALLBACK_PHASE]);
-        $phases = Phase::whereIn('name', $phaseNames)->get()->keyBy('name');
-
-        $phaseNames->each(function (string $phaseName, int $index) use ($phases, $tournament) {
-            /** @var Phase|null $phase */
-            $phase = $phases->get($phaseName);
-            if (!$phase) {
-                return;
-            }
-
-            $tournament->tournamentPhases()->firstOrCreate(
-                ['phase_id' => $phase->id],
-                [
-                    'is_active' => $index === 0,
-                    'is_completed' => false,
-                ]
-            );
-        });
+        $this->phaseService->sync($event->tournament->fresh());
     }
 }

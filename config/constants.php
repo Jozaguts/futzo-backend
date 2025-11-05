@@ -204,7 +204,7 @@ return [
             'game_time' => 90,
             'time_between_games' => 0,
             'round_trip' => 1,
-            'group_stage' => 1,
+            'group_stage' => 0,
             'elimination_round_trip' => 1
         ],
         [
@@ -219,7 +219,7 @@ return [
             'game_time' => 60,
             'time_between_games' => 0,
             'round_trip' => 1,
-            'group_stage' => 1,
+            'group_stage' => 0,
             'elimination_round_trip' => 1
         ],
         [
@@ -234,7 +234,7 @@ return [
             'game_time' => 60,
             'time_between_games' => 0,
             'round_trip' => 1,
-            'group_stage' => 1,
+            'group_stage' => 0,
             'elimination_round_trip' => 1
         ],
         [

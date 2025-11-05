@@ -13,6 +13,7 @@ use App\Models\TournamentField;
 use App\Models\TournamentPhase;
 use App\Models\TournamentTiebreaker;
 use App\Services\GroupConfigurationOptionService;
+use App\Services\TournamentPhaseService;
 use App\Support\MatchDuration;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -27,6 +28,9 @@ class ScheduleGeneratorService
     private array $fieldLocationMap = [];
     private ?int $fallbackLocationId = null;
 
+    public function __construct(private readonly TournamentPhaseService $phaseService)
+    {
+    }
 
     public function setTournament(Tournament $tournament): self
     {
@@ -1048,6 +1052,9 @@ class ScheduleGeneratorService
         } else {
             $this->clearFieldsPhase();
         }
+
+        $this->tournament = $this->tournament->refresh();
+        $this->phaseService->sync($this->tournament);
 
         return $this;
     }

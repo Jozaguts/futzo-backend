@@ -7,6 +7,7 @@ use App\Events\RegisteredTeamPresident;
 use App\Exports\TeamsTemplateExport;
 use App\Facades\QrTemplateRendererService;
 use App\Http\Requests\ImportTeamsRequest;
+use App\Http\Requests\TeamHomePreferencesRequest;
 use App\Http\Requests\TeamStoreRequest;
 use App\Http\Requests\TeamUpdateRequest;
 use App\Http\Resources\DefaultLineupResource;
@@ -34,6 +35,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use JsonException;
 use Maatwebsite\Excel\Facades\Excel;
 use PhpOffice\PhpSpreadsheet\Exception;
@@ -46,7 +48,10 @@ class TeamsController extends Controller
 
     public function index(Request $request): TeamCollection
     {
-        $teams = Team::with(['tournaments' => fn($q) => $q->orderBy('name','desc')])
+        $teams = Team::with([
+                'tournaments' => fn($q) => $q->orderBy('name', 'desc'),
+                'homeLocation',
+            ])
              ->orderBy('id','desc')
             ->paginate(
                 $request->get('per_page', 10),
@@ -235,6 +240,31 @@ class TeamsController extends Controller
             ]);
             return response()->json(['success' => false, 'message' => $e->getMessage()], 401);
         }
+    }
+
+    public function updateHomePreferences(TeamHomePreferencesRequest $request, Team $team): TeamResource
+    {
+        $payload = $request->validated();
+
+        $homeLocationId = $this->normalizeHomeLocation($payload['home_location_id'] ?? null);
+
+        // Validamos que la sede exista dentro de la liga actual antes de continuar.
+        $this->assertLocationBelongsToLeague($homeLocationId);
+
+        // Normalizamos la información antes de persistirla para mantener consistencia en la base de datos.
+        $attributes = [
+            'home_location_id' => $homeLocationId,
+            'home_day_of_week' => $this->normalizeHomeDay($payload['home_day_of_week'] ?? null),
+            'home_start_time' => $this->normalizeHomeStartTime($payload['home_start_time'] ?? null),
+        ];
+
+        DB::transaction(static function () use ($team, $attributes) {
+            $team->update($attributes);
+        });
+
+        $team->refresh()->loadMissing(['homeLocation']);
+
+        return new TeamResource($team);
     }
 
     public function destroy($id): void
@@ -526,6 +556,31 @@ class TeamsController extends Controller
             } catch (\Throwable) {
                 return null;
             }
+        }
+    }
+
+    private function assertLocationBelongsToLeague(?int $locationId): void
+    {
+        if (!$locationId) {
+            return;
+        }
+
+        $leagueId = auth()->user()?->league_id;
+
+        if (!$leagueId) {
+            return;
+        }
+
+        // Aseguramos que la sede esté vinculada a la liga del usuario autenticado.
+        $belongsToLeague = DB::table('league_location')
+            ->where('league_id', $leagueId)
+            ->where('location_id', $locationId)
+            ->exists();
+
+        if (!$belongsToLeague) {
+            throw ValidationException::withMessages([
+                'home_location_id' => ['La sede seleccionada no pertenece a tu liga.'],
+            ]);
         }
     }
 

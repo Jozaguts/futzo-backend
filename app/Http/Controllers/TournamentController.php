@@ -807,11 +807,28 @@ class TournamentController extends Controller
 
     public function fields(Tournament $tournament): AnonymousResourceCollection
     {
-        return FieldResource::collection($tournament->fields)
+        $tournamentFields = $tournament->fields()->get();
+        $leagueFields = $tournament->league
+            ? $tournament->league->fields()->get()
+            : collect();
+
+        if ($tournamentFields->isNotEmpty()) {
+            $fields = $tournamentFields;
+            $fieldsSource = 'tournament';
+        } elseif ($leagueFields->isNotEmpty()) {
+            $fields = $leagueFields;
+            $fieldsSource = 'league';
+        } else {
+            $fields = collect();
+            $fieldsSource = null;
+        }
+
+        return FieldResource::collection($fields)
             ->additional([
                 'meta' => [
                     'tournament_id' => $tournament->id,
-                    'tournament_name' => $tournament->name
+                    'tournament_name' => $tournament->name,
+                    'fields_source' => $fieldsSource,
                 ]
             ]);
     }

@@ -13,22 +13,53 @@ use RuntimeException;
 
 class TournamentScheduleRegenerationService
 {
-    public function analyze(Tournament $tournament): array
+    public function canUpdateStartDate(Tournament $tournament): bool
+    {
+        $games = Game::query()
+            ->where('tournament_id', $tournament->id)
+            ->orderBy('round')
+            ->get(['round', 'status']);
+
+        if ($games->isEmpty()) {
+            return true;
+        }
+
+        $allScheduled = $games->every(static fn($game) => $game->status === Game::STATUS_SCHEDULED);
+
+        $firstRound = $games->min('round');
+        if ($firstRound === null) {
+            return true;
+        }
+
+        $firstRoundHasStarted = $games
+            ->where('round', $firstRound)
+            ->contains(static fn($game) => $game->status !== Game::STATUS_SCHEDULED);
+
+        if ($allScheduled) {
+            return true;
+        }
+
+        return !$firstRoundHasStarted;
+    }
+
+    public function analyze(Tournament $tournament, ?bool $roundTripOverride = null): array
     {
         $games = Game::query()
             ->where('tournament_id', $tournament->id)
             ->orderBy('round')
             ->get(['id', 'round', 'status']);
 
+        $roundTrip = $roundTripOverride ?? (bool)($tournament->configuration?->round_trip ?? false);
+
         if ($games->isEmpty()) {
-            return [
+            return $this->augmentAnalysis($tournament, [
                 'mode' => 'full',
                 'cutoff_round' => null,
                 'completed_rounds' => 0,
                 'total_rounds' => 0,
                 'pending_manual_matches' => 0,
                 'explanation' => 'No hay partidos programados. El calendario se regenerará completamente.',
-            ];
+            ], $roundTrip);
         }
 
         $roundGroups = $games->groupBy('round')->sortKeys();
@@ -36,41 +67,41 @@ class TournamentScheduleRegenerationService
         $completedRounds = $this->resolveCompletedRounds($roundGroups);
 
         if (!$games->contains('status', Game::STATUS_COMPLETED)) {
-            return [
+            return $this->augmentAnalysis($tournament, [
                 'mode' => 'full',
                 'cutoff_round' => null,
                 'completed_rounds' => 0,
                 'total_rounds' => $maxRound,
                 'pending_manual_matches' => $this->countPendingManualMatches($tournament->id),
                 'explanation' => 'No hay partidos completados. El calendario se regenerará completamente.',
-            ];
+            ], $roundTrip);
         }
 
         if ($completedRounds === 0) {
-            return [
+            return $this->augmentAnalysis($tournament, [
                 'mode' => 'full',
                 'cutoff_round' => null,
                 'completed_rounds' => 0,
                 'total_rounds' => $maxRound,
                 'pending_manual_matches' => $this->countPendingManualMatches($tournament->id),
                 'explanation' => 'Aún no hay jornadas completadas. El calendario se regenerará completamente.',
-            ];
+            ], $roundTrip);
         }
 
         if ($completedRounds >= $maxRound) {
-            return [
+            return $this->augmentAnalysis($tournament, [
                 'mode' => 'full',
                 'cutoff_round' => null,
                 'completed_rounds' => $completedRounds,
                 'total_rounds' => $maxRound,
                 'pending_manual_matches' => $this->countPendingManualMatches($tournament->id),
                 'explanation' => 'Todas las jornadas están completadas. No hay partidos pendientes para regenerar.',
-            ];
+            ], $roundTrip);
         }
 
         $cutoffRound = $completedRounds + 1;
 
-        return [
+        return $this->augmentAnalysis($tournament, [
             'mode' => 'partial',
             'cutoff_round' => $cutoffRound,
             'completed_rounds' => $completedRounds,
@@ -81,7 +112,7 @@ class TournamentScheduleRegenerationService
                 $completedRounds,
                 $cutoffRound
             ),
-        ];
+        ], $roundTrip);
     }
 
     public function regenerate(Tournament $tournament, array $analysis): array
@@ -322,6 +353,48 @@ class TournamentScheduleRegenerationService
                     ->orWhereNull('field_id');
             })
             ->count();
+    }
+
+    private function augmentAnalysis(Tournament $tournament, array $analysis, bool $roundTrip): array
+    {
+        $totalTeams = $this->resolveTeamCount($tournament);
+        $hasBye = $totalTeams > 0 && ($totalTeams % 2 !== 0);
+        $matchesPerRound = $totalTeams < 2 ? 0 : intdiv($totalTeams, 2);
+        if ($totalTeams > 1 && $hasBye) {
+            $matchesPerRound = intdiv($totalTeams - 1, 2);
+        }
+        $baseRounds = 0;
+        if ($totalTeams > 1) {
+            $baseRounds = $hasBye ? $totalTeams : ($totalTeams - 1);
+        }
+        $projectedRounds = $roundTrip ? $baseRounds * 2 : $baseRounds;
+        $totalMatches = $matchesPerRound * $projectedRounds;
+
+        $message = $roundTrip
+            ? 'El calendario regular se generará con partidos de ida y vuelta.'
+            : 'El calendario regular se generará con partidos solo de ida.';
+
+        return array_merge($analysis, [
+            'round_trip_selected' => $roundTrip,
+            'round_trip_message' => $message,
+            'matches_per_round' => $matchesPerRound,
+            'projected_rounds' => $projectedRounds,
+            'total_matches' => $totalMatches,
+            'has_bye' => $hasBye,
+        ]);
+    }
+
+    private function resolveTeamCount(Tournament $tournament): int
+    {
+        if ($tournament->relationLoaded('teams')) {
+            return (int)$tournament->teams->count();
+        }
+
+        if (isset($tournament->teams_count)) {
+            return (int)$tournament->teams_count;
+        }
+
+        return (int)$tournament->teams()->count();
     }
 
     private function logRegeneration(Tournament $tournament, int $leagueId, string $mode, array $result): ScheduleRegenerationLog

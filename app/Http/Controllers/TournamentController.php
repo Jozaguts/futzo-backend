@@ -29,10 +29,12 @@ use App\Models\Team;
 use App\Models\Tournament;
 use App\Models\TournamentFormat;
 use App\Models\TournamentPhase;
+use App\Models\TournamentConfiguration;
 use App\Models\TournamentFieldReservation;
 use App\Services\ScheduleGeneratorService;
 use App\Services\TournamentScheduleRegenerationService;
 use Barryvdh\Snappy\Facades\SnappyImage;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -602,7 +604,21 @@ class TournamentController extends Controller
         Tournament $tournament,
         TournamentScheduleRegenerationService $service
     ): JsonResponse {
-        $analysis = $service->analyze($tournament);
+        $data = $request->validate([
+            'start_date' => ['nullable', 'date'],
+            'round_trip' => ['nullable', 'boolean'],
+        ]);
+        $roundTripSelected = array_key_exists('round_trip', $data)
+            ? (bool)$data['round_trip']
+            : null;
+        $requestedStartDate = !empty($data['start_date'])
+            ? Carbon::parse($data['start_date'])->startOfDay()
+            : null;
+        if ($requestedStartDate && $service->canUpdateStartDate($tournament)) {
+            $tournament->start_date = $requestedStartDate;
+        }
+        $tournament->loadCount('teams');
+        $analysis = $service->analyze($tournament, $roundTripSelected);
 
         return response()->json($analysis);
     }
@@ -612,6 +628,45 @@ class TournamentController extends Controller
         Tournament $tournament,
         TournamentScheduleRegenerationService $service
     ): JsonResponse {
+        $data = $request->validate([
+            'start_date' => ['nullable', 'date'],
+            'round_trip' => ['nullable', 'boolean'],
+        ]);
+        $requestedStartDate = !empty($data['start_date'])
+            ? Carbon::parse($data['start_date'])->startOfDay()
+            : null;
+        $roundTripProvided = array_key_exists('round_trip', $data);
+        $roundTripSelected = $roundTripProvided ? (bool)$data['round_trip'] : null;
+        $canUpdateStartDate = $service->canUpdateStartDate($tournament);
+        if ($requestedStartDate && !$canUpdateStartDate) {
+            throw ValidationException::withMessages([
+                'start_date' => ['No es posible actualizar la fecha de inicio porque la jornada 1 ya ha comenzado.'],
+            ]);
+        }
+        if ($requestedStartDate && $canUpdateStartDate) {
+            $currentStartDate = optional($tournament->start_date)?->copy()?->startOfDay();
+            if (!$currentStartDate || !$currentStartDate->equalTo($requestedStartDate)) {
+                $tournament->update([
+                    'start_date' => $requestedStartDate,
+                ]);
+            }
+        }
+        if ($roundTripProvided) {
+            $configuration = $tournament->configuration;
+            if ($configuration) {
+                $configuration->forceFill([
+                    'round_trip' => $roundTripSelected,
+                ])->save();
+            } else {
+                TournamentConfiguration::create([
+                    'tournament_id' => $tournament->id,
+                    'round_trip' => $roundTripSelected,
+                ]);
+            }
+        }
+        $tournament->refresh();
+        $tournament->load(['configuration']);
+        $tournament->loadCount('teams');
         try {
             $analysis = $service->analyze($tournament);
             $result = $service->regenerate($tournament, $analysis);

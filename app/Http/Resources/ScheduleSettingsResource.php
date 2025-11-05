@@ -2,9 +2,10 @@
 
 namespace App\Http\Resources;
 
-use App\Services\GroupConfigurationOptionService;
 use App\Models\Game;
 use App\Models\ScheduleRegenerationLog;
+use App\Services\GroupConfigurationOptionService;
+use App\Services\TournamentScheduleRegenerationService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -27,6 +28,9 @@ class ScheduleSettingsResource extends JsonResource
                     ->orWhereNull('field_id');
             })
             ->count();
+        /** @var TournamentScheduleRegenerationService $regenerationService */
+        $regenerationService = app(TournamentScheduleRegenerationService::class);
+        $canUpdateStartDate = $regenerationService->canUpdateStartDate($this->resource);
         $selectedOptionId = null;
         $groupConfiguration = $this->resource->groupConfiguration;
         if ($groupConfiguration && !empty($groupOptions) && is_array($groupConfiguration->group_sizes)) {
@@ -99,9 +103,10 @@ class ScheduleSettingsResource extends JsonResource
         return [
             'tournament_id' => $this->resource->id,
             'penalty_draw_enabled' => (bool)$this->resource->penalty_draw_enabled,
-            'round_trip' => $this->resource->configuration->round_trip,
+            'round_trip' => (bool) optional($this->resource->configuration)->round_trip,
             'start_date' => $this->resource->start_date?->format('Y-m-d'),
             'end_date' => $this->resource->end_date?->format('Y-m-d'),
+            'can_update_start_date' => $canUpdateStartDate,
             'elimination_round_trip' => $this->resource->configuration->elimination_round_trip ?? null,
             'game_time' => $this->resource->configuration->game_time ?? null,
             'min_teams' => $this->resource->configuration->min_teams ?? null,

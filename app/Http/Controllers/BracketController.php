@@ -114,11 +114,29 @@ class BracketController extends Controller
             'matches' => 'required|array|min:1',
             'matches.*.home_team_id' => 'required|integer|exists:teams,id',
             'matches.*.away_team_id' => 'required|integer|exists:teams,id',
-            'matches.*.field_id' => 'required|integer|exists:fields,id',
+            'matches.*.field_id' => 'nullable|integer|exists:fields,id',
             'matches.*.match_date' => 'required|date',
             'matches.*.match_time' => 'required|date_format:H:i',
             'matches.*.leg' => 'sometimes|integer|min:1',
         ]);
+
+        $normalizedMatches = [];
+        foreach ($data['matches'] as $index => $match) {
+            try {
+                $matchDate = \Carbon\Carbon::parse($match['match_date'])->toDateString();
+            } catch (\Throwable $exception) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    "matches.$index.match_date" => ['La fecha del partido es inválida.'],
+                ]);
+            }
+
+            $normalizedMatches[] = array_merge($match, [
+                'field_id' => !empty($match['field_id']) ? (int)$match['field_id'] : null,
+                'match_date' => $matchDate,
+                'match_time' => $match['match_time'],
+            ]);
+        }
+        $data['matches'] = $normalizedMatches;
 
         // Fase destino
         $tp = $tournament->tournamentPhases()
@@ -145,11 +163,13 @@ class BracketController extends Controller
             if ((int)$m['home_team_id'] === (int)$m['away_team_id']) {
                 abort(422, 'Un equipo no puede enfrentarse a sí mismo.');
             }
-            $key = $m['field_id'] . '|' . \Carbon\Carbon::parse($m['match_date'])->toDateString() . '|' . $m['match_time'];
-            if (isset($fieldTimeSet[$key])) {
-                abort(422, 'Hay partidos duplicados en el mismo campo y hora dentro de la solicitud.');
+            if (!empty($m['field_id'])) {
+                $key = $m['field_id'] . '|' . \Carbon\Carbon::parse($m['match_date'])->toDateString() . '|' . $m['match_time'];
+                if (isset($fieldTimeSet[$key])) {
+                    abort(422, 'Hay partidos duplicados en el mismo campo y hora dentro de la solicitud.');
+                }
+                $fieldTimeSet[$key] = true;
             }
-            $fieldTimeSet[$key] = true;
 
             $dateStr = \Carbon\Carbon::parse($m['match_date'])->toDateString();
             foreach (['home_team_id','away_team_id'] as $side) {
@@ -179,12 +199,14 @@ class BracketController extends Controller
             $date = \Carbon\Carbon::parse($m['match_date'])->toDateString();
             $time = $m['match_time'] . ':00';
 
-            $exists = \App\Models\Game::where('field_id', $m['field_id'])
-                ->whereDate('match_date', $date)
-                ->where('match_time', $time)
-                ->exists();
-            if ($exists) {
-                abort(422, 'Ya existe un partido programado en ese campo y hora.');
+            if (!empty($m['field_id'])) {
+                $exists = \App\Models\Game::where('field_id', $m['field_id'])
+                    ->whereDate('match_date', $date)
+                    ->where('match_time', $time)
+                    ->exists();
+                if ($exists) {
+                    abort(422, 'Ya existe un partido programado en ese campo y hora.');
+                }
             }
 
             // Descanso con juegos ya existentes del torneo para cada equipo
@@ -205,7 +227,10 @@ class BracketController extends Controller
                     }
                 }
             }
-            $locationId = \DB::table('fields')->where('id', $m['field_id'])->value('location_id');
+            $locationId = null;
+            if (!empty($m['field_id'])) {
+                $locationId = \DB::table('fields')->where('id', $m['field_id'])->value('location_id');
+            }
 
             $created[] = \App\Models\Game::create([
                 'tournament_id' => $tournament->id,
@@ -213,8 +238,8 @@ class BracketController extends Controller
                 'tournament_phase_id' => $tp->id,
                 'home_team_id' => (int)$m['home_team_id'],
                 'away_team_id' => (int)$m['away_team_id'],
-                'field_id' => (int)$m['field_id'],
-                'location_id' => (int)$locationId,
+                'field_id' => $m['field_id'] ? (int)$m['field_id'] : null,
+                'location_id' => $locationId ? (int)$locationId : null,
                 'match_date' => $date,
                 'match_time' => $time,
                 'round' => (int)($m['leg'] ?? 1),

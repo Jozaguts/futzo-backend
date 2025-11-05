@@ -6,6 +6,7 @@ use App\Models\Phase;
 use App\Models\Standing;
 use App\Models\TournamentPhase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class StandingsService
 {
@@ -27,6 +28,11 @@ class StandingsService
     public function recalculateStandingsForPhase(int $tournamentId, ?int $tournamentPhaseId = null, ?int $triggeringGameId = null): void
     {
         DB::transaction(function () use ($tournamentId, $tournamentPhaseId, $triggeringGameId) {
+            Log::info('StandingsService::recalculateStandingsForPhase:start', [
+                'tournament_id' => $tournamentId,
+                'tournament_phase_id' => $tournamentPhaseId,
+                'triggering_game_id' => $triggeringGameId,
+            ]);
             $penaltyDrawEnabled = (bool) DB::table('tournaments')
                 ->where('id', $tournamentId)
                 ->value('penalty_draw_enabled');
@@ -87,6 +93,12 @@ class StandingsService
                 ->orderBy('match_time')
                 ->orderBy('id')
                 ->get();
+            Log::info('StandingsService::recalculateStandingsForPhase:games-fetched', [
+                'count' => $games->count(),
+                'tournament_id' => $tournamentId,
+                'phase_filter' => $tournamentPhaseId,
+                'penalty_draw_enabled' => $penaltyDrawEnabled,
+            ]);
 
             // Detectar si es fase de grupos
             $isGroupPhase = false;
@@ -94,6 +106,10 @@ class StandingsService
                 $phaseName = $phaseNameMap[$tournamentPhaseId] ?? null;
                 $isGroupPhase = ($phaseName === 'Fase de grupos');
             }
+            Log::info('StandingsService::recalculateStandingsForPhase:phase-context', [
+                'is_group_phase' => $isGroupPhase,
+                'phase_name' => $phaseNameMap[$tournamentPhaseId] ?? null,
+            ]);
 
             // 4) Procesar cada juego (cronológico) y actualizar estructuras
             foreach ($games as $g) {
@@ -110,6 +126,13 @@ class StandingsService
                     $gkH = $teamGroupMap[$home] ?? null;
                     $gkA = $teamGroupMap[$away] ?? null;
                     if (empty($gkH) || empty($gkA) || $gkH !== $gkA) {
+                        Log::debug('StandingsService::recalculateStandingsForPhase:skip-cross-group-game', [
+                            'game_id' => $g->id,
+                            'home_team_id' => $home,
+                            'away_team_id' => $away,
+                            'home_group' => $gkH,
+                            'away_group' => $gkA,
+                        ]);
                         continue; // ignorar partidos cruzados
                     }
                 }
@@ -138,6 +161,16 @@ class StandingsService
                 }
 
                 // Home update
+                Log::debug('StandingsService::process-game', [
+                    'game_id' => $g->id,
+                    'home_team_id' => $home,
+                    'away_team_id' => $away,
+                    'home_goals' => $hg,
+                    'away_goals' => $ag,
+                    'decided_by_penalties' => $g->decided_by_penalties,
+                    'penalty_winner_team_id' => $g->penalty_winner_team_id,
+                ]);
+
                 $stats[$home]['matches_played']++;
                 $stats[$home]['goals_for'] += $hg;
                 $stats[$home]['goals_against'] += $ag;
@@ -170,10 +203,18 @@ class StandingsService
                         $stats[$home]['draws']++;
                         ++$stats[$home]['points'];
                         $stats[$home]['results'][] = 'D';
+                        Log::debug('StandingsService::process-game:draw', [
+                            'game_id' => $g->id,
+                            'team_id' => $home,
+                        ]);
 
                         $stats[$away]['draws']++;
                         ++$stats[$away]['points'];
                         $stats[$away]['results'][] = 'D';
+                        Log::debug('StandingsService::process-game:draw', [
+                            'game_id' => $g->id,
+                            'team_id' => $away,
+                        ]);
                     }
                 } else {
                     $stats = $this->updateStats($stats, $away, $home);
@@ -216,10 +257,29 @@ class StandingsService
                         'updated_after_game_id' => $triggeringGameId,
                     ]
                 );
+                Log::info('StandingsService::recalculateStandingsForPhase:standing-updated', [
+                    'team_id' => $teamId,
+                    'team_tournament_id' => $s['team_tournament_id'],
+                    'tournament_phase_id' => $standingsPhaseId,
+                    'matches_played' => $s['matches_played'],
+                    'wins' => $s['wins'],
+                    'draws' => $s['draws'],
+                    'losses' => $s['losses'],
+                    'goals_for' => $s['goals_for'],
+                    'goals_against' => $s['goals_against'],
+                    'points' => $s['points'],
+                    'last_5' => $last5Str,
+                ]);
             }
 
             // 6) Recalcular ranks (standard competition ranking)
             $this->recalculateRanks($tournamentId, $standingsPhaseId, $tournamentPhaseId);
+            Log::info('StandingsService::recalculateStandingsForPhase:completed', [
+                'tournament_id' => $tournamentId,
+                'tournament_phase_id' => $tournamentPhaseId,
+                'standings_phase_id' => $standingsPhaseId,
+                'teams_processed' => count($stats),
+            ]);
         });
     }
 
@@ -259,6 +319,12 @@ class StandingsService
         }
 
         $rows = $query->get();
+        Log::info('StandingsService::recalculateRanks:fetched-rows', [
+            'tournament_id' => $tournamentId,
+            'standings_phase_id' => $standingsPhaseId,
+            'row_count' => $rows->count(),
+            'tiebreakers' => $tiebreakers,
+        ]);
 
         // Detectar bloques empatados
         $rank = 1;
@@ -300,12 +366,22 @@ class StandingsService
             // Si hay empate y "Resultado entre equipos" está activo
             if (count($block) > 1 && in_array('Resultado entre equipos', $tiebreakers)) {
                 $block = $this->applyHeadToHead($block, $tournamentId, $phaseFilter);
+                Log::info('StandingsService::recalculateRanks:head-to-head-applied', [
+                    'team_ids' => array_map(fn($s) => $s->team_id, $block),
+                    'tournament_id' => $tournamentId,
+                    'phase_filter' => $phaseFilter,
+                ]);
             }
 
             // Asignar rank secuencial (sin repeticiones)
             foreach ($block as $b) {
                 $b->rank = $rank++;
                 $b->saveQuietly();
+                Log::debug('StandingsService::recalculateRanks:rank-updated', [
+                    'standing_id' => $b->id,
+                    'team_id' => $b->team_id,
+                    'rank' => $b->rank,
+                ]);
             }
 
             $i = $j;
@@ -337,6 +413,13 @@ class StandingsService
         foreach ($games as $g) {
             $hg = (int)$g->home_goals;
             $ag = (int)$g->away_goals;
+            Log::debug('StandingsService::applyHeadToHead:process-game', [
+                'game_id' => $g->id,
+                'home_team_id' => $g->home_team_id,
+                'away_team_id' => $g->away_team_id,
+                'home_goals' => $hg,
+                'away_goals' => $ag,
+            ]);
 
             // Stats para local
             $mini[$g->home_team_id]['goals_for'] += $hg;
@@ -370,6 +453,9 @@ class StandingsService
         }
 
         // Ordenar bloque usando mini tabla
+        Log::debug('StandingsService::applyHeadToHead:mini-table', [
+            'mini' => $mini,
+        ]);
         usort($block, function ($a, $b) use ($mini) {
             return
                 ($mini[$b->team_id]['points'] <=> $mini[$a->team_id]['points']) ?:
@@ -394,9 +480,18 @@ class StandingsService
         $stats[$away]['wins']++;
         $stats[$away]['points'] += 3;
         $stats[$away]['results'][] = 'W';
+        Log::debug('StandingsService::updateStats:win', [
+            'team_id' => $away,
+            'wins' => $stats[$away]['wins'],
+            'points' => $stats[$away]['points'],
+        ]);
 
         $stats[$home]['losses']++;
         $stats[$home]['results'][] = 'L';
+        Log::debug('StandingsService::updateStats:loss', [
+            'team_id' => $home,
+            'losses' => $stats[$home]['losses'],
+        ]);
         return $stats;
     }
 

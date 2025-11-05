@@ -40,6 +40,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
@@ -812,18 +813,41 @@ class TournamentController extends Controller
 
         $status = $data['status'];
 
+        Log::info('TournamentController::updateGameStatus:start', [
+            'tournament_id' => $tournamentId,
+            'round_id' => $roundId,
+            'status' => $status,
+            'actor_id' => $request->user()?->id,
+        ]);
+
         $games = Game::where('tournament_id', $tournamentId)
             ->where('round', $roundId)
             ->get();
 
         foreach ($games as $game) {
             if ($game->status === $status) {
+                Log::debug('TournamentController::updateGameStatus:skip-same-status', [
+                    'game_id' => $game->id,
+                    'status' => $status,
+                ]);
                 continue;
             }
 
+            Log::info('TournamentController::updateGameStatus:updating', [
+                'game_id' => $game->id,
+                'previous_status' => $game->status,
+                'new_status' => $status,
+            ]);
             $game->status = $status;
             $game->save();
         }
+
+        Log::info('TournamentController::updateGameStatus:completed', [
+            'tournament_id' => $tournamentId,
+            'round_id' => $roundId,
+            'status' => $status,
+            'games_updated' => $games->count(),
+        ]);
 
         return response()->json(['message' => 'Estado de partido actualizado correctamente']);
     }

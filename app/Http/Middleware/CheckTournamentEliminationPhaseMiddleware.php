@@ -7,9 +7,17 @@ use App\Models\Tournament;
 use Closure;
 use Illuminate\Http\Request;
 
-class CheckTournamentCanRegisterMiddleware
+class CheckTournamentEliminationPhaseMiddleware
 {
     use ResolvesTournament;
+
+    private const ELIMINATION_PHASES = [
+        'Dieciseisavos de Final',
+        'Octavos de Final',
+        'Cuartos de Final',
+        'Semifinales',
+        'Final',
+    ];
 
     public function handle(Request $request, Closure $next)
     {
@@ -21,12 +29,12 @@ class CheckTournamentCanRegisterMiddleware
             ], 404);
         }
 
-        $configuration = $tournament->configuration;
-        $maxTeams = $configuration?->max_teams;
+        $activePhase = $tournament->activePhase();
+        $phaseName = $activePhase?->phase?->name;
 
-        if ($maxTeams && $tournament->teams()->count() >= $maxTeams) {
+        if ($phaseName && in_array($phaseName, self::ELIMINATION_PHASES, true)) {
             return response()->json([
-                'message' => "El torneo {$tournament->name} ha alcanzado el número máximo de equipos permitidos.",
+                'message' => "El torneo {$tournament->name} se encuentra en {$phaseName}, ya no se permiten nuevos equipos.",
             ], 403);
         }
 

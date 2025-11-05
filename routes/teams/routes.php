@@ -23,7 +23,9 @@ Route::prefix('teams')->group(function () {
     Route::put('{team}/games/{game}/formation', [TeamsController::class, 'updateGameTeamFormation']);
     Route::put('{team}/home-preferences', [TeamsController::class, 'updateHomePreferences']);
     Route::post('import', [TeamsController::class, 'import']);
-    Route::post('', [TeamsController::class, 'store'])->withoutMiddleware('auth:sanctum');
+    Route::post('', [TeamsController::class, 'store'])
+        ->withoutMiddleware('auth:sanctum')
+        ->middleware(['tournament.can_register_team', 'tournament.registration_phase_open']);
     Route::put('{team}/default-lineup-players/{defaultLineupPlayer}', [TeamsController::class, 'updateDefaultLineupAvailableTeamPlayers']);
     Route::put('{team}/lineup-players/{lineupPlayer}', [TeamsController::class, 'updateLineupAvailableTeamPlayers']);
     Route::put('{team}/formation', [TeamsController::class, 'updateDefaultFormation']);

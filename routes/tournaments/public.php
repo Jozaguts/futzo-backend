@@ -4,7 +4,7 @@
 use App\Http\Controllers\TeamsController;
 use App\Http\Controllers\TournamentController;
 
-Route::middleware(['throttle:20,1','tournament.can_register_team'])
+Route::middleware(['throttle:20,1','tournament.can_register_team','tournament.registration_phase_open'])
     ->group(function () {
         Route::get('tournaments/{tournament:slug}/registrations/catalogs', [TournamentController::class, 'catalogs']);
         // solo se utiliza en el middleware de nuxt para renderizar o no la vista

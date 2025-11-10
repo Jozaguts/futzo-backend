@@ -16,6 +16,7 @@ use App\Services\PlayerService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Maatwebsite\Excel\Facades\Excel;
 use PhpOffice\PhpSpreadsheet\Exception;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -87,9 +88,51 @@ class PlayersController extends Controller
         }
     }
 
-    public function update(PlayerUpdateRequest $request, $id): void
+    public function update(PlayerUpdateRequest $request, Player $player): PlayerResource
     {
-        $request->except('_method');
+        $data = $request->validated();
+        $userPayload = Arr::only($data, ['name', 'last_name', 'email', 'phone']);
+        $playerPayload = Arr::only($data, [
+            'birthdate',
+            'nationality',
+            'position_id',
+            'number',
+            'height',
+            'weight',
+            'dominant_foot',
+            'medical_notes',
+            'notes',
+        ]);
+
+        if (!empty($userPayload) && $player->user) {
+            $player->user->fill($userPayload);
+            $player->user->save();
+        }
+
+        if (array_key_exists('position_id', $playerPayload)) {
+            $positionId = $playerPayload['position_id'];
+            $player->position()->associate($positionId ? Position::find($positionId) : null);
+        }
+
+        $player->fill(Arr::except($playerPayload, ['position_id']));
+        $player->save();
+
+        $player->loadMissing([
+            'user',
+            'team.tournaments.category',
+            'position',
+            'category',
+        ]);
+
+        $tournaments = $this->collectPlayerTournaments($player);
+        $teams = $this->collectPlayerTeams($player, $tournaments);
+        $stats = $this->buildPlayerStats($player, count($tournaments));
+
+        $player->setAttribute('tournaments_payload', $tournaments);
+        $player->setAttribute('teams_payload', $teams);
+        $player->setAttribute('stats_payload', $stats);
+
+        return new PlayerResource($player);
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class PlayerUpdateRequest extends FormRequest
 {
@@ -23,11 +24,35 @@ class PlayerUpdateRequest extends FormRequest
      */
     public function rules()
     {
+        $player = $this->route('player');
+        $userId = $player?->user_id;
+
         return [
-            'user_id' => 'required|exists:users,id',
-            'team_id' => 'required|exists:teams,id',
-            'position_id' => 'required|exists:positions,id',
-            'number' => 'integer',
+            'name' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'last_name' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'email' => [
+                'sometimes',
+                'nullable',
+                'email',
+                Rule::unique('users', 'email')->ignore($userId),
+            ],
+            'phone' => [
+                'sometimes',
+                'nullable',
+                'string',
+                Rule::unique('users', 'phone')->ignore($userId),
+            ],
+            'birthdate' => ['sometimes', 'nullable', 'date'],
+            'nationality' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'position_id' => ['sometimes', 'nullable', 'exists:positions,id'],
+            'number' => ['sometimes', 'nullable', 'integer'],
+            'height' => ['sometimes', 'nullable', 'numeric'],
+            'weight' => ['sometimes', 'nullable', 'numeric'],
+            'dominant_foot' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'medical_notes' => ['sometimes', 'nullable', 'string'],
+            'notes' => ['sometimes', 'nullable', 'string'],
+            'team_id' => ['prohibited'],
+            'category_id' => ['prohibited'],
         ];
     }
 }

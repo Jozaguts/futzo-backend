@@ -35,6 +35,7 @@ class Player extends Model
         'dominant_foot',
         'nationality',
         'medical_notes',
+        'notes',
         'number',
         'birthdate',
         'slug',

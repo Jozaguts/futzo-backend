@@ -6,6 +6,8 @@ use App\Exports\PlayersTemplateExport;
 use App\Http\Requests\PlayerStoreRequest;
 use App\Http\Requests\PlayerUpdateRequest;
 use App\Http\Resources\PlayerCollection;
+use App\Http\Resources\PlayerResource;
+use App\Models\GameEvent;
 use App\Models\Player;
 use App\Models\Position;
 use App\Models\Team;
@@ -47,6 +49,26 @@ class PlayersController extends Controller
             })
             ->paginate($request->get('per_page', 10), ['*'], 'page', $request->get('page', 1));
         return new PlayerCollection($players);
+    }
+
+    public function show(Player $player): PlayerResource
+    {
+        $player->loadMissing([
+            'user',
+            'team.tournaments.category',
+            'position',
+            'category',
+        ]);
+
+        $tournaments = $this->collectPlayerTournaments($player);
+        $teams = $this->collectPlayerTeams($player, $tournaments);
+        $stats = $this->buildPlayerStats($player, count($tournaments));
+
+        $player->setAttribute('tournaments_payload', $tournaments);
+        $player->setAttribute('teams_payload', $teams);
+        $player->setAttribute('stats_payload', $stats);
+
+        return new PlayerResource($player);
     }
 
     /**
@@ -126,6 +148,101 @@ class PlayersController extends Controller
     public function downloadPlayersTemplate(): BinaryFileResponse
     {
         return Excel::download(new PlayersTemplateExport(), 'jugadores_template.xlsx');
+    }
+
+    private function collectPlayerTournaments(Player $player): array
+    {
+        if (!$player->team) {
+            return [];
+        }
+
+        return $player->team->tournaments
+            ->unique('id')
+            ->map(static function ($tournament) {
+                return [
+                    'id' => $tournament->id,
+                    'name' => $tournament->name,
+                    'status' => $tournament->status,
+                    'image' => $tournament->image,
+                    'slug' => $tournament->slug,
+                    'start_date' => $tournament->start_date?->toDateString(),
+                    'start_date_label' => $tournament->start_date_to_string,
+                    'category' => $tournament->category ? [
+                        'id' => $tournament->category->id,
+                        'name' => $tournament->category->name,
+                    ] : null,
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    private function collectPlayerTeams(Player $player, array $tournaments): array
+    {
+        if (!$player->team) {
+            return [];
+        }
+
+        $category = $player->category;
+
+        return [[
+            'id' => $player->team->id,
+            'name' => $player->team->name,
+            'slug' => $player->team->slug,
+            'image' => $player->team->image,
+            'category' => $category ? [
+                'id' => $category->id,
+                'name' => $category->name,
+            ] : null,
+            'tournament' => $tournaments[0] ?? null,
+        ]];
+    }
+
+    private function buildPlayerStats(Player $player, int $tournamentsCount): array
+    {
+        $eventTotals = $player->gameEvents()
+            ->select('type')
+            ->selectRaw('COUNT(*) as total')
+            ->groupBy('type')
+            ->pluck('total', 'type')
+            ->toArray();
+
+        $gamesPlayed = $this->countGamesPlayed($player);
+
+        return [
+            'games_played' => $gamesPlayed,
+            'games' => $gamesPlayed,
+            'tournaments' => $tournamentsCount,
+            'tournaments_played' => $tournamentsCount,
+            'goals' => ($eventTotals[GameEvent::GOAL] ?? 0) + ($eventTotals[GameEvent::PENALTY] ?? 0),
+            'assists' => $eventTotals['assist'] ?? 0,
+            'fouls' => $eventTotals['foul'] ?? 0,
+            'fouls_committed' => $eventTotals['foul'] ?? 0,
+            'yellow_cards' => $eventTotals[GameEvent::YELLOW_CARD] ?? 0,
+            'red_cards' => $eventTotals[GameEvent::RED_CARD] ?? 0,
+            'own_goals' => $eventTotals[GameEvent::OWN_GOAL] ?? 0,
+            'minutes_played' => 0,
+            'clean_sheets' => 0,
+        ];
+    }
+
+    private function countGamesPlayed(Player $player): int
+    {
+        $gamesPlayed = $player->lineupPlayers()
+            ->select('lineups.game_id')
+            ->join('lineups', 'lineup_players.lineup_id', '=', 'lineups.id')
+            ->whereNull('lineups.deleted_at')
+            ->whereNotNull('lineups.game_id')
+            ->distinct()
+            ->count('lineups.game_id');
+
+        if ($gamesPlayed > 0) {
+            return $gamesPlayed;
+        }
+
+        return $player->gameEvents()
+            ->distinct('game_id')
+            ->count('game_id');
     }
 
     private function isValidHeader($header): bool

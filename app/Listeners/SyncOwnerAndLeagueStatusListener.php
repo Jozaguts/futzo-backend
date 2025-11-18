@@ -39,6 +39,9 @@ class SyncOwnerAndLeagueStatusListener implements ShouldQueue
             $user->status = $derivedUserStatus; // pending_onboarding|active|suspended
             $user->save();
         }
+
+        $this->syncUserPlan($user, $type, $object);
+
         // Propagar a ligas del owner (si existen). Si aún no hay liga, no hace nada.
         app(LeagueStatusSyncService::class)->syncForOwner($user);
     }
@@ -66,5 +69,24 @@ class SyncOwnerAndLeagueStatusListener implements ShouldQueue
         return null;
     }
 
-    // sincronización movida a LeagueStatusSyncService
+    private function syncUserPlan(User $user, string $type, array $object): void
+    {
+        $planSlug = data_get($object, 'metadata.plan') ?? data_get($object, 'metadata.plan_sku');
+        $status = $object['status'] ?? null;
+
+        $activeStatuses = ['trialing', 'active'];
+        $inactiveStatuses = ['past_due', 'unpaid', 'canceled', 'incomplete', 'incomplete_expired', 'paused'];
+
+        if ($planSlug && in_array($type, ['customer.subscription.created', 'customer.subscription.updated'], true)) {
+            if (in_array($status, $activeStatuses, true)) {
+                $user->switchPlan($planSlug);
+            } elseif (in_array($status, $inactiveStatuses, true)) {
+                $user->switchPlan(User::PLAN_FREE);
+            }
+        }
+
+        if (in_array($type, ['customer.subscription.deleted', 'invoice.payment_failed'], true)) {
+            $user->switchPlan(User::PLAN_FREE);
+        }
+    }
 }

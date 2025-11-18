@@ -96,6 +96,9 @@ jobs:
               echo "SESSION_DOMAIN=${{ vars.SESSION_DOMAIN }}"
               echo "SESSION_SECURE_COOKIE=${{ vars.SESSION_SECURE_COOKIE || 'true' }}"
               echo
+              echo "SENTRY_LARAVEL_DSN=https://1c540f71da45c95d9da08240120ceb0b@o4510384858398720.ingest.us.sentry.io/4510384859316224"
+              echo "SENTRY_SEND_DEFAULT_PII=true"
+              echo "SENTRY_TRACES_SAMPLE_RATE=1.0"
               echo "REDIS_HOST=${{ vars.REDIS_HOST }}"
               echo "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}"
               echo "REDIS_PORT=${{ vars.REDIS_PORT || '6379' }}"

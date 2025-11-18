@@ -23,6 +23,7 @@
     "league/flysystem-aws-s3-v3": "^3.0",
     "maatwebsite/excel": "^3.1",
     "mailersend/laravel-driver": "^2.6",
+    "sentry/sentry-laravel": "^4.19",
     "spatie/laravel-medialibrary": "^11.9.0",
     "spatie/laravel-permission": "^6.9.0",
     "spatie/laravel-sluggable": "^3.7",

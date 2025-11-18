@@ -20,6 +20,10 @@ class AssignAdminRoleOnCheckoutListener implements ShouldQueue
             }
             $user = User::where('email', $email)
                 ->orWhere('phone',$phone)->firstOrFail();
+            if ($planSlug = $object['metadata']['plan_sku'] ?? ($object['metadata']['plan'] ?? null)) {
+                $user->switchPlan($planSlug);
+            }
+
             try {
                 $user->assignRole('administrador');
             } catch (\Throwable $e) {

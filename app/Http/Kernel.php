@@ -76,5 +76,6 @@ class Kernel extends HttpKernel
         'tournament.registration_phase_open' => \App\Http\Middleware\CheckTournamentEliminationPhaseMiddleware::class,
         'checkout.eligibility' => \App\Http\Middleware\EnsureCheckoutEligibilityMiddleware::class,
         'billing.operational' => \App\Http\Middleware\EnsureOperationalForBilling::class,
+        'tournaments.quota' => \App\Http\Middleware\EnsureTournamentQuota::class,
     ];
 }

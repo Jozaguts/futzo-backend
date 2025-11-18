@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Payment;
+use App\Models\ProductPrice;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -25,26 +27,30 @@ class PaymentIntentController extends Controller
         ]);
 
         $user = $request->user();
-        $price = \App\Models\ProductPrice::for($data['plan'], 'intro', $data['period']);
-        abort_unless($price, 422, 'Plan o periodo inválido');
+        $planSlug = (string) $data['plan'];
+        $planDefinition = $this->ensurePlanPurchaseAllowed($user, $planSlug);
 
-        $amount = (int) $price->price; // centavos
-        $currency = strtoupper($price->currency?->iso_code ?: 'MXN');
+        $productPrice = ProductPrice::for($planSlug, 'intro', $data['period']);
+        abort_unless(is_null($productPrice), 422, 'Plan o periodo inválido');
+
+        $amount = (int) $productPrice->price; // centavos
+        $currency = strtoupper($productPrice->currency?->iso_code ?: 'MXN');
         $purpose = 'subscription_checkout_prep';
-        $description = sprintf('Pago %s (%s)', $data['plan'], $data['period']);
+        $description = sprintf('Pago %s (%s)', $planSlug, $data['period']);
 
-        // Asegurar y sincronizar stripe customer (para prefill de email)
-        $user->createOrGetStripeCustomer();
-        try {
-            $user->updateStripeCustomer([
-                'email' => (string) $user->email,
-                'name'  => trim($user->name . ' ' . ($user->last_name ?? '')),
-                'phone' => $user->phone,
-            ]);
-        } catch (\Throwable $e) {}
+        // Asegurar y sincronizar stripe customer (para prefill de email) solo si ya existe
+        if ($user->hasStripeId()) {
+            try {
+                $user->updateStripeCustomer([
+                    'email' => (string) $user->email,
+                    'name'  => trim($user->name . ' ' . ($user->last_name ?? '')),
+                    'phone' => $user->phone,
+                ]);
+            } catch (\Throwable $e) {}
+        }
 
         // Idempotencia por usuario+plan+periodo (variant intro)
-        $intentKey = sprintf('pi:create:%d:plan:%s:%s:intro', $user->id, $data['plan'], $data['period']);
+        $intentKey = sprintf('pi:create:%d:plan:%s:%s:intro', $user->id, $planSlug, $data['period']);
         $cached = Cache::get($intentKey);
         $stripe = $user->stripe();
 
@@ -78,7 +84,7 @@ class PaymentIntentController extends Controller
         $params = [
             'amount' => $amount,
             'currency' => strtolower($currency),
-            'customer' => $user->stripe_id,
+//            'customer' => $user->stripe_id,
             'description' => $description,
             'automatic_payment_methods' => ['enabled' => true],
             'receipt_email' => (string) $user->email,
@@ -86,10 +92,14 @@ class PaymentIntentController extends Controller
                 'user_id' => (string) $user->id,
                 'app_email' => (string) $user->email,
                 'purpose' => (string) $purpose,
-                'plan' => (string) $data['plan'],
+                'plan' => $planSlug,
+                'plan_sku' => $planSlug,
+                'plan_label' => (string) ($planDefinition['name'] ?? $planSlug),
                 'period' => (string) $data['period'],
                 'variant' => 'intro',
+                'current_plan' => $user->planSlug(),
             ],
+            'setup_future_usage' => 'off_session',
         ];
 
         $pi = $stripe->paymentIntents->create($params, [
@@ -115,5 +125,16 @@ class PaymentIntentController extends Controller
             'amount' => $amount,
             'currency' => $currency,
         ]);
+    }
+
+    protected function ensurePlanPurchaseAllowed(User $user, string $planSlug): array
+    {
+        $plans = config('billing.plans', []);
+
+        abort_unless(isset($plans[$planSlug]), 422, 'Plan inválido.');
+        abort_if($planSlug === User::PLAN_FREE, 422, 'El plan gratuito no requiere pago.');
+        abort_if($user->planSlug() === $planSlug, 409, 'Ya cuentas con este plan.');
+
+        return $plans[$planSlug];
     }
 }

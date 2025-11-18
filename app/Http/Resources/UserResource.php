@@ -18,6 +18,17 @@ class UserResource extends JsonResource
     public function toArray(Request $request): array
     {
         $onboarding = app(OnboardingService::class)->stepsFor($this->resource);
+        $planDefinition = $this->resource->planDefinition();
+        $currentPlan = [
+            'slug' => $this->resource->planSlug(),
+            'label' => $this->resource->planLabel(),
+            'tournaments_quota' => $this->resource->tournamentsQuota(),
+            'tournaments_used' => (int) $this->resource->tournaments_used,
+            'can_create_more_tournaments' => $this->resource->canCreateTournament(),
+            'started_at' => $this->resource->plan_started_at,
+            'expires_at' => $this->resource->plan_expires_at,
+            'description' => $planDefinition['description'] ?? null,
+        ];
 
         return [
             'id' => $this->resource->id,
@@ -34,6 +45,7 @@ class UserResource extends JsonResource
             'is_operational' => (bool) $this->resource->isOperationalForBilling(),
             'onboarding' => $onboarding,
             'subscribed' => $this->resource->hasActiveSubscription(),
+            'current_plan' => $currentPlan,
             'plan' => ProductPrice::where('stripe_price_id', $this->resource?->subscription()?->stripe_price)
                 ->select(['id','billing_period','price','product_id'])
                 ->with('product:id,name,sku')

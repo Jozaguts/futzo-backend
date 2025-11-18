@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Jobs\SendMetaCapiEventJob;
-use App\Models\PostCheckoutLogin;
 use App\Models\User;
 use App\Services\CheckoutSessionService;
 use Illuminate\Http\Request;
@@ -13,7 +12,6 @@ use Stripe\StripeClient;
 
 class OnBoardingCallbackController extends Controller
 {
-    const int PURCHASE_SUBSCRIPTION_CODE = 2000;
     /**
      * @throws ApiErrorException
      */
@@ -54,7 +52,6 @@ class OnBoardingCallbackController extends Controller
         if ($hasFbAttribution) {
             $amountTotal = ($s->amount_total ?? 0);
             $currency    = strtoupper($s->currency ?? 'MXN');
-            $postTrial   = $user?->trial_ends_at && now()->greaterThan($user->trial_ends_at);
             SendMetaCapiEventJob::dispatch(
                 eventName: 'Purchase',
                 eventId: $eventId,
@@ -62,7 +59,6 @@ class OnBoardingCallbackController extends Controller
                 custom: [
                     'value'       => $amountTotal > 0 ? round($amountTotal / 100, 2) : 0,
                     'currency'    => $currency,
-                    'is_post_trial' => (bool) $postTrial,
                 ],
                 eventSourceUrl: config('app.url') . '/configuracion?payment=success',
                 testCode: $request->input('test_event_code'),

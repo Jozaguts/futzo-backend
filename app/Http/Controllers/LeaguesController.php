@@ -51,15 +51,6 @@ class LeaguesController extends Controller
         }
         $user->save();
 
-        // Si no tiene suscripción y no está en trial (DB), inicia trial
-        if (!$user->hasActiveSubscription() && !$user->onDatabaseTrial()) {
-            $days = (int) config('billing.trial_days', 14);
-            if ($days > 0) {
-                $user->trial_ends_at = now()->addDays($days);
-                $user->save();
-            }
-        }
-
         // Sincroniza estado de liga en función de la suscripción del owner
         app(\App\Services\LeagueStatusSyncService::class)->syncForOwner($user);
         $league->refresh();

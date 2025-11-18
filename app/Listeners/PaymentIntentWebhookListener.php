@@ -117,7 +117,6 @@ class PaymentIntentWebhookListener implements ShouldQueue
 
             $amount = ($object['amount_received'] ?? $object['amount'] ?? 0);
             $currency = strtoupper($object['currency'] ?? 'MXN');
-            $postTrial = $user->trial_ends_at && now()->greaterThan($user->trial_ends_at);
 
             SendMetaCapiEventJob::dispatch(
                 eventName: 'Purchase',
@@ -133,7 +132,6 @@ class PaymentIntentWebhookListener implements ShouldQueue
                 custom: [
                     'value' => $amount > 0 ? round($amount / 100, 2) : 0,
                     'currency' => $currency,
-                    'is_post_trial' => (bool) $postTrial,
                 ],
                 eventSourceUrl: config('app.url') . '/configuracion?payment=success',
                 testCode: null,

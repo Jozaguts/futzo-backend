@@ -19,7 +19,7 @@ class EnsureOperationalForBilling
 
         $allowed = false;
 
-        // Allow if user has active subscription or is on trial
+        // Allow if user tiene plan Free o una suscripción activa
         if (method_exists($user, 'isOperationalForBilling') && $user->isOperationalForBilling()) {
             $allowed = true;
         }

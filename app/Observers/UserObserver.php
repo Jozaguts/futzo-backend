@@ -33,13 +33,6 @@ class UserObserver
             $user->status = User::PENDING_ONBOARDING_STATUS;
         }
 
-        if (is_null($user->trial_ends_at)) {
-            $days = (int) config('billing.trial_days', 14);
-            if ($days > 0) {
-                $user->trial_ends_at = now()->addDays($days);
-            }
-        }
-
         if (empty($user->plan)) {
             $user->plan = config('billing.default_plan', User::PLAN_FREE);
         }
@@ -184,7 +177,7 @@ class UserObserver
             eventName: 'StartTrial',
             eventId: $eventId,
             userCtx: $userCtx,
-            custom: ['trial_days' => (int) config('billing.trial_days', 7), 'value' => 0, 'currency' => 'MXN'],
+            custom: ['trial_days' => 0, 'value' => 0, 'currency' => 'MXN'],
             eventSourceUrl: config('app.url') . '/login',
             testCode: $request->input('test_event_code'),
             actionSource: 'website',

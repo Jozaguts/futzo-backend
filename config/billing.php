@@ -1,9 +1,6 @@
 <?php
 
 return [
-    // Days for platform trial when user signs up without paying
-    'trial_days' => env('BILLING_TRIAL_DAYS', 7),
-
     // Default plan slug assigned to new users
     'default_plan' => env('BILLING_DEFAULT_PLAN', 'free'),
 

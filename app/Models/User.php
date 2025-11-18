@@ -156,12 +156,7 @@ class User extends Authenticatable implements MustVerifyEmail, HasMedia
             return true;
         }
 
-        return $this->hasActiveSubscription() || $this->onTrial() || $this->onDatabaseTrial();
-    }
-
-    public function onDatabaseTrial(): bool
-    {
-        return !is_null($this->trial_ends_at) && $this->trial_ends_at->isFuture();
+        return $this->hasActiveSubscription();
     }
 
     public function planDefinition(?string $plan = null): array

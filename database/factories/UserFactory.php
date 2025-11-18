@@ -37,6 +37,10 @@ class UserFactory extends Factory
             'remember_token' => Str::random(10),
             'status' => User::PENDING_ONBOARDING_STATUS,
             'trial_ends_at' => now()->addDays(7),
+            'plan' => config('billing.default_plan', User::PLAN_FREE),
+            'tournaments_quota' => config('billing.plans.free.tournaments_quota', 1),
+            'tournaments_used' => 0,
+            'plan_started_at' => now(),
         ];
     }
 

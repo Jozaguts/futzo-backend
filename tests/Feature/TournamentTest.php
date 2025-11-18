@@ -74,6 +74,9 @@ it('filters tournaments by status', function () {
         'country_id' => $country->id,
         'football_type_id' => $footballType->id,
     ]);
+    if (auth()->check() && auth()->user()->league_id !== $league->id) {
+        auth()->user()->forceFill(['league_id' => $league->id])->saveQuietly();
+    }
     $category = Category::factory()->create();
     $tournamentFormat = TournamentFormat::query()->first() ?? TournamentFormat::factory()->create();
 

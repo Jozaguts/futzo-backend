@@ -37,6 +37,8 @@ uses(
         if (is_null($this->user->league_id)) {
             $this->user->league_id = 1; // fallback al primer registro
         }
+        $this->user->switchPlan(\App\Models\User::PLAN_ELITE_LEAGUE);
+        $this->user->tournaments_used = 0;
         $this->user->saveQuietly();
 
         $this->app

@@ -194,6 +194,10 @@ function createPenaltyMatchSetup(bool $penaltyFlag = true): array
         'football_type_id' => $footballType->id,
     ]);
 
+    if (auth()->check() && auth()->user()->league_id !== $league->id) {
+        auth()->user()->forceFill(['league_id' => $league->id])->saveQuietly();
+    }
+
     $category = Category::factory()->create();
 
     $formatData = config('constants.tournament_formats')[0];
@@ -219,7 +223,8 @@ function createPenaltyMatchSetup(bool $penaltyFlag = true): array
     $tournament->locations()->attach($location->id);
 
     attachTeamsToTournament($tournament, 2);
-    $teams = $tournament->teams()->take(2)->get();
+
+    $teams = $tournament->teams()->take(2)->get()->values();
 
     $generalPhase = Phase::firstOrCreate(
         ['name' => 'Tabla general'],

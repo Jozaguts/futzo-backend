@@ -31,11 +31,16 @@ use Spatie\Permission\Traits\HasRoles;
  */
 #[ObservedBy([UserObserver::class])]
 class User extends Authenticatable implements MustVerifyEmail, HasMedia
-
 {
     public const string PENDING_ONBOARDING_STATUS = 'pending_onboarding';
     public const string ACTIVE_STATUS = 'active';
     public const string SUSPENDED_STATUS = 'suspended';
+
+    public const string PLAN_FREE = 'free';
+    public const string PLAN_KICKOFF = 'kickoff';
+    public const string PLAN_PRO_PLAY = 'pro_play';
+    public const string PLAN_ELITE_LEAGUE = 'elite_league';
+
     use HasApiTokens, HasFactory, Notifiable, HasRoles, InteractsWithMedia, Billable;
 
     public function sendEmailVerificationNotification(): void
@@ -70,6 +75,11 @@ class User extends Authenticatable implements MustVerifyEmail, HasMedia
         'pm_type'  ,
         'pm_last_four' ,
         'trial_ends_at',
+        'plan',
+        'tournaments_quota',
+        'tournaments_used',
+        'plan_started_at',
+        'plan_expires_at',
     ];
 
     /**
@@ -95,6 +105,8 @@ class User extends Authenticatable implements MustVerifyEmail, HasMedia
         'verified_at' => 'datetime',
         'trial_ends_at' => 'datetime',
         'password' => 'hashed',
+        'plan_started_at' => 'datetime',
+        'plan_expires_at' => 'datetime',
     ];
 
     protected function fullName(): Attribute
@@ -140,11 +152,89 @@ class User extends Authenticatable implements MustVerifyEmail, HasMedia
 
     public function isOperationalForBilling(): bool
     {
+        if ($this->isOnFreePlan()) {
+            return true;
+        }
+
         return $this->hasActiveSubscription() || $this->onTrial() || $this->onDatabaseTrial();
     }
 
     public function onDatabaseTrial(): bool
     {
         return !is_null($this->trial_ends_at) && $this->trial_ends_at->isFuture();
+    }
+
+    public function planDefinition(?string $plan = null): array
+    {
+        $plans = config('billing.plans', []);
+        $planSlug = $plan ?? $this->planSlug();
+
+        return $plans[$planSlug] ?? ['name' => ucfirst(str_replace('_', ' ', (string) $planSlug))];
+    }
+
+    public function planSlug(): string
+    {
+        return $this->plan ?? config('billing.default_plan', self::PLAN_FREE);
+    }
+
+    public function planLabel(): string
+    {
+        return (string) ($this->planDefinition()['name'] ?? ucfirst($this->planSlug()));
+    }
+
+    public function tournamentsQuota(): ?int
+    {
+        $quota = $this->tournaments_quota ?? ($this->planDefinition()['tournaments_quota'] ?? null);
+
+        return is_null($quota) ? null : (int) $quota;
+    }
+
+    public function canCreateTournament(): bool
+    {
+        $quota = $this->tournamentsQuota();
+        if (is_null($quota)) {
+            return true;
+        }
+
+        return (int) $this->tournaments_used < $quota;
+    }
+
+    public function incrementTournamentUsage(int $amount = 1): void
+    {
+        if ($amount <= 0) {
+            return;
+        }
+
+        $this->forceFill([
+            'tournaments_used' => max(0, (int) $this->tournaments_used + $amount),
+        ])->saveQuietly();
+    }
+
+    public function decrementTournamentUsage(int $amount = 1): void
+    {
+        if ($amount <= 0) {
+            return;
+        }
+
+        $this->forceFill([
+            'tournaments_used' => max(0, (int) $this->tournaments_used - $amount),
+        ])->saveQuietly();
+    }
+
+    public function switchPlan(string $planSlug, ?int $quotaOverride = null): void
+    {
+        $definition = $this->planDefinition($planSlug);
+
+        $this->forceFill([
+            'plan' => $planSlug,
+            'plan_started_at' => now(),
+            'plan_expires_at' => null,
+            'tournaments_quota' => $quotaOverride ?? ($definition['tournaments_quota'] ?? null),
+        ])->save();
+    }
+
+    public function isOnFreePlan(): bool
+    {
+        return $this->planSlug() === self::PLAN_FREE;
     }
 }

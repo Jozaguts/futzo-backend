@@ -39,6 +39,23 @@ class UserObserver
                 $user->trial_ends_at = now()->addDays($days);
             }
         }
+
+        if (empty($user->plan)) {
+            $user->plan = config('billing.default_plan', User::PLAN_FREE);
+        }
+
+        if (is_null($user->plan_started_at)) {
+            $user->plan_started_at = now();
+        }
+
+        if (is_null($user->tournaments_used)) {
+            $user->tournaments_used = 0;
+        }
+
+        if (is_null($user->tournaments_quota)) {
+            $definition = $user->planDefinition($user->plan);
+            $user->tournaments_quota = $definition['tournaments_quota'] ?? null;
+        }
     }
 
     /**

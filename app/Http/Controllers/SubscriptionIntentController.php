@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ProductPrice;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class SubscriptionIntentController extends Controller
 {
+    private const BLOCKING_STRIPE_STATUSES = ['trialing','active','past_due','unpaid','paused','processing'];
+    private const RETRYABLE_STRIPE_STATUSES = ['incomplete','incomplete_expired'];
     /**
      * Crea una suscripción en estado incomplete (payment_behavior=default_incomplete)
      * y retorna el client_secret del PaymentIntent del último invoice para usar
@@ -24,7 +28,10 @@ class SubscriptionIntentController extends Controller
         ]);
 
         $user = $request->user();
-        $price = \App\Models\ProductPrice::for($data['plan'], 'intro', $data['period']);
+        $planSlug = (string) $data['plan'];
+        $planDefinition = $this->ensurePlanPurchaseAllowed($user, $planSlug);
+
+        $price = ProductPrice::for($planSlug, 'intro', $data['period']);
         abort_unless($price, 422, 'Plan o periodo inválido');
 
         // Asegurar y sincronizar cliente en Stripe (prefill de email en Payment Element)
@@ -39,28 +46,13 @@ class SubscriptionIntentController extends Controller
             // si falla, continuamos; el Payment Element leerá del intent de todos modos
         }
 
-        // Limitar a una sola suscripción por cliente
-        // 1) Verificar localmente con Cashier
-        $hasLocalSub = $user->subscriptions()
-            ->whereNull('ends_at')
-            ->whereNotIn('stripe_status', ['canceled', 'incomplete_expired'])
-            ->exists();
-        // 2) Verificar en Stripe (por si aún no existe row local)
-        $hasRemoteSub = false;
-        try {
-            $remoteSubs = $user->stripe()->subscriptions->all([
-                'customer' => $user->stripe_id,
-                'status' => 'all',
-                'limit' => 10,
-            ]);
-            foreach ($remoteSubs->data as $s) {
-                if (in_array($s->status, ['trialing','active','past_due','unpaid','incomplete','paused','processing'], true)) {
-                    $hasRemoteSub = true; break;
-                }
-            }
-        } catch (\Throwable $e) {}
+        // Limpiar suscripciones locales pendientes/incompletas
+        $this->cleanupPendingLocalSubscriptions($user);
 
-        if ($hasLocalSub || $hasRemoteSub) {
+        $hasBlockingLocalSub = $this->hasBlockingLocalSubscription($user);
+        $hasBlockingRemoteSub = $this->hasBlockingRemoteSubscription($user);
+
+        if ($hasBlockingLocalSub || $hasBlockingRemoteSub) {
             // Generar URL del billing portal para gestionar su plan existente
             $returnUrl = config('app.frontend_url') . '/configuracion';
             $session = $user->stripe()->billingPortal->sessions->create([
@@ -85,11 +77,15 @@ class SubscriptionIntentController extends Controller
             ],
             'expand' => ['latest_invoice.payment_intent'],
             'metadata' => [
-                'plan' => (string) $data['plan'],
+                'plan' => $planSlug,
+                'plan_sku' => $planSlug,
+                'plan_label' => (string) ($planDefinition['name'] ?? $planSlug),
                 'period' => (string) $data['period'],
                 'variant' => 'intro',
+                'user_id' => (string) $user->id,
                 'app_user_id' => (string) $user->id,
                 'app_email' => (string) $user->email,
+                'current_plan' => $user->planSlug(),
             ],
         ]);
 
@@ -105,5 +101,91 @@ class SubscriptionIntentController extends Controller
             'currency' => strtoupper($pi->currency ?? 'MXN'),
             'status' => $pi->status,
         ]);
+    }
+
+    protected function ensurePlanPurchaseAllowed(User $user, string $planSlug): array
+    {
+        $plans = config('billing.plans', []);
+
+        abort_unless(isset($plans[$planSlug]), 422, 'Plan inválido.');
+        abort_if($planSlug === User::PLAN_FREE, 422, 'El plan gratuito no requiere pago.');
+        abort_if($user->planSlug() === $planSlug, 409, 'Ya cuentas con este plan.');
+
+        return $plans[$planSlug];
+    }
+
+    protected function hasBlockingLocalSubscription(User $user): bool
+    {
+        return $user->subscriptions()
+            ->whereNull('ends_at')
+            ->where(function ($query) {
+                $query->whereIn('stripe_status', self::BLOCKING_STRIPE_STATUSES)
+                    ->orWhereNull('stripe_status');
+            })
+            ->exists();
+    }
+
+    protected function hasBlockingRemoteSubscription(User $user): bool
+    {
+        if (!$user->stripe_id) {
+            return false;
+        }
+
+        $pendingToCancel = [];
+        try {
+            $remoteSubs = $user->stripe()->subscriptions->all([
+                'customer' => $user->stripe_id,
+                'status' => 'all',
+                'limit' => 10,
+            ]);
+            foreach ($remoteSubs->data as $subscription) {
+                if (in_array($subscription->status, self::BLOCKING_STRIPE_STATUSES, true)) {
+                    return true;
+                }
+                if (in_array($subscription->status, self::RETRYABLE_STRIPE_STATUSES, true)) {
+                    $pendingToCancel[] = $subscription->id;
+                }
+            }
+        } catch (\Throwable $e) {
+            return false;
+        }
+
+        foreach ($pendingToCancel as $subscriptionId) {
+            $this->cancelStripeSubscription($user, $subscriptionId);
+        }
+
+        return false;
+    }
+
+    protected function cleanupPendingLocalSubscriptions(User $user): void
+    {
+        $user->subscriptions()
+            ->whereNull('ends_at')
+            ->whereIn('stripe_status', self::RETRYABLE_STRIPE_STATUSES)
+            ->each(function ($subscription) use ($user) {
+                if (!empty($subscription->stripe_id)) {
+                    $this->cancelStripeSubscription($user, $subscription->stripe_id);
+                } else {
+                    $subscription->delete();
+                }
+            });
+    }
+
+    protected function cancelStripeSubscription(User $user, ?string $stripeSubscriptionId): void
+    {
+        if (!$stripeSubscriptionId) {
+            return;
+        }
+
+        try {
+            $user->stripe()->subscriptions->cancel($stripeSubscriptionId, [
+                'invoice_now' => false,
+                'prorate' => false,
+            ]);
+        } catch (\Throwable $e) {
+            // ignore failures; maybe already cancelled
+        }
+
+        $user->subscriptions()->where('stripe_id', $stripeSubscriptionId)->delete();
     }
 }

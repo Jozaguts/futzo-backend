@@ -131,11 +131,11 @@ jobs:
               echo
               echo "FACEBOOK_CLIENT_ID=${{ vars.FACEBOOK_CLIENT_ID }}"
               echo "FACEBOOK_CLIENT_SECRET=${{ secrets.FACEBOOK_CLIENT_SECRET }}"
-              echo "FACEBOOK_REDIRECT_URI=${{ vars.FRONTEND_URL }}/authorize/facebook/callback"
+              echo "FACEBOOK_REDIRECT_URI=${{ vars.APP_URL }}/auth/facebook/callback"
               echo
               echo "GOOGLE_CLIENT_ID=${{ vars.GOOGLE_CLIENT_ID }}"
               echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}"
-              echo "GOOGLE_REDIRECT_URI=${{ vars.FRONTEND_URL }}/authorize/google/callback"
+              echo "GOOGLE_REDIRECT_URI=${{ vars.APP_URL }}/auth/google/callback"
               echo
               echo "WHATSAPP_TOKEN=${{ secrets.WHATSAPP_TOKEN }}"
               echo "WHATSAPP_PHONE_ID=${{ vars.WHATSAPP_PHONE_ID }}"

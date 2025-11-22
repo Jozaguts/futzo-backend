@@ -1,9 +1,8 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthenticateController;
-use App\Models\User;
 use GuzzleHttp\Exception\ClientException;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Laravel\Socialite\Facades\Socialite;
 

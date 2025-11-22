@@ -11,7 +11,10 @@ Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthenticateController::class, 'register']);
     Route::get('/{provider}/redirect', function ($provider) {
         $url = Socialite::driver($provider)->stateless()->redirect()->getTargetUrl();
-
+        \Log::info('Redirecting to social provider', [
+            'provider' => $provider,
+            'url' => $url,
+        ]);
         return response()->json(['url' => $url]);
     });
     Route::get('/{provider}/callback', function (Request $request, $provider) {

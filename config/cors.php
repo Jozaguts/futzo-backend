@@ -36,7 +36,8 @@ return [
         'http://futzo.test:3000',
         'http://hola.futzo.test:3001',
         'https://hola.futzo.io:3001',
-        'https://hola.futzo.io'
+        'https://hola.futzo.io',
+        'http://localhost:3000',
     ],
 
     'allowed_origins_patterns' => [],

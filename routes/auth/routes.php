@@ -14,8 +14,12 @@ Route::prefix('auth')->group(function () {
 
         return response()->json(['url' => $url]);
     });
-    Route::get('/{provider}/callback', function ($provider) {
-
+    Route::get('/{provider}/callback', function (Request $request, $provider) {
+        if ($request->missing('code')) {
+            return response()->json([
+                'message' => 'Missing authorization code.',
+            ], 400);
+        }
         $user = Socialite::driver($provider)->stateless()->user();
         $authUser = User::updateOrCreate(
             [

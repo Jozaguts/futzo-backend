@@ -79,7 +79,7 @@ Route::prefix('auth')->group(function () {
 
         \Auth::login($authUser);
 
-        return response()->noContent();
+        return redirect()->away(config('app.frontend_url') . '/authorize/facebook/callback');
     });
     Route::post('login', [AuthenticateController::class, 'login'])->name('login');
     Route::post('logout', [AuthenticateController::class, 'logout'])->name('logout');

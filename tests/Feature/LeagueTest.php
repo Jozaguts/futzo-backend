@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\League;
+use App\Models\QrConfiguration;
+use App\Models\QrType;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\UploadedFile;
 
@@ -61,4 +63,30 @@ it('list the leagues correctly', function () {
                 'tournament_count'
             ]
         ]);
+});
+
+it('creates qr configurations for every qr type when a league is created', function () {
+    QrConfiguration::query()->delete();
+    QrType::query()->delete();
+
+    $qrTypes = collect([
+        ['name' => 'Registro de equipos', 'key' => 'team_registration', 'description' => 'QR para registro de equipos'],
+        ['name' => 'Registro de torneos', 'key' => 'tournament_registration', 'description' => 'QR para registro de torneos'],
+    ])->map(fn(array $payload) => QrType::create($payload));
+
+    $league = League::create([
+        'name' => 'Liga QR',
+        'status' => League::STATUS_DRAFT,
+    ]);
+
+    expect($league->QRConfigurations)->toHaveCount($qrTypes->count());
+
+    $qrTypes->each(function (QrType $type) use ($league): void {
+        $this->assertDatabaseHas('qr_configurations', [
+            'league_id' => $league->id,
+            'qr_type_id' => $type->id,
+            'title' => $league->name,
+            'subtitle' => 'Configuración inicial',
+        ]);
+    });
 });

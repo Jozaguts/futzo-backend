@@ -1,6 +1,6 @@
 # Futzo — Memo del proyecto y backlog vivo (v0.1)
 
-**Última actualización:** 2025-09-09
+**Última actualización:** 2025-12-17
 **Stack:** Laravel (API REST) + Laravel Sanctum · MySQL/MariaDB · Stripe (Cashier) · Spatie (Permissions/Media Library) · Excel (Maatwebsite/PhpSpreadsheet)
 
 Nota: El frontend (Nuxt SPA) no está en este repo; este memo refleja el backend actual y su contrato API para la SPA.
@@ -16,9 +16,9 @@ Nota: El frontend (Nuxt SPA) no está en este repo; este memo refleja el backend
 ## 2) Módulos existentes (validados con tests)
 
 - Autenticación y verificación: registro con OTP (email/WhatsApp/Twilio Verify), login (Sanctum).
-- Onboarding: pasos guiados (crear liga → crear ubicación → configurar canchas) con allowed_paths dinámicos.
+- Onboarding: checklists y hints contextuales (crear liga → sugerir sedes/campos) sin bloqueo; el usuario puede saltar la captura de ubicaciones y aún así crear torneos y generar calendarios desde el día 0.
 - Ligas: creación y asociación automática al usuario, estado sincronizado con facturación (ready/suspended) según suscripción o trial DB.
-- Ubicaciones y canchas: CRUD; ventanas base por campo (FieldWindows) y ventanas por liga‑campo (LeagueFieldWindows).
+- Ubicaciones y canchas: CRUD; `locations` aportan metadatos/direcciones pero no son requisito para calendarizar; la disponibilidad real vive en `fields` + `league_fields` + ventanas (FieldWindows + LeagueFieldWindows).
 - Torneos: CRUD, configuración, asociación de ubicaciones/canchas, exportaciones (standing/stats/schedule por ronda).
 - Calendarización automática (v1): generación de calendario para formato liga y grupos/eliminación; evita solapes; pruebas de sugerencias de bracket y confirmación.
 - Juegos: reprogramación con validación de ventanas efectivas y no‑solape; eventos (goles/tarjetas/cambios), lineups, completar partido.
@@ -42,28 +42,29 @@ Nota: El frontend (Nuxt SPA) no está en este repo; este memo refleja el backend
 
 ## 4) Modelo de datos de sedes/canchas (real)
 
-- `locations` (SoftDeletes): sedes físicas con tags (Spatie Tags) y `fields` relacionados.
-- `fields` (SoftDeletes): canchas dentro de la sede; tipo/dimensiones por defecto; ventanas base 24/7 iniciales.
-- `league_location` (pivot SoftDeletes: `LeagueLocation`): ligas ↔ sedes.
-- `league_fields`: ligas ↔ canchas; define ventanas por liga‑campo en `league_field_windows`.
-- `location_tournament` (pivot SoftDeletes: `LocationTournament`): torneos ↔ sedes (alcance de sede para el torneo).
+- `locations` (SoftDeletes): sedes físicas con tags (Spatie Tags) y `fields` relacionados. Ahora son opcionales para programar; sirven como metadata/dirección cuando existen, pero los partidos pueden quedar con `location_id` null o “por confirmar”.
+- `fields` (SoftDeletes): canchas (físicas o virtuales) con tipo/dimensiones por defecto; pueden existir sin `location_id` mientras haya ventanas base (24/7 iniciales).
+- `league_location` (pivot SoftDeletes: `LeagueLocation`): ligas ↔ sedes (para casos donde sí hay direcciones).
+- `league_fields`: ligas ↔ canchas; define las ventanas efectivas por liga‑campo en `league_field_windows` y es la verdadera fuente de disponibilidad para calendarizar.
+- `location_tournament` (pivot SoftDeletes: `LocationTournament`): torneos ↔ sedes (si la liga quiere filtrar canchas por torneo).
 - `tournament_fields`: relación explícita de canchas usadas por torneo.
 - `tournament_field_reservations`: reservas/blackouts por torneo y liga‑campo (resta disponibilidad efectiva).
-- Juegos (`games`) referencian `field_id` y `location_id`, con `status` programado/en_progreso/completado/aplazado/cancelado.
+- Juegos (`games`) referencian `field_id`; `location_id` solo se rellena cuando existe una sede asociada o se define un fallback manual.
 
-Ventanas efectivas por campo (para agendar): FieldWindows ∩ LeagueFieldWindows − TournamentFieldReservations.
+Ventanas efectivas por campo (para agendar): FieldWindows ∩ LeagueFieldWindows − TournamentFieldReservations. Al no depender de `locations`, podemos programar tan pronto existan `fields` con ventanas válidas, incluso mientras la liga termina de capturar sus sedes reales.
 
 ## 5) Calendarización automática (implementado v1)
 
 - Servicios
-  - `ScheduleGeneratorService`: genera fixtures (liga, grupos, eliminación); calcula duración efectiva (tiempo de juego + descanso global + gap admin + buffer) y asigna a `field_id` evitando colisiones. Incluye guardas/errores legibles.
-  - `AvailabilityService`: produce ventanas semanales efectivas (por liga‑campo) y genera slots discretizados.
+  - `ScheduleGeneratorService`: genera fixtures (liga, grupos, eliminación); calcula duración efectiva (tiempo de juego + descanso global + gap admin + buffer) y asigna a `field_id` evitando colisiones. Opera directamente sobre `league_fields`, por lo que ya no depende de `locations` para la disponibilidad.
+  - `AvailabilityService`: produce ventanas semanales efectivas (por liga‑campo) y genera slots discretizados sin importar si la cancha tiene sede asociada o es virtual.
 
 - Capacidades actuales
   - Liga (ida/vuelta) y fase de grupos con entrelazado de jornadas por grupo.
   - Eliminación (octavos/cuartos/semis/final) con toma de clasificados desde standings.
   - Validación de no‑solape por campo/fecha y ajuste a ventanas efectivas (liga y reservas de torneo).
   - Reprogramación de partidos con verificación granular de ventanas y colisiones.
+  - Generación de partidos incluso si no hay `locations` creadas; el sistema llena `location_id` cuando existe y, de lo contrario, deja el campo vacío/por confirmar sin frenar el calendario.
 
 - Endpoints clave
   - `POST /api/v1/admin/tournaments/{t}/schedule` (genera calendario)
@@ -113,7 +114,7 @@ Notas: El listado exacto aparece en `routes/*` y `php artisan route:list`. Varia
 4. Consolidar “estadísticas de juego” (consultas agregadas y endpoints de resumen por torneo/equipo/jugador; caching ligero).
 5. Mejoras de calendarización: soporte multi‑TZ (por liga) y buffers configurables por liga/torneo.
 6. Endpoints de administración de roles/staff de liga (asignar `personal administrativo de liga`).
-7. Pulir onboarding: cerrar `pending_onboarding` cuando `create_field` esté done y abrir secciones restantes.
+7. Pulir onboarding: ahora que no bloqueamos al usuario por no tener sedes/canchas, definir checklists, nudges y estado `pending_onboarding` acorde para incentivar la captura de ubicaciones reales antes de publicar el calendario.
 8. Auditoría básica (model events a tabla de logs) y políticas de retención/borrado de PII.
 
 ## 10) ADRs (decisiones actuales)
@@ -136,7 +137,8 @@ Notas: El listado exacto aparece en `routes/*` y `php artisan route:list`. Varia
 
 ## 13) Changelog
 
-- v0.1 (2025‑09‑09): Documento inicial basado en código actual. Incluye calendarización v1, onboarding, roles, pagos y endpoints reales.
+- v0.2 (2025-12-17): Calendarización ya no depende de `locations`; `league_fields` y sus ventanas son la fuente única de disponibilidad, permitiendo crear torneos/juegos sin capturar sedes. Onboarding deja de bloquear pasos por falta de ubicaciones y se basa en checklists/nudges.
+- v0.1 (2025-09-09): Documento inicial basado en código actual. Incluye calendarización v1, onboarding, roles, pagos y endpoints reales.
 
 ## 14) Checklist de contexto (para completar)
 
@@ -313,4 +315,3 @@ Anexos útiles
   - Mostrar TZ explícita junto a campos de fecha/hora y en listados.
   - Advertir si la TZ del dispositivo difiere de la TZ de la liga.
 - DST: confiar en IANA (Carbon) para el corrimiento horario. Agregadas pruebas con cambio estacional (NY 2025‑03‑09).
-

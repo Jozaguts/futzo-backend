@@ -12,11 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('tickets', function (Blueprint $table) {
-            $table->ulid();
+            $table->uuid('id')->primary();
             $table->foreignId('user_id')
                 ->constrained('users')
                 ->cascadeOnDelete();
+            $table->foreignId('league_id')->constrained('leagues')->cascadeOnDelete();
+            $table->foreignId('tournament_id')->nullable()->constrained('tournaments')->nullOnDelete();
 
+            $table->enum('contact_method',[ 'email', 'phone'])->default('email');
+            $table->string('contact_value', 190);
             // Para listas, filtros y contexto rápido
             $table->string('subject', 190);
 
@@ -44,7 +48,7 @@ return new class extends Migration
             $table->softDeletes();
 
             // Índices comunes en listados
-            $table->index(['requester_user_id', 'status']);
+            $table->index(['user_id', 'status']);
             $table->index(['category', 'status']);
         });
     }

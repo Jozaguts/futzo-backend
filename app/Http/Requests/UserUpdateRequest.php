@@ -25,6 +25,7 @@ class UserUpdateRequest extends FormRequest
             'email' => ['required', 'email'],
             'name' => ['required', 'string'],
             'phone' => ['string','nullable'],
+            'contact_method' => ['in:email,phone','nullable'],
         ];
     }
 }

@@ -76,6 +76,9 @@ class UserObserver
                 ['token' => $token, 'created_at' => now()]
             );
             $user->notify(new SendOTPViaTwilioVerifyNotification($phoneNumber, $token));
+            $user->forceFill(['contact_method' => 'phone'])->saveQuietly();
+        }else if(!is_null($user->email)){
+            $user->forceFill(['contact_method' => 'email'])->saveQuietly();
         }
 
         Notification::route('mail', 'sagit@futzo.io')

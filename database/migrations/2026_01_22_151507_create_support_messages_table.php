@@ -14,8 +14,10 @@ return new class extends Migration
         Schema::create('support_messages', function (Blueprint $table) {
             $table->id();
 
-            $table->foreignId('ticket_id')
-                ->constrained('tickets')
+            $table->uuid('ticket_id')->index();
+            $table->foreign('ticket_id')
+                ->references('id')
+                ->on('tickets')
                 ->cascadeOnDelete();
 
             // Quién escribió (usuario / staff / sistema)

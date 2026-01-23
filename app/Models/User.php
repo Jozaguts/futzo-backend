@@ -42,21 +42,11 @@ class User extends Authenticatable implements MustVerifyEmail, HasMedia
     public const string PLAN_ELITE_LEAGUE = 'elite_league';
 
     use HasApiTokens, HasFactory, Notifiable, HasRoles, InteractsWithMedia, Billable;
-
-    public function sendEmailVerificationNotification(): void
-    {
-        $this->notify(new VerifyEmailWithToken($this->verification_token));
-    }
-
-    public function hasVerifiedEmail(): bool
-    {
-        return !is_null($this->verified_at);
-    }
-
     protected $fillable = [
         'name',
         'last_name',
         'email',
+        'contact_method',
         'verification_token',
         'password',
         'facebook_id',
@@ -95,12 +85,12 @@ class User extends Authenticatable implements MustVerifyEmail, HasMedia
         'facebook_id',
         'google_id',
     ];
-
     /**
      * The attributes that should be cast.
      *
      * @var array<string, string>
      */
+
     protected $casts = [
         'verified_at' => 'datetime',
         'trial_ends_at' => 'datetime',
@@ -108,6 +98,15 @@ class User extends Authenticatable implements MustVerifyEmail, HasMedia
         'plan_started_at' => 'datetime',
         'plan_expires_at' => 'datetime',
     ];
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new VerifyEmailWithToken($this->verification_token));
+    }
+
+    public function hasVerifiedEmail(): bool
+    {
+        return !is_null($this->verified_at);
+    }
 
     protected function fullName(): Attribute
     {

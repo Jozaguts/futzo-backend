@@ -19,6 +19,14 @@ class UserResource extends JsonResource
     {
         $onboarding = app(OnboardingService::class)->stepsFor($this->resource);
         $planDefinition = $this->resource->planDefinition();
+        $contactMethod = $this->resource->contact_method;
+        if(is_null($contactMethod)) {
+            if(!is_null($this->resource->email)) {
+                $contactMethod = 'email';
+            } elseif(!is_null($this->resource->phone)) {
+                $contactMethod = 'phone';
+            }
+        }
         $currentPlan = [
             'slug' => $this->resource->planSlug(),
             'label' => $this->resource->planLabel(),
@@ -34,6 +42,7 @@ class UserResource extends JsonResource
             'id' => $this->resource->id,
             'name' => $this->resource->name,
             'email' => $this->resource->email,
+            'contact_method' => $contactMethod,
             'roles' => $this->resource->roles()->pluck('name'),
             'league' => new LeagueResource($this->whenLoaded('league')),
             'has_league' => (bool)$this->resource->league,

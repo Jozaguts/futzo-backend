@@ -66,10 +66,7 @@ jobs:
 
             # PHP / Composer diagnostics and setup
           if ! php -m | grep -qi '^intl$'; then
-            echo "[deploy] Installing php intl extension..."
-            sudo apt-get update -y
-            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y php8.4-intl
-            sudo systemctl restart php8.4-fpm || true
+            php -m | grep -qi '^intl$' || { echo "Missing ext-intl on server. Install php8.4-intl."; exit 1; }
           fi
             echo "PHP: $(php -v | head -n1)"
             if ! command -v composer >/dev/null 2>&1; then

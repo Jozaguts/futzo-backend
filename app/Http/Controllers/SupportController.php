@@ -42,7 +42,7 @@ class SupportController extends Controller
         ]);
 
 
-        Notification::route('mail', 'soporte@futzo.io')
+        Notification::route('mail', 'sagit@futzo.io')
             ->notify(new NewSupportTicketNotification($ticket, $message));
 
         return response()->json([
@@ -73,7 +73,7 @@ class SupportController extends Controller
         ]);
         $ticket->status = 'pending';
         $ticket->save();
-        Notification::route('mail', 'soporte@futzo.io')
+        Notification::route('mail', 'sagit@futzo.io')
             ->notify(new NewSupportTicketNotification($ticket, $message['response_message']));
         return response()->json(['message' => 'Su mensaje ha sido enviado exitosamente'], 201);
     }

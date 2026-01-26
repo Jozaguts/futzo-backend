@@ -33,15 +33,24 @@ jobs:
             git pull --ff-only origin main
 
             # Compute semantic version from last tag and recent commits
-            LAST_TAG=$(git describe --tags --abbrev=0 --match 'v*' 2>/dev/null || echo 'v0.0.0')
-            COMMITS=$(git log --pretty=%s ${LAST_TAG}..HEAD || true)
+            git fetch --prune --tags
+            LAST_TAG="$(git describe --tags --abbrev=0 --match 'v*' 2>/dev/null || true)"
+            if [ -n "$LAST_TAG" ]; then
+              BASE_REF="$LAST_TAG"
+              BASE_VER="${LAST_TAG#v}"
+            else
+              BASE_REF="$(git rev-list --max-parents=0 HEAD)"  # primer commit
+              BASE_VER="0.0.0"
+            fi
+            COMMITS="$(git log --pretty=%s "${BASE_REF}..HEAD" || true)"
+          
             if [ -z "$COMMITS" ]; then
               VERSION="$LAST_TAG"
             else
               BUMP=patch
               echo "$COMMITS" | grep -E 'BREAKING CHANGE|!:' >/dev/null 2>&1 && BUMP=major
               if [ "$BUMP" = "patch" ] && echo "$COMMITS" | grep -E '^feat(\(|:)' >/dev/null 2>&1; then BUMP=minor; fi
-              VER=${LAST_TAG#v}
+              VER="$BASE_VER"
               MA=${VER%%.*}
               REM=${VER#*.}
               MI=${REM%%.*}
@@ -56,6 +65,12 @@ jobs:
             echo "Computed version: $VERSION"
 
             # PHP / Composer diagnostics and setup
+          if ! php -m | grep -qi '^intl$'; then
+            echo "[deploy] Installing php intl extension..."
+            sudo apt-get update -y
+            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y php8.4-intl
+            sudo systemctl restart php8.4-fpm || true
+          fi
             echo "PHP: $(php -v | head -n1)"
             if ! command -v composer >/dev/null 2>&1; then
               echo "Composer not found; attempting install..."

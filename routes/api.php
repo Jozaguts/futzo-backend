@@ -40,7 +40,7 @@ Route::prefix('v1')
         Route::post('support/tickets',[SupportController::class, 'ticket'])
             ->middleware(CanMakeSupportMessageRequestMiddleware::class)
             ->name('support.tickets');
-        Route::post('support/tickets/{ticket}/messages',[SupportController::class, 'message'])->name('support.tickets.message');
+        Route::patch('support/tickets/{ticket}',[SupportController::class, 'message'])->name('support.tickets.message');
         Route::get('support/tickets', [SupportController::class, 'list'])->name('support.tickets.list');
         Route::prefix('admin')->middleware(['billing.operational'])->group(function () {
             Route::get('onboarding/steps', [OnboardingController::class, 'index']);

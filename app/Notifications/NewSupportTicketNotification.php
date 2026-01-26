@@ -7,6 +7,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Str;
 
 class NewSupportTicketNotification extends Notification implements ShouldQueue
 {
@@ -30,7 +31,7 @@ class NewSupportTicketNotification extends Notification implements ShouldQueue
             'Futzo %s • %s • Ticket %s',
             strtoupper($this->ticket->category),
             strtoupper($this->ticket->status),
-            $this->ticket->id->toString()->truncate(8) . '...',
+            $this->ticket->id,
         );
         $mail = (new MailMessage)
             ->subject($subject)

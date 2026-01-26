@@ -55,15 +55,26 @@ class SupportController extends Controller
     {
         return TicketCollection::make(
             Ticket::where('user_id', $request->user()->id)
-                ->where('status', 'open')
+                ->whereNot('status', 'closed')
                 ->with('publicMessages')
                 ->get()
         );
 
 
     }
-    public function message(Request $request)
+    public function message(Request $request, Ticket $ticket): JsonResponse
     {
+        $message = $request->validate(['response_message' => 'required']);
 
+        $ticket->publicMessages()->create([
+            'author_type' => 'user',
+            'author_user_id' => $request->user()->id,
+            'body' => $message['response_message'],
+        ]);
+        $ticket->status = 'pending';
+        $ticket->save();
+        Notification::route('mail', 'soporte@futzo.io')
+            ->notify(new NewSupportTicketNotification($ticket, $message['response_message']));
+        return response()->json(['message' => 'Su mensaje ha sido enviado exitosamente'], 201);
     }
 }

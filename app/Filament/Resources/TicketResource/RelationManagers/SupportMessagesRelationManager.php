@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\TicketResource\RelationManagers;
 
+use App\Models\SupportMessage;
 use Filament\Actions\CreateAction;
 use Filament\Forms;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -65,7 +66,16 @@ class SupportMessagesRelationManager extends RelationManager
             ])
             ->headerActions([
                 CreateAction::make()
-                    ->label('Responder'),
+                    ->label('Responder')
+                    ->after(function (RelationManager $livewire, SupportMessage $record): void {
+                        $ticket = $livewire->getOwnerRecord();
+
+                        $ticket->forceFill([
+                            'status' => 'answered',
+                            'last_message_at' => $record->created_at ?? now(),
+                            'closed_at' => null,
+                        ])->save();
+                    }),
             ])
             ->actions([])
             ->bulkActions([]);

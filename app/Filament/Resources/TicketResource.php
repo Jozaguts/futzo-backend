@@ -43,6 +43,17 @@ class TicketResource extends Resource
                     ->label('Estado')
                     ->badge()
                     ->sortable(),
+                Tables\Columns\ToggleColumn::make('is_closed')
+                    ->label('Cerrar')
+                    ->getStateUsing(fn (Ticket $record): bool => $record->status === 'closed')
+                    ->updateStateUsing(function (bool $state, Ticket $record): bool {
+                        $record->forceFill([
+                            'status' => $state ? 'closed' : 'open',
+                            'closed_at' => $state ? now() : null,
+                        ])->save();
+
+                        return $state;
+                    }),
                 Tables\Columns\TextColumn::make('priority')
                     ->label('Prioridad')
                     ->badge()

@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Notifications\VerifyEmailWithToken;
 use App\Observers\UserObserver;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -30,7 +32,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @method static create(array $userData)
  */
 #[ObservedBy([UserObserver::class])]
-class User extends Authenticatable implements MustVerifyEmail, HasMedia
+class User extends Authenticatable implements MustVerifyEmail, HasMedia, FilamentUser
 {
     public const string PENDING_ONBOARDING_STATUS = 'pending_onboarding';
     public const string ACTIVE_STATUS = 'active';
@@ -239,5 +241,10 @@ class User extends Authenticatable implements MustVerifyEmail, HasMedia
     public function openedTicketsCount() : int
     {
         return $this->tickets()->where('status', 'open')->count();
+    }
+
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return $this->hasRole('super administrador');
     }
 }

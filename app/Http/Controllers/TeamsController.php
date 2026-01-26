@@ -272,7 +272,7 @@ class TeamsController extends Controller
 
     }
 
-    private function createOrUpdateUser($userData, $request, $role, $roleName, $eventClass, $sendEmail = true): ?User
+    private function createOrUpdateUser($userData, $request, $role, $roleName, $eventClass, $sendEmail = true, $saveQuietly = false): ?User
     {
         if (!$userData) {
             return null;
@@ -282,8 +282,14 @@ class TeamsController extends Controller
         $temporaryPassword = str()->random(8);
         $user->put('password', $temporaryPassword);
         $user->put('verified_at', now());
+        if($saveQuietly){
+            $user = User::withoutEvents(function () use ($user) {
+                return User::updateOrCreate(['email' => $user->get('email')], $user->except('email')->toArray());
+            });
+        } else {
+           $user =  User::updateOrCreate(['email' => $user->get('email')], $user->except('email')->toArray());
+        }
 
-        $user = User::updateOrCreate(['email' => $user->get('email')], $user->except('email')->toArray());
 
         if ($request->hasFile("$role.image")) {
             $media = $user->addMedia($request->file("$role.image"))->toMediaCollection('image');
@@ -336,7 +342,7 @@ class TeamsController extends Controller
                     continue;
                 }
 
-                $header = $sheet->rangeToArray('A1:L1', null, true, true, true)[1];
+                $header = $sheet->rangeToArray('A1:K1', null, true, true, true)[1];
 
                 if ($this->isValidHeader($header)) {
                     $found = true;
@@ -401,26 +407,7 @@ class TeamsController extends Controller
      */
     private function storeTeamFromRow($row, $tournament): void
     {
-//        $locationName = trim((string) ($row['B'] ?? ''));
-//        $homeLocationId = null;
-//        if ($locationName !== '') {
-//            $query = Location::query()
-//                ->whereRaw('LOWER(name) = ?', [Str::lower($locationName)]);
-//
-//            if ($tournament?->league_id) {
-//                $query->whereHas('leagues', static function ($q) use ($tournament) {
-//                    $q->where('league_id', $tournament->league_id);
-//                });
-//            }
-//
-//            $homeLocationId = $query->value('id');
-//
-//            if (!$homeLocationId) {
-//                $homeLocationId = Location::query()
-//                    ->whereRaw('LOWER(name) = ?', [Str::lower($locationName)])
-//                    ->value('id');
-//            }
-//        }
+
 
         $data = [
             'team' => [
@@ -462,7 +449,8 @@ class TeamsController extends Controller
                 'president',
                 'dueño de equipo',
                 RegisteredTeamPresident::class,
-                false
+                false,
+                true
             );
         }
         if ($data['coach']['name']) {
@@ -472,7 +460,8 @@ class TeamsController extends Controller
                 'coach',
                 'entrenador',
                 RegisteredTeamCoach::class,
-                false
+                false,
+                    true
             );
         }
 

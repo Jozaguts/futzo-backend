@@ -26,7 +26,6 @@ class TeamsDataSheet implements FromCollection, WithHeadings, WithTitle, WithCol
                 '',
                 '',
                 '',
-                '',
             ]
         ]);
     }

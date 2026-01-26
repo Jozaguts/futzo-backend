@@ -43,6 +43,7 @@ class UserResource extends JsonResource
             'name' => $this->resource->name,
             'email' => $this->resource->email,
             'contact_method' => $contactMethod,
+            'opened_tickets_count' => $this->resource->openedTicketsCount(),
             'roles' => $this->resource->roles()->pluck('name'),
             'league' => new LeagueResource($this->whenLoaded('league')),
             'has_league' => (bool)$this->resource->league,

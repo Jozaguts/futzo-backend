@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Mail\SupportMessageSent;
+use App\Http\Resources\TicketCollection;
 use App\Models\SupportMessage;
 use App\Models\Ticket;
 use App\Notifications\NewSupportTicketNotification;
@@ -49,6 +49,17 @@ class SupportController extends Controller
             'message' => 'Ticket created successfully',
             'ticket_id' => $ticket->id,
         ], 201);
+
+    }
+    public function list(Request $request): TicketCollection
+    {
+        return TicketCollection::make(
+            Ticket::where('user_id', $request->user()->id)
+                ->where('status', 'open')
+                ->with('publicMessages')
+                ->get()
+        );
+
 
     }
     public function message(Request $request)

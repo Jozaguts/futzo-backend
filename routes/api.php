@@ -16,6 +16,7 @@ use App\Http\Controllers\RefereeController;
 use App\Http\Controllers\RoleAndPermissionsController;
 use App\Http\Controllers\SupportController;
 use App\Http\Controllers\UserController;
+use App\Http\Middleware\CanMakeSupportMessageRequestMiddleware;
 use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -36,8 +37,11 @@ Route::prefix('v1')
         Route::get('/me', function (Request $request) {
             return new UserResource($request->user()->load('league'));
         });
-        Route::post('support/tickets',[SupportController::class, 'ticket'])->name('support.tickets');
+        Route::post('support/tickets',[SupportController::class, 'ticket'])
+            ->middleware(CanMakeSupportMessageRequestMiddleware::class)
+            ->name('support.tickets');
         Route::post('support/tickets/{ticket}/messages',[SupportController::class, 'message'])->name('support.tickets.message');
+        Route::get('support/tickets', [SupportController::class, 'list'])->name('support.tickets.list');
         Route::prefix('admin')->middleware(['billing.operational'])->group(function () {
             Route::get('onboarding/steps', [OnboardingController::class, 'index']);
             Route::apiResource('/roles', RoleAndPermissionsController::class);

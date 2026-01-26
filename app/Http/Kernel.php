@@ -77,5 +77,6 @@ class Kernel extends HttpKernel
         'checkout.eligibility' => \App\Http\Middleware\EnsureCheckoutEligibilityMiddleware::class,
         'billing.operational' => \App\Http\Middleware\EnsureOperationalForBilling::class,
         'tournaments.quota' => \App\Http\Middleware\EnsureTournamentQuota::class,
+        'can_make_support_message_request' => \App\Http\Middleware\CanMakeSupportMessageRequestMiddleware::class,
     ];
 }

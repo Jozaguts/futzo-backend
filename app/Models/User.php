@@ -231,4 +231,13 @@ class User extends Authenticatable implements MustVerifyEmail, HasMedia
     {
         return $this->planSlug() === self::PLAN_FREE;
     }
+
+    public function tickets(): HasMany
+    {
+        return $this->hasMany(Ticket::class);
+    }
+    public function openedTicketsCount() : int
+    {
+        return $this->tickets()->where('status', 'open')->count();
+    }
 }

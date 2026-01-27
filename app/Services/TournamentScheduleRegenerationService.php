@@ -163,6 +163,287 @@ class TournamentScheduleRegenerationService
         return $completedRounds;
     }
 
+    public function regenerateWithFixedRound(
+        Tournament $tournament,
+        int $roundId,
+        array $matches,
+        ?int $byeTeamId
+    ): array {
+        return DB::transaction(function () use ($tournament, $roundId, $matches, $byeTeamId) {
+            if ($roundId !== 1) {
+                throw new RuntimeException('Esta acción solo permite fijar la jornada 1.');
+            }
+
+            $tournament = $tournament->fresh([
+                'configuration',
+                'league',
+                'teams',
+                'groupConfiguration',
+            ]);
+
+            if (!$tournament || $tournament->teams->count() < 2) {
+                throw new RuntimeException('El torneo necesita al menos dos equipos para ajustar el calendario.');
+            }
+
+            if ((bool)($tournament->configuration?->group_stage ?? false)) {
+                throw new RuntimeException('El ajuste de descanso no aplica cuando el torneo tiene fase de grupos.');
+            }
+
+            $hasResults = Game::query()
+                ->where('tournament_id', $tournament->id)
+                ->where('status', '!=', Game::STATUS_SCHEDULED)
+                ->exists();
+            if ($hasResults) {
+                throw new RuntimeException('No es posible modificar el calendario porque ya existen jornadas con resultados.');
+            }
+
+            $teamIds = $tournament->teams->pluck('id')->map(static fn($id) => (int) $id)->all();
+            $teamCount = count($teamIds);
+            $isOdd = $teamCount % 2 !== 0;
+            $expectedMatches = $isOdd ? intdiv($teamCount - 1, 2) : intdiv($teamCount, 2);
+
+            if (count($matches) !== $expectedMatches) {
+                throw new RuntimeException('La jornada 1 debe contener la cantidad correcta de partidos.');
+            }
+
+            if ($isOdd && !$byeTeamId) {
+                throw new RuntimeException('Debes indicar el equipo que descansa en la jornada 1.');
+            }
+
+            if (!$isOdd && $byeTeamId) {
+                throw new RuntimeException('El descanso solo aplica cuando hay número impar de equipos.');
+            }
+
+            $teamMap = array_fill_keys($teamIds, true);
+            $usedTeams = [];
+            $pairKeys = [];
+            $roundPairs = [];
+
+            foreach ($matches as $match) {
+                $home = (int) ($match['home_team_id'] ?? 0);
+                $away = (int) ($match['away_team_id'] ?? 0);
+
+                if (!$home || !$away || $home === $away) {
+                    throw new RuntimeException('Los partidos de la jornada 1 son inválidos.');
+                }
+
+                if (!isset($teamMap[$home]) || !isset($teamMap[$away])) {
+                    throw new RuntimeException('Todos los equipos de la jornada 1 deben pertenecer al torneo.');
+                }
+
+                if (isset($usedTeams[$home]) || isset($usedTeams[$away])) {
+                    throw new RuntimeException('Un equipo no puede jugar más de una vez en la jornada 1.');
+                }
+
+                $key = $this->buildNormalizedMatchKey($home, $away);
+                if (isset($pairKeys[$key])) {
+                    throw new RuntimeException('No puedes repetir el mismo partido en la jornada 1.');
+                }
+
+                $pairKeys[$key] = true;
+                $usedTeams[$home] = true;
+                $usedTeams[$away] = true;
+                $roundPairs[] = [$home, $away];
+            }
+
+            if ($isOdd) {
+                $byeTeamId = (int) $byeTeamId;
+                if (!isset($teamMap[$byeTeamId])) {
+                    throw new RuntimeException('El equipo que descansa no pertenece al torneo.');
+                }
+                if (isset($usedTeams[$byeTeamId])) {
+                    throw new RuntimeException('El equipo que descansa no puede estar en la jornada 1.');
+                }
+                if (count($usedTeams) !== $teamCount - 1) {
+                    throw new RuntimeException('Faltan equipos por asignar en la jornada 1.');
+                }
+            } elseif (count($usedTeams) !== $teamCount) {
+                throw new RuntimeException('La jornada 1 debe incluir a todos los equipos.');
+            }
+
+            $roundTrip = (bool)($tournament->configuration?->round_trip ?? false);
+
+            /** @var ScheduleGeneratorService $generator */
+            $generator = app(ScheduleGeneratorService::class);
+            $fixtureRounds = $generator
+                ->setTournament($tournament)
+                ->generateFixturesForTeamsWithFixedRound($teamIds, $roundPairs, $roundTrip, $byeTeamId);
+
+            Game::query()
+                ->where('tournament_id', $tournament->id)
+                ->forceDelete();
+
+            $phaseId = TournamentPhase::query()
+                ->where('tournament_id', $tournament->id)
+                ->where('is_active', true)
+                ->value('id');
+
+            $matchesCreated = 0;
+            $currentRound = 1;
+            $leagueId = Auth::user()?->league_id ?? $tournament->league_id;
+
+            foreach ($fixtureRounds as $pairings) {
+                foreach ($pairings as $pair) {
+                    Game::create([
+                        'league_id' => $leagueId,
+                        'tournament_id' => $tournament->id,
+                        'home_team_id' => (int) $pair[0],
+                        'away_team_id' => (int) $pair[1],
+                        'status' => Game::STATUS_SCHEDULED,
+                        'slot_status' => Game::SLOT_STATUS_PENDING,
+                        'round' => $currentRound,
+                        'match_date' => null,
+                        'match_time' => null,
+                        'field_id' => null,
+                        'location_id' => null,
+                        'tournament_phase_id' => $phaseId,
+                    ]);
+                    $matchesCreated++;
+                }
+
+                $currentRound++;
+            }
+
+            $result = [
+                'cutoff_round' => 1,
+                'completed_rounds' => 0,
+                'matches_created' => $matchesCreated,
+                'message' => 'La jornada 1 fue fijada y el calendario se regeneró desde la jornada 2.',
+            ];
+
+            $this->logRegeneration($tournament, $leagueId, 'fixed_round', $result);
+
+            return $result;
+        });
+    }
+
+    public function regenerateWithForcedBye(Tournament $tournament, int $targetRound, int $byeTeamId): array
+    {
+        return DB::transaction(function () use ($tournament, $targetRound, $byeTeamId) {
+            $tournament = $tournament->fresh([
+                'configuration',
+                'league',
+                'teams',
+                'groupConfiguration',
+            ]);
+
+            if (!$tournament || $tournament->teams->count() < 2) {
+                throw new RuntimeException('El torneo necesita al menos dos equipos para ajustar el calendario.');
+            }
+
+            if ((bool)($tournament->configuration?->group_stage ?? false)) {
+                throw new RuntimeException('El ajuste de descanso no aplica cuando el torneo tiene fase de grupos.');
+            }
+
+            if ($tournament->teams->count() % 2 === 0) {
+                throw new RuntimeException('El ajuste de descanso solo aplica cuando el torneo tiene un número impar de equipos.');
+            }
+
+            $teamIds = $tournament->teams->pluck('id')->map(static fn($id) => (int) $id)->all();
+            if (!in_array($byeTeamId, $teamIds, true)) {
+                throw new RuntimeException('El equipo seleccionado no pertenece al torneo.');
+            }
+
+            $roundTrip = (bool)($tournament->configuration?->round_trip ?? false);
+            $baseRounds = count($teamIds);
+            $totalRounds = $roundTrip ? $baseRounds * 2 : $baseRounds;
+
+            if ($targetRound < 1 || $targetRound > $totalRounds) {
+                throw new RuntimeException('La jornada solicitada no es válida para este torneo.');
+            }
+
+            $hasSchedule = Game::query()
+                ->where('tournament_id', $tournament->id)
+                ->exists();
+            if (!$hasSchedule) {
+                throw new RuntimeException('No hay un calendario generado para ajustar.');
+            }
+
+            $roundHasResults = Game::query()
+                ->where('tournament_id', $tournament->id)
+                ->where('round', '>=', $targetRound)
+                ->where('status', '!=', Game::STATUS_SCHEDULED)
+                ->exists();
+            if ($roundHasResults) {
+                throw new RuntimeException('No es posible ajustar el descanso porque ya existen jornadas con resultados.');
+            }
+
+            $existingKeys = Game::query()
+                ->where('tournament_id', $tournament->id)
+                ->where('round', '<', $targetRound)
+                ->get(['home_team_id', 'away_team_id'])
+                ->map(fn($game) => $this->buildMatchKey((int) $game->home_team_id, (int) $game->away_team_id))
+                ->all();
+
+            $existingKeyMap = array_fill_keys($existingKeys, true);
+
+            /** @var ScheduleGeneratorService $generator */
+            $generator = app(ScheduleGeneratorService::class);
+            $offset = $this->resolveRotationOffsetForBye(
+                $generator,
+                $teamIds,
+                $roundTrip,
+                $byeTeamId,
+                $existingKeyMap
+            );
+
+            $fixtureRounds = $generator
+                ->setTournament($tournament)
+                ->generateFixturesForTeamsWithRotation($teamIds, $roundTrip, $offset);
+
+            Game::query()
+                ->where('tournament_id', $tournament->id)
+                ->where('round', '>=', $targetRound)
+                ->forceDelete();
+
+            $phaseId = TournamentPhase::query()
+                ->where('tournament_id', $tournament->id)
+                ->where('is_active', true)
+                ->value('id');
+
+            $matchesCreated = 0;
+            $currentRound = $targetRound;
+
+            foreach ($this->buildRemainingRounds($fixtureRounds, $existingKeyMap) as $pairings) {
+                foreach ($pairings as $pair) {
+                    Game::create([
+                        'league_id' => Auth::user()?->league_id ?? $tournament->league_id,
+                        'tournament_id' => $tournament->id,
+                        'home_team_id' => (int) $pair[0],
+                        'away_team_id' => (int) $pair[1],
+                        'status' => Game::STATUS_SCHEDULED,
+                        'slot_status' => Game::SLOT_STATUS_PENDING,
+                        'round' => $currentRound,
+                        'match_date' => null,
+                        'match_time' => null,
+                        'field_id' => null,
+                        'location_id' => null,
+                        'tournament_phase_id' => $phaseId,
+                    ]);
+                    $matchesCreated++;
+                }
+                $currentRound++;
+            }
+
+            $result = [
+                'cutoff_round' => $targetRound,
+                'completed_rounds' => $targetRound - 1,
+                'matches_created' => $matchesCreated,
+                'message' => sprintf(
+                    'El calendario se ajustó desde la jornada %d para que el equipo %d descanse.',
+                    $targetRound,
+                    $byeTeamId
+                ),
+            ];
+
+            $this->logRegeneration($tournament, Auth::user()?->league_id ?? $tournament->league_id, 'bye_override', array_merge($result, [
+                'message' => $result['message'],
+            ]));
+
+            return $result;
+        });
+    }
+
     private function regenerateFull(Tournament $tournament, int $leagueId): array
     {
         Game::query()
@@ -342,6 +623,85 @@ class TournamentScheduleRegenerationService
     private function buildMatchKey(int $homeTeamId, int $awayTeamId): string
     {
         return $homeTeamId . '|' . $awayTeamId;
+    }
+
+    private function buildNormalizedMatchKey(int $teamA, int $teamB): string
+    {
+        $min = min($teamA, $teamB);
+        $max = max($teamA, $teamB);
+
+        return $min . '|' . $max;
+    }
+
+    private function resolveRotationOffsetForBye(
+        ScheduleGeneratorService $generator,
+        array $teamIds,
+        bool $roundTrip,
+        int $byeTeamId,
+        array $existingKeyMap
+    ): int {
+        $baseRounds = count($teamIds);
+
+        for ($offset = 0; $offset < $baseRounds; $offset++) {
+            $fixtureRounds = $generator->generateFixturesForTeamsWithRotation($teamIds, $roundTrip, $offset);
+            $remainingRounds = $this->buildRemainingRounds($fixtureRounds, $existingKeyMap);
+
+            if (empty($remainingRounds)) {
+                continue;
+            }
+
+            $byeTeam = $this->resolveByeTeam($teamIds, $remainingRounds[0]);
+            if ($byeTeam === $byeTeamId) {
+                return $offset;
+            }
+        }
+
+        throw new RuntimeException('No se pudo ajustar el descanso solicitado con las jornadas actuales.');
+    }
+
+    private function buildRemainingRounds(array $fixtureRounds, array $existingKeyMap): array
+    {
+        $remainingRounds = [];
+
+        foreach ($fixtureRounds as $pairings) {
+            $filtered = [];
+            foreach ($pairings as $pair) {
+                if (!is_array($pair) || count($pair) < 2) {
+                    continue;
+                }
+
+                $key = $this->buildMatchKey((int) $pair[0], (int) $pair[1]);
+                if (isset($existingKeyMap[$key])) {
+                    continue;
+                }
+
+                $filtered[] = [(int) $pair[0], (int) $pair[1]];
+            }
+
+            if (!empty($filtered)) {
+                $remainingRounds[] = $filtered;
+            }
+        }
+
+        return $remainingRounds;
+    }
+
+    private function resolveByeTeam(array $teamIds, array $pairings): ?int
+    {
+        $playing = [];
+
+        foreach ($pairings as $pair) {
+            if (!is_array($pair) || count($pair) < 2) {
+                continue;
+            }
+
+            $playing[] = (int) $pair[0];
+            $playing[] = (int) $pair[1];
+        }
+
+        $missing = array_values(array_diff($teamIds, array_unique($playing)));
+
+        return count($missing) === 1 ? (int) $missing[0] : null;
     }
 
     private function countPendingManualMatches(int $tournamentId): int

@@ -23,6 +23,8 @@ use App\Http\Resources\ScheduleSettingsResource;
 use App\Http\Resources\TournamentCollection;
 use App\Http\Resources\TournamentResource;
 use App\Http\Resources\TournamentScheduleCollection;
+use App\Jobs\RegenerateScheduleWithForcedByeJob;
+use App\Jobs\RegenerateScheduleWithFixedRoundJob;
 use App\Models\Game;
 use App\Models\GameEvent;
 use App\Models\Location;
@@ -787,41 +789,43 @@ class TournamentController extends Controller
     public function setTournamentRoundBye(
         SetTournamentRoundByeRequest $request,
         Tournament $tournament,
-        int $roundId,
-        TournamentScheduleRegenerationService $service
+        int $roundId
     ): JsonResponse {
+        // Nota: este flujo no se está utilizando actualmente en la UI.
         $byeTeamId = (int) $request->validated()['bye_team_id'];
 
-        try {
-            $result = $service->regenerateWithForcedBye($tournament, $roundId, $byeTeamId);
+        RegenerateScheduleWithForcedByeJob::dispatch(
+            $tournament->id,
+            $roundId,
+            $byeTeamId,
+            auth()->id()
+        )->afterCommit();
 
-            return response()->json($result);
-        } catch (RuntimeException $exception) {
-            throw ValidationException::withMessages([
-                'bye_team_id' => [$exception->getMessage()],
-            ]);
-        }
+        return response()->json([
+            'message' => 'La regeneración del calendario fue enviada a la cola.',
+        ], 202);
     }
 
     public function setTournamentRoundSchedule(
         SetTournamentRoundScheduleRequest $request,
         Tournament $tournament,
-        int $roundId,
-        TournamentScheduleRegenerationService $service
+        int $roundId
     ): JsonResponse {
         $data = $request->validated();
         $matches = $data['matches'] ?? [];
         $byeTeamId = isset($data['bye_team_id']) ? (int) $data['bye_team_id'] : null;
 
-        try {
-            $result = $service->regenerateWithFixedRound($tournament, $roundId, $matches, $byeTeamId);
+        RegenerateScheduleWithFixedRoundJob::dispatch(
+            $tournament->id,
+            $roundId,
+            $matches,
+            $byeTeamId,
+            auth()->id()
+        )->afterCommit();
 
-            return response()->json($result);
-        } catch (RuntimeException $exception) {
-            throw ValidationException::withMessages([
-                'matches' => [$exception->getMessage()],
-            ]);
-        }
+        return response()->json([
+            'message' => 'La regeneración del calendario fue enviada a la cola.',
+        ], 202);
     }
 
     private function isEliminationPhase(Game $game): bool

@@ -917,6 +917,21 @@ class ScheduleGeneratorService
 
     private function generateFixtures(array $teams, bool $roundTrip): array
     {
+        $fixtures = $this->generateBaseFixtures($teams);
+
+        if ($roundTrip) {
+            // agregar la vuelta: invertir local y visitante
+            foreach ($fixtures as $round) {
+                $reverseRound = array_map(static fn($match) => [$match[1], $match[0]], $round);
+                $fixtures[] = $reverseRound;
+            }
+        }
+
+        return $fixtures;
+    }
+
+    private function generateBaseFixtures(array $teams): array
+    {
         $fixtures = [];
         $teamCount = count($teams);
         $rounds = $teamCount - 1;
@@ -953,8 +968,38 @@ class ScheduleGeneratorService
             array_splice($rotation, 1, 0, [$last]);
         }
 
+        return $fixtures;
+    }
+
+    private function rotateFixtures(array $fixtures, int $offset): array
+    {
+        $count = count($fixtures);
+        if ($count === 0) {
+            return $fixtures;
+        }
+
+        $offset = $offset % $count;
+        if ($offset === 0) {
+            return $fixtures;
+        }
+
+        return array_merge(
+            array_slice($fixtures, -$offset),
+            array_slice($fixtures, 0, $count - $offset)
+        );
+    }
+
+    public function generateFixturesForTeams(array $teamIds, bool $roundTrip = false): array
+    {
+        return $this->generateFixtures($teamIds, $roundTrip);
+    }
+
+    public function generateFixturesForTeamsWithRotation(array $teamIds, bool $roundTrip, int $offset): array
+    {
+        $fixtures = $this->generateBaseFixtures($teamIds);
+        $fixtures = $this->rotateFixtures($fixtures, $offset);
+
         if ($roundTrip) {
-            // agregar la vuelta: invertir local y visitante
             foreach ($fixtures as $round) {
                 $reverseRound = array_map(static fn($match) => [$match[1], $match[0]], $round);
                 $fixtures[] = $reverseRound;
@@ -964,9 +1009,87 @@ class ScheduleGeneratorService
         return $fixtures;
     }
 
-    public function generateFixturesForTeams(array $teamIds, bool $roundTrip = false): array
+    public function generateFixturesForTeamsWithFixedRound(
+        array $teamIds,
+        array $roundOnePairs,
+        bool $roundTrip,
+        ?int $byeTeamId = null
+    ): array {
+        $rotation = $this->buildRotationFromRound($teamIds, $roundOnePairs, $byeTeamId);
+
+        return $this->generateFixturesFromRotation($rotation, $roundTrip);
+    }
+
+    private function buildRotationFromRound(array $teamIds, array $roundOnePairs, ?int $byeTeamId): array
     {
-        return $this->generateFixtures($teamIds, $roundTrip);
+        $teams = $teamIds;
+        $isOdd = count($teams) % 2 !== 0;
+
+        if ($isOdd) {
+            $teams[] = null;
+        }
+
+        $teamCount = count($teams);
+        $half = (int) ($teamCount / 2);
+        $pairs = array_values($roundOnePairs);
+
+        if ($isOdd) {
+            $pairs[] = [$byeTeamId, null];
+        }
+
+        if (count($pairs) !== $half) {
+            throw new RuntimeException('La jornada inicial no coincide con la cantidad de partidos esperada.');
+        }
+
+        $rotation = array_fill(0, $teamCount, null);
+        $index = 0;
+
+        foreach ($pairs as $pair) {
+            $rotation[$index] = $pair[0] ?? null;
+            $rotation[$teamCount - 1 - $index] = $pair[1] ?? null;
+            $index++;
+        }
+
+        return $rotation;
+    }
+
+    private function generateFixturesFromRotation(array $rotation, bool $roundTrip): array
+    {
+        $fixtures = [];
+        $teamCount = count($rotation);
+        $rounds = $teamCount - 1;
+        $half = $teamCount / 2;
+
+        for ($round = 0; $round < $rounds; $round++) {
+            $pairings = [];
+            for ($i = 0; $i < $half; $i++) {
+                $home = $rotation[$i];
+                $away = $rotation[$teamCount - 1 - $i];
+
+                if (!is_null($home) && !is_null($away)) {
+                    if ($round % 2 !== 0) {
+                        [$home, $away] = [$away, $home];
+                    }
+                    $pairings[] = [$home, $away];
+                }
+            }
+
+            $fixtures[] = $pairings;
+
+            $fixed = array_shift($rotation);
+            $last = array_pop($rotation);
+            array_unshift($rotation, $fixed);
+            array_splice($rotation, 1, 0, [$last]);
+        }
+
+        if ($roundTrip) {
+            foreach ($fixtures as $round) {
+                $reverseRound = array_map(static fn($match) => [$match[1], $match[0]], $round);
+                $fixtures[] = $reverseRound;
+            }
+        }
+
+        return $fixtures;
     }
 
     private function generateAvailableSlots($fields, $startDate, $matchDuration, $weeksToGenerate): array

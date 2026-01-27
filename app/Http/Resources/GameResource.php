@@ -36,107 +36,91 @@ class GameResource extends JsonResource
         // 2) Campo específico: del request o el original del juego
         $fieldId = (int)$request->input('field_id', $this->resource->field_id);
 
-        // 3) Fase activa y sus límites
-        $currentPhase = $this->resource->tournamentPhase;
-        $tournamentId = $this->resource->tournament_id;
-        $phaseGamesQuery = Game::where('tournament_id', $tournamentId)
-            ->where('tournament_phase_id', optional($currentPhase)->id);
-        $phaseStart = $phaseGamesQuery->min('match_date');
-        $phaseEnd = $phaseGamesQuery->max('match_date');
+        // 3) Duración total a reservar (tiempo de juego + gap admin + buffer según modalidad)
+        $config = $this->resource->tournament->configuration;
+        $matchDuration = MatchDuration::minutes($config);
 
-        $phaseStart = $phaseStart ? Carbon::parse($phaseStart) : null;
-        $phaseEnd = $phaseEnd ? Carbon::parse($phaseEnd) : null;
+        // 4) Ventanas efectivas: field ∩ league − reservas de otros torneos
+        $leagueField = LeagueField::where('field_id', $fieldId)
+            ->where('league_id', $this->resource->tournament->league_id)
+            ->first();
+        $availabilityService = app(AvailabilityService::class);
+        $weekly = $leagueField
+            ? $availabilityService->getWeeklyWindowsForLeagueField($leagueField->id, $this->resource->tournament_id)
+            : [];
 
-        // 4) Si la fecha solicitada está fuera de la ventana de la fase, no hay opciones
-        if ($request->has('date') && $phaseStart && $phaseEnd && ($selectedDate->lt($phaseStart) || $selectedDate->gt($phaseEnd))) {
-            $options = [];
-        } else {
-            // 5) Duración total a reservar (tiempo de juego + gap admin + buffer según modalidad)
-            $config = $this->resource->tournament->configuration;
-            $matchDuration = MatchDuration::minutes($config);
+        // 5) Construir intervalos reservados (cualquier torneo en el mismo campo/fecha)
+        $reservedIntervals = [];
 
-            // 6) Ventanas efectivas: field ∩ league − reservas de otros torneos
-            $leagueField = LeagueField::where('field_id', $fieldId)
-                ->where('league_id', $this->resource->tournament->league_id)
-                ->first();
-            $availabilityService = app(AvailabilityService::class);
-            $weekly = $leagueField
-                ? $availabilityService->getWeeklyWindowsForLeagueField($leagueField->id, $this->resource->tournament_id)
-                : [];
-
-            // 7) Construir intervalos reservados (cualquier torneo en el mismo campo/fecha)
-            $reservedIntervals = [];
-
-            // incluir el propio juego (si tiene hora)
-            if (!empty($this->resource->match_time)) {
-                $curStart = Carbon::createFromFormat('H:i', $this->resource->match_time);
-                $reservedIntervals[] = [
-                    $curStart->hour * 60 + $curStart->minute,
-                    $curStart->copy()->addMinutes($matchDuration)->hour * 60 + $curStart->copy()->addMinutes($matchDuration)->minute,
-                ];
-            }
-
-            // otros juegos del mismo campo y fecha (dentro de la misma liga por LeagueScope)
-            $otherGames = Game::with(['tournament.configuration'])
-                ->where('field_id', $fieldId)
-                ->whereDate('match_date', $selectedDate)
-                ->where('id', '!=', $this->resource->id)
-                ->get(['id', 'match_time', 'tournament_id']);
-            foreach ($otherGames as $g) {
-                if (empty($g->match_time)) { continue; }
-                $gStart = Carbon::createFromFormat('H:i', $g->match_time);
-                $gCfg = $g->tournament->configuration;
-                $gDuration = MatchDuration::minutes($gCfg, $matchDuration);
-                $startMin = $gStart->hour * 60 + $gStart->minute;
-                $endMin = $startMin + $gDuration;
-                $reservedIntervals[] = [$startMin, $endMin];
-            }
-
-            // 8) Generar opciones de franjas evitando solapes con reservados
-            $intervals = [];
-            $map = [0 => 'sunday', 1 => 'monday', 2 => 'tuesday', 3 => 'wednesday', 4 => 'thursday', 5 => 'friday', 6 => 'saturday'];
-            foreach ($weekly as $dow => $ranges) {
-                $day = $map[$dow];
-                if ($day !== $dayOfWeek) {
-                    continue;
-                }
-                $slotDate = $selectedDate;
-                $freeSlots = [];
-                foreach ($ranges as [$s, $e]) {
-                    $start = $slotDate->copy()->setTime(intdiv($s, 60), $s % 60);
-                    $end = $slotDate->copy()->setTime(intdiv($e, 60), $e % 60);
-                    $cursor = $start->copy();
-                    while ($cursor->copy()->addMinutes($matchDuration)->lessThanOrEqualTo($end)) {
-                        $slotStart = $cursor->copy();
-                        $slotEnd = $cursor->copy()->addMinutes($matchDuration);
-                        $slotStartMin = $slotStart->hour * 60 + $slotStart->minute;
-                        $slotEndMin = $slotEnd->hour * 60 + $slotEnd->minute;
-
-                        // verificar solape con cualquier reservado
-                        $overlaps = false;
-                        foreach ($reservedIntervals as [$rs, $re]) {
-                            if ($slotStartMin < $re && $slotEndMin > $rs) { // solapan
-                                $overlaps = true; break;
-                            }
-                        }
-                        if (!$overlaps) {
-                            $freeSlots[] = [
-                                'start' => $slotStart->format('H:i'),
-                                'end' => $slotEnd->format('H:i'),
-                            ];
-                        }
-                        $cursor->addMinutes($matchDuration);
-                    }
-                }
-                if (!empty($freeSlots)) {
-                    $intervals['day'] = $day;
-                    $intervals['hours'] = $freeSlots;
-                }
-            }
-            $options = [
-                ['field_id' => (int)$fieldId, 'available_intervals' => $intervals]
+        // incluir el propio juego (si tiene hora)
+        if (!empty($this->resource->match_time)) {
+            $curStart = Carbon::createFromFormat('H:i', $this->resource->match_time);
+            $reservedIntervals[] = [
+                $curStart->hour * 60 + $curStart->minute,
+                $curStart->copy()->addMinutes($matchDuration)->hour * 60 + $curStart->copy()->addMinutes($matchDuration)->minute,
             ];
         }
+
+        // otros juegos del mismo campo y fecha (dentro de la misma liga por LeagueScope)
+        $otherGames = Game::with(['tournament.configuration'])
+            ->where('field_id', $fieldId)
+            ->whereDate('match_date', $selectedDate)
+            ->where('id', '!=', $this->resource->id)
+            ->get(['id', 'match_time', 'tournament_id']);
+        foreach ($otherGames as $g) {
+            if (empty($g->match_time)) { continue; }
+            $gStart = Carbon::createFromFormat('H:i', $g->match_time);
+            $gCfg = $g->tournament->configuration;
+            $gDuration = MatchDuration::minutes($gCfg, $matchDuration);
+            $startMin = $gStart->hour * 60 + $gStart->minute;
+            $endMin = $startMin + $gDuration;
+            $reservedIntervals[] = [$startMin, $endMin];
+        }
+
+        // 6) Generar opciones de franjas evitando solapes con reservados
+        $intervals = [];
+        $map = [0 => 'sunday', 1 => 'monday', 2 => 'tuesday', 3 => 'wednesday', 4 => 'thursday', 5 => 'friday', 6 => 'saturday'];
+        foreach ($weekly as $dow => $ranges) {
+            $day = $map[$dow];
+            if ($day !== $dayOfWeek) {
+                continue;
+            }
+            $slotDate = $selectedDate;
+            $freeSlots = [];
+            foreach ($ranges as [$s, $e]) {
+                $start = $slotDate->copy()->setTime(intdiv($s, 60), $s % 60);
+                $end = $slotDate->copy()->setTime(intdiv($e, 60), $e % 60);
+                $cursor = $start->copy();
+                while ($cursor->copy()->addMinutes($matchDuration)->lessThanOrEqualTo($end)) {
+                    $slotStart = $cursor->copy();
+                    $slotEnd = $cursor->copy()->addMinutes($matchDuration);
+                    $slotStartMin = $slotStart->hour * 60 + $slotStart->minute;
+                    $slotEndMin = $slotEnd->hour * 60 + $slotEnd->minute;
+
+                    // verificar solape con cualquier reservado
+                    $overlaps = false;
+                    foreach ($reservedIntervals as [$rs, $re]) {
+                        if ($slotStartMin < $re && $slotEndMin > $rs) { // solapan
+                            $overlaps = true; break;
+                        }
+                    }
+                    if (!$overlaps) {
+                        $freeSlots[] = [
+                            'start' => $slotStart->format('H:i'),
+                            'end' => $slotEnd->format('H:i'),
+                        ];
+                    }
+                    $cursor->addMinutes($matchDuration);
+                }
+            }
+            if (!empty($freeSlots)) {
+                $intervals['day'] = $day;
+                $intervals['hours'] = $freeSlots;
+            }
+        }
+        $options = [
+            ['field_id' => (int)$fieldId, 'available_intervals' => $intervals]
+        ];
         $homeGroupKey = $this->resource->getAttribute('home_group_key');
         $awayGroupKey = $this->resource->getAttribute('away_group_key');
         $storedGroupKey = $this->resource->getAttribute('group_key');

@@ -13,6 +13,7 @@ Route::prefix('tournaments')->group(function () {
 
     Route::get('{tournament}/schedule/settings', [TournamentController::class, 'scheduleSettings']);
     Route::get('{tournament}/schedule/rounds/{round}/export', [TournamentController::class, 'exportTournamentRoundScheduleAs']);
+    Route::get('{tournament}/schedule/rounds/{round}', [TournamentController::class, 'getRoundDetails']);
     Route::get('{tournament}/standing/export', [TournamentController::class, 'exportStanding']);
     Route::get('{tournament}/stats/export', [TournamentController::class, 'exportStats']);
     Route::get('{tournament}/schedule', [TournamentController::class, 'getTournamentSchedule']);
@@ -42,6 +43,8 @@ Route::prefix('tournaments')->group(function () {
     Route::post('{tournament}/phases/advance', [TournamentController::class, 'advancePhase']);
     Route::post('{tournament}/locations', [TournamentController::class, 'storeTournamentLocations']);
     Route::post('{tournament}/rounds/{roundId}', [TournamentController::class, 'updateTournamentRound']);
+    Route::post('{tournament}/schedule/rounds/{roundId}/bye', [TournamentController::class, 'setTournamentRoundBye']);
+    Route::post('{tournament}/schedule/rounds/{roundId}/lock', [TournamentController::class, 'setTournamentRoundSchedule']);
     Route::post('{tournament}/bracket/confirm', [BracketController::class, 'confirm']);
     Route::post('{tournament}/regenerate-calendar', [TournamentController::class, 'analyzeScheduleRegeneration']);
     Route::post('{tournament}/confirm-regeneration', [TournamentController::class, 'confirmScheduleRegeneration']);

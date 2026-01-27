@@ -13,7 +13,10 @@ use App\Http\Requests\TournamentStoreRequest;
 use App\Http\Requests\TournamentUpdateRequest;
 use App\Http\Requests\UpdateTournamentRoundRequest;
 use App\Http\Requests\UpdateTournamentStatusRequest;
+use App\Http\Requests\SetTournamentRoundByeRequest;
+use App\Http\Requests\SetTournamentRoundScheduleRequest;
 use App\Http\Resources\FieldResource;
+use App\Http\Resources\GameResource;
 use App\Http\Resources\LastGamesCollection;
 use App\Http\Resources\NextGamesCollection;
 use App\Http\Resources\ScheduleSettingsResource;
@@ -32,6 +35,7 @@ use App\Models\TournamentPhase;
 use App\Models\TournamentConfiguration;
 use App\Models\TournamentFieldReservation;
 use App\Services\ScheduleGeneratorService;
+use App\Services\RoundStatusService;
 use App\Services\TournamentScheduleRegenerationService;
 use Barryvdh\Snappy\Facades\SnappyImage;
 use Carbon\Carbon;
@@ -780,6 +784,46 @@ class TournamentController extends Controller
         return response()->json(['message' => 'Partido actualizado correctamente']);
     }
 
+    public function setTournamentRoundBye(
+        SetTournamentRoundByeRequest $request,
+        Tournament $tournament,
+        int $roundId,
+        TournamentScheduleRegenerationService $service
+    ): JsonResponse {
+        $byeTeamId = (int) $request->validated()['bye_team_id'];
+
+        try {
+            $result = $service->regenerateWithForcedBye($tournament, $roundId, $byeTeamId);
+
+            return response()->json($result);
+        } catch (RuntimeException $exception) {
+            throw ValidationException::withMessages([
+                'bye_team_id' => [$exception->getMessage()],
+            ]);
+        }
+    }
+
+    public function setTournamentRoundSchedule(
+        SetTournamentRoundScheduleRequest $request,
+        Tournament $tournament,
+        int $roundId,
+        TournamentScheduleRegenerationService $service
+    ): JsonResponse {
+        $data = $request->validated();
+        $matches = $data['matches'] ?? [];
+        $byeTeamId = isset($data['bye_team_id']) ? (int) $data['bye_team_id'] : null;
+
+        try {
+            $result = $service->regenerateWithFixedRound($tournament, $roundId, $matches, $byeTeamId);
+
+            return response()->json($result);
+        } catch (RuntimeException $exception) {
+            throw ValidationException::withMessages([
+                'matches' => [$exception->getMessage()],
+            ]);
+        }
+    }
+
     private function isEliminationPhase(Game $game): bool
     {
         $phaseName = optional($game->tournamentPhase?->phase)->name;
@@ -1245,6 +1289,185 @@ class TournamentController extends Controller
                 'tournament_id' => $tournament->id,
                 'type' => $typeKey,
             ],
+        ]);
+    }
+
+    public function getRoundDetails(Request $request, Tournament $tournament, int $round): JsonResponse
+    {
+        $tournament->loadMissing(['configuration', 'teams']);
+        $activePhase = $tournament->activePhase();
+
+        $baseQuery = Game::query()
+            ->where('tournament_id', $tournament->id)
+            ->where('round', $round)
+            ->when($activePhase, static function ($query, $phase) {
+                $query->where('tournament_phase_id', $phase->id);
+            })
+            ->when(!$activePhase, static function ($query) {
+                $query->whereNull('tournament_phase_id');
+            });
+
+        if (!(clone $baseQuery)->exists()) {
+            return response()->json([
+                'message' => 'No hay partidos para esta jornada.',
+            ], 404);
+        }
+
+        $includeGroupData = (int)($tournament->configuration?->tournament_format_id ?? $tournament->tournament_format_id)
+            === TournamentFormatId::GroupAndElimination->value;
+
+        $teamGroupMap = [];
+        $groupSummaries = collect();
+        $teamsById = collect();
+
+        if ($includeGroupData) {
+            $assignments = DB::table('team_tournament')
+                ->select('team_id', 'group_key')
+                ->where('tournament_id', $tournament->id)
+                ->whereNotNull('group_key')
+                ->get();
+
+            if ($assignments->isNotEmpty()) {
+                $teamIds = $assignments->pluck('team_id')->unique();
+                $teamsById = Team::whereIn('id', $teamIds)
+                    ->get(['id', 'name', 'image', 'colors'])
+                    ->keyBy('id');
+
+                $teamGroupMap = $assignments->pluck('group_key', 'team_id')->toArray();
+
+                $groupSummaries = collect($teamGroupMap)
+                    ->mapToGroups(static function ($groupKey, $teamId) {
+                        return [$groupKey => $teamId];
+                    })
+                    ->map(function ($teamIds, $groupKey) use ($teamsById) {
+                        $groupTeams = $teamIds->map(function ($teamId) use ($teamsById) {
+                            $team = $teamsById->get($teamId);
+
+                            if (!$team) {
+                                return null;
+                            }
+
+                            return [
+                                'id' => $team->id,
+                                'name' => $team->name,
+                                'image' => $team->image,
+                            ];
+                        })->filter()->values()->all();
+
+                        return [
+                            'key' => $groupKey,
+                            'name' => "Grupo {$groupKey}",
+                            'teams_count' => count($groupTeams),
+                            'teams' => $groupTeams,
+                        ];
+                    });
+            }
+        }
+
+        $matches = (clone $baseQuery)
+            ->with([
+                'homeTeam',
+                'awayTeam',
+                'field',
+                'location',
+                'referee',
+                'tournament',
+                'tournament.configuration',
+                'tournament.teams:id,name,image',
+                'tournamentPhase',
+                'tournamentPhase.phase',
+                'penalties',
+            ])
+            ->orderBy('match_time')
+            ->get();
+
+        if ($includeGroupData && !empty($teamGroupMap)) {
+            $buildGroupSummary = static function (string $groupKey) use ($teamGroupMap, $teamsById) {
+                $teamIds = array_keys($teamGroupMap, $groupKey, true);
+
+                $groupTeams = collect($teamIds)
+                    ->map(function ($teamId) use ($teamsById) {
+                        $team = $teamsById->get((int)$teamId);
+
+                        if (!$team) {
+                            return null;
+                        }
+
+                        return [
+                            'id' => $team->id,
+                            'name' => $team->name,
+                            'image' => $team->image,
+                        ];
+                    })
+                    ->filter()
+                    ->values()
+                    ->all();
+
+                return [
+                    'key' => $groupKey,
+                    'name' => "Grupo {$groupKey}",
+                    'teams_count' => count($groupTeams),
+                    'teams' => $groupTeams,
+                ];
+            };
+
+            $matches = $matches->map(function (Game $game) use ($teamGroupMap, $groupSummaries, $buildGroupSummary) {
+                $homeGroup = $teamGroupMap[$game->home_team_id] ?? null;
+                $awayGroup = $teamGroupMap[$game->away_team_id] ?? null;
+                $gameGroupKey = $game->group_key ?? null;
+
+                if (!is_null($homeGroup)) {
+                    $game->setAttribute('home_group_key', $homeGroup);
+                }
+
+                if (!is_null($awayGroup)) {
+                    $game->setAttribute('away_group_key', $awayGroup);
+                }
+
+                if (!$gameGroupKey && $homeGroup && $homeGroup === $awayGroup) {
+                    $gameGroupKey = $homeGroup;
+                }
+
+                if ($gameGroupKey) {
+                    $summary = $groupSummaries->get($gameGroupKey) ?? $buildGroupSummary($gameGroupKey);
+                    $game->setAttribute('group_key', $gameGroupKey);
+                    $game->setAttribute('group_summary', $summary);
+                }
+
+                return $game;
+            });
+        }
+
+        $byeTeam = null;
+        $teams = $tournament->teams;
+        if ($teams instanceof \Illuminate\Support\Collection && $teams->count() % 2 !== 0) {
+            $playingTeamIds = $matches->flatMap(static function ($match) {
+                return [
+                    $match->home_team_id,
+                    $match->away_team_id,
+                ];
+            })->filter()->unique();
+
+            $bye = $teams->first(function ($team) use ($playingTeamIds) {
+                return !$playingTeamIds->contains($team->id);
+            });
+
+            if ($bye) {
+                $byeTeam = [
+                    'id' => $bye->id,
+                    'name' => $bye->name,
+                    'image' => $bye->image,
+                ];
+            }
+        }
+
+        return response()->json([
+            'round' => (int) $round,
+            'status' => RoundStatusService::getRoundStatus($tournament->id, $round),
+            'isEditable' => false,
+            'date' => optional($matches->first())->match_date?->toDateString(),
+            'matches' => $matches->map(fn ($match) => GameResource::make($match))->values(),
+            'bye_team' => $byeTeam,
         ]);
     }
 }

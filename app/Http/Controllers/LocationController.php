@@ -172,11 +172,19 @@ class LocationController extends Controller
                 // apply to all days
                 for ($dow = 0; $dow <= 6; $dow++) {
                     foreach ($ranges as $r) {
+                        $start = $this->toMinutes($r['start'] ?? '00:00');
+                        $end = $this->toMinutes($r['end'] ?? '24:00');
+                        if ($end === 0 && $start > 0) {
+                            $end = 1440;
+                        }
+                        if ($end < $start) {
+                            $end = 1440;
+                        }
                         LeagueFieldWindow::create([
                             'league_field_id' => $leagueFieldId,
                             'day_of_week' => $dow,
-                            'start_minute' => $this->toMinutes($r['start'] ?? '00:00'),
-                            'end_minute' => $this->toMinutes($r['end'] ?? '24:00'),
+                            'start_minute' => $start,
+                            'end_minute' => $end,
                             'enabled' => true,
                         ]);
                     }
@@ -185,11 +193,19 @@ class LocationController extends Controller
             }
             $dow = $map[$dk];
             foreach ($ranges as $r) {
+                $start = $this->toMinutes($r['start'] ?? '00:00');
+                $end = $this->toMinutes($r['end'] ?? '24:00');
+                if ($end === 0 && $start > 0) {
+                    $end = 1440;
+                }
+                if ($end < $start) {
+                    $end = 1440;
+                }
                 LeagueFieldWindow::create([
                     'league_field_id' => $leagueFieldId,
                     'day_of_week' => $dow,
-                    'start_minute' => $this->toMinutes($r['start'] ?? '00:00'),
-                    'end_minute' => $this->toMinutes($r['end'] ?? '24:00'),
+                    'start_minute' => $start,
+                    'end_minute' => $end,
                     'enabled' => true,
                 ]);
             }

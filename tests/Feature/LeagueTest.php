@@ -85,7 +85,7 @@ it('creates qr configurations for every qr type when a league is created', funct
         $this->assertDatabaseHas('qr_configurations', [
             'league_id' => $league->id,
             'qr_type_id' => $type->id,
-            'title' => $league->name,
+            'title' => $type->name,
             'subtitle' => 'Configuración inicial',
         ]);
     });

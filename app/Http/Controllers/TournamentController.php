@@ -1017,7 +1017,10 @@ class TournamentController extends Controller
             sleep(2);
             $games = $games->map(function($game){
                 return [
-                    $game->homeTeam->name, $game->match_time, $game->awayTeam->name,
+                    $game->homeTeam->name,
+                    $game->match_date ? $game->match_date->toDateString() : null,
+                    $game->match_time,
+                    $game->awayTeam->name,
                 ];
             })->toArray();
             $export = new RoundExport(

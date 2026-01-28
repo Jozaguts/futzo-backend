@@ -30,23 +30,23 @@ class RoundExport implements FromArray, WithColumnFormatting, WithColumnWidths, 
     {
         $rows = [];
 
-        $rows[] = ["Jornada {$this->round}", '', ''];
+        $rows[] = ["Jornada {$this->round}", '', '', ''];
 
         if ($this->byeTeamName) {
-            $rows[] = ["Descansa: {$this->byeTeamName}", '', ''];
+            $rows[] = ["Descansa: {$this->byeTeamName}", '', '', ''];
         }
 
-        $rows[] = ['LOCAL', '', 'VISITANTE'];
+        $rows[] = ['LOCAL', 'FECHA', 'HORA', 'VISITANTE'];
 
         foreach ($this->games as $match) {
             $rows[] = $match;
         }
 
         for ($i = 0; $i < self::BLANK_ROWS; $i++) {
-            $rows[] = ['', '', ''];
+            $rows[] = ['', '', '', ''];
         }
 
-        $rows[] = ["{$this->leagueName} | {$this->tournamentName}", '', ''];
+        $rows[] = ["{$this->leagueName} | {$this->tournamentName}", '', '', ''];
 
         return $rows;
     }
@@ -58,15 +58,17 @@ class RoundExport implements FromArray, WithColumnFormatting, WithColumnWidths, 
     public function columnFormats(): array
     {
         return [
-            'B' => NumberFormat::FORMAT_DATE_TIME3,
+            'B' => NumberFormat::FORMAT_DATE_YYYYMMDD2,
+            'C' => NumberFormat::FORMAT_DATE_TIME4,
         ];
     }
     public function columnWidths(): array
     {
         return [
-            'A' => 50,
-            'B' => 30,
-            'C' => 50,
+            'A' => 45,
+            'B' => 16,
+            'C' => 16,
+            'D' => 45,
         ];
     }
 
@@ -75,17 +77,17 @@ class RoundExport implements FromArray, WithColumnFormatting, WithColumnWidths, 
      */
     public function styles(Worksheet $sheet): void
     {
-        $sheet->mergeCells('A1:C1');
+        $sheet->mergeCells('A1:D1');
 
-        $sheet->getStyle('A1:C1')->applyFromArray([
+        $sheet->getStyle('A1:D1')->applyFromArray([
             'font' => ['bold' => true],
         ]);
 
         $columnHeaderRow = 2;
 
         if ($this->byeTeamName) {
-            $sheet->mergeCells('A2:C2');
-            $sheet->getStyle('A2:C2')->applyFromArray([
+            $sheet->mergeCells('A2:D2');
+            $sheet->getStyle('A2:D2')->applyFromArray([
                 'font' => ['italic' => true],
             ]);
             $columnHeaderRow = 3;
@@ -94,8 +96,8 @@ class RoundExport implements FromArray, WithColumnFormatting, WithColumnWidths, 
         $dataRows = count($this->games);
         $footerRow = $columnHeaderRow + $dataRows + self::BLANK_ROWS + 1;
 
-        $sheet->mergeCells("A{$footerRow}:C{$footerRow}");
-        $sheet->getStyle("A{$footerRow}:C{$footerRow}")->applyFromArray([
+        $sheet->mergeCells("A{$footerRow}:D{$footerRow}");
+        $sheet->getStyle("A{$footerRow}:D{$footerRow}")->applyFromArray([
             'font' => ['bold' => true],
         ]);
     }

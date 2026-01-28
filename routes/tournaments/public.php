@@ -11,3 +11,4 @@ Route::middleware(['throttle:20,1','tournament.can_register_team','tournament.re
         Route::get('tournaments/{tournament:slug}/can-register', [TournamentController::class, 'canRegister']);
         Route::post('tournaments/{tournament}/pre-register-team', [TeamsController::class, 'store']);
     });
+Route::get('tournaments/{tournament:slug}/details', [TournamentController::class, 'getPublicDetails']);

@@ -2,6 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Tournament\GetNextTournamentGamesAction;
+use App\Actions\Tournament\GetTournamentLastResultAction;
+use App\Actions\Tournament\GetTournamentPublicDetailsAction;
+use App\Actions\Tournament\GetTournamentStandingsAction;
+use App\Actions\Tournament\GetTournamentStatsAction;
 use App\DTO\TournamentDTO;
 use App\Events\TournamentCreatedEvent;
 use App\Exports\RoundExport;
@@ -1034,156 +1039,24 @@ class TournamentController extends Controller
         }
         return $exportable;
     }
-    public function getStandings(Tournament $tournament): array
+    public function getStandings(Tournament $tournament, GetTournamentStandingsAction $action): array
     {
-        $tournament->loadMissing(['format', 'tournamentPhases.phase']);
-
-        $fallbackPhaseName = $tournament->format?->name === 'Grupos y Eliminatoria'
-            ? 'Fase de grupos'
-            : 'Tabla general';
-
-        $fallbackPhase = $tournament->tournamentPhases
-            ->first(static fn($phase) => $phase->phase?->name === $fallbackPhaseName);
-
-        $activePhase = $tournament->activePhase();
-        $targetPhaseId = $fallbackPhase?->id ?? $activePhase?->id;
-
-        $query = $tournament
-            ->standings()
-            ->with('team')
-            ->orderBy('rank');
-
-        if (is_null($targetPhaseId)) {
-            $query->whereNull('tournament_phase_id');
-        } else {
-            $query->where('tournament_phase_id', $targetPhaseId);
-        }
-
-        return $query
-            ->get()
-            ->toArray();
+        return $action->execute($tournament);
     }
-    public function getStats(Tournament $tournament): array
+    public function getStats(Tournament $tournament, GetTournamentStatsAction $action ): array
     {
-        $goals = DB::table('game_events')
-            ->join('games','games.id','=','game_events.game_id')
-            ->join('players','players.id','game_events.player_id')
-            ->join('users','users.id','players.user_id')
-            ->join('teams','teams.id','game_events.team_id')
-            ->where('games.tournament_id', $tournament->id)
-            ->whereIn('game_events.type',[GameEvent::GOAL, GameEvent::PENALTY])
-            ->select(
-                'players.id as player_id',
-                'users.name as player_name',
-                'teams.name as team_name',
-                'teams.slug as team_slug',
-                DB::raw("COALESCE(users.image, CONCAT('https://ui-avatars.com/api/?name=', REPLACE(users.name, ' ', '+'))) as user_image"),
-                DB::raw("COALESCE(teams.image, CONCAT('https://ui-avatars.com/api/?name=', REPLACE(COALESCE(teams.slug, ''), ' ', '+'))) as team_image"),
-                DB::raw('COUNT(*) as total' )
-            )
-            ->groupBy('players.id','users.name','teams.name','teams.image','teams.slug')
-            ->orderByDesc('total')
-            ->limit(5)
-            ->get();
-        $assistance =  DB::table('game_events')
-            ->join('games','games.id','game_events.game_id')
-            ->join('players','players.id','game_events.related_player_id')
-            ->join('teams','teams.id','game_events.team_id')
-            ->join('users','users.id','players.user_id')
-            ->where('games.tournament_id', $tournament->id)
-            ->where('game_events.type',GameEvent::GOAL)
-            ->whereNotNull('game_events.related_player_id')
-            ->select(
-                'players.id as player_id',
-                'users.name as player_name',
-                'teams.name as team_name',
-                DB::raw("COALESCE(users.image, CONCAT('https://ui-avatars.com/api/?name=', users.name)) as user_image"),
-                DB::raw("COALESCE(teams.image, CONCAT('https://ui-avatars.com/api/?name=', REPLACE(COALESCE(teams.name, ''), ' ', '+'))) as team_image"),
-                DB::raw('COUNT(*) as total' )
-            )
-            ->groupBy('players.id','users.name','teams.name','teams.image')
-            ->orderByDesc('total')
-            ->limit(5)
-            ->get();
-        $yellowCards = DB::table('game_events')
-            ->join('games','games.id','game_events.game_id')
-            ->join('players','players.id','game_events.player_id')
-            ->join('teams','teams.id','game_events.team_id')
-            ->join('users','users.id','players.user_id')
-            ->where('games.tournament_id', $tournament->id)
-            ->whereIn('game_events.type',[GameEvent::YELLOW_CARD, GameEvent::YELLOW_CARD])
-            ->whereNotNull('game_events.player_id')
-            ->select(
-                'players.id as player_id',
-                'users.name as player_name',
-                'teams.name as team_name',
-                DB::raw("COALESCE(users.image, CONCAT('https://ui-avatars.com/api/?name=', users.name)) as user_image"),
-                DB::raw("COALESCE(teams.image, CONCAT('https://ui-avatars.com/api/?name=', REPLACE(COALESCE(teams.name, ''), ' ', '+'))) as team_image"),
-                DB::raw('COUNT(*) as total' )
-            )
-            ->groupBy(
-                'players.id',
-                'users.name',
-                'teams.name',
-                'teams.image'
-            )
-            ->orderByDesc('total')
-            ->limit(5)
-            ->get();
-
-        $redCards = DB::table('game_events')
-            ->join('games','games.id','game_events.game_id')
-            ->join('players','players.id','game_events.player_id')
-            ->join('teams','teams.id','game_events.team_id')
-            ->join('users','users.id','players.user_id')
-            ->where('games.tournament_id', $tournament->id)
-            ->whereIn('game_events.type',[GameEvent::RED_CARD])
-            ->whereNotNull('game_events.player_id')
-            ->select(
-                'players.id as player_id',
-                'users.name as player_name',
-                'teams.name as team_name',
-                DB::raw("COALESCE(users.image, CONCAT('https://ui-avatars.com/api/?name=', users.name)) as user_image"),
-                DB::raw("COALESCE(teams.image, CONCAT('https://ui-avatars.com/api/?name=', REPLACE(COALESCE(teams.name, ''), ' ', '+'))) as team_image"),
-                DB::raw('COUNT(*) as total' )
-            )
-            ->groupBy('players.id','users.name','teams.name','teams.image')
-            ->orderByDesc('total')
-            ->limit(5)
-            ->get();
-        return [
-            'goals' => $goals,
-            'assistance' => $assistance,
-            'red_cards' => $redCards,
-            'yellow_cards' => $yellowCards
-        ];
+        return $action->execute($tournament);
     }
-    public function getLastResults(Request $request, Tournament $tournament): LastGamesCollection
+    public function getLastResults(Request $request, Tournament $tournament, GetTournamentLastResultAction $action): LastGamesCollection
     {
         $limit = $request->query('limit',3);
-
-        $lastGames = $tournament->games()
-            ->with(['homeTeam:id,name,image', 'awayTeam:id,name,image','location:id,name','field:id,name'])
-            ->whereIn('status', [Game::STATUS_COMPLETED, Game::STATUS_CANCELED, Game::STATUS_POSTPONED])
-            ->orderBy('match_date', 'desc')
-            ->orderBy('match_time', 'desc')
-            ->limit($limit)
-            ->get();
-
+        $lastGames = $action->execute($tournament, $limit);
         return new LastGamesCollection($lastGames);
     }
-    public function getNextGames(Request $request, Tournament $tournament): NextGamesCollection
+    public function getNextGames(Request $request, Tournament $tournament, GetNextTournamentGamesAction $action): NextGamesCollection
     {
         $limit = $request->query('limit',3);
-
-        $nextGames = $tournament->games()
-            ->with(['homeTeam:id,name,image', 'awayTeam:id,name,image','location:id,name','field:id,name'])
-            ->where('status', Game::STATUS_SCHEDULED)
-            ->orderBy('match_date', 'desc')
-            ->orderBy('match_time', 'desc')
-            ->limit($limit)
-            ->get();
-
+        $nextGames = $action->execute($tournament, $limit);
         return new NextGamesCollection($nextGames);
     }
 
@@ -1192,10 +1065,10 @@ class TournamentController extends Controller
      * @throws \Throwable
      * @throws \PhpOffice\PhpSpreadsheet\Writer\Exception
      */
-    public function exportStanding(Request $request, Tournament $tournament)
+    public function exportStanding(Request $request, Tournament $tournament, GetTournamentStandingsAction $action)
     {
         $type = $request->query('type');
-        $standing = $this->getStandings($tournament);
+        $standing = $action->execute($tournament);
         $league = $tournament?->league;
         $exportable = null;
         if ($type === self::IMG_EXPORT_TYPE){
@@ -1491,4 +1364,10 @@ class TournamentController extends Controller
             'bye_team' => $byeTeam,
         ]);
     }
+
+    public function getPublicDetails (Tournament $tournament, GetTournamentPublicDetailsAction $action)
+    {
+        return $action->execute($tournament);
+    }
+
 }

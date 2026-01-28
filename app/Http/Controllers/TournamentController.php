@@ -951,14 +951,28 @@ class TournamentController extends Controller
     public function exportTournamentRoundScheduleAs(Request $request, Tournament $tournament, int $round)
     {
         $type = $request->query('type');
-        $games = Game::where('tournament_id', $tournament->id)
-           ->with([
-               'homeTeam:id,name,image',
-               'awayTeam:id,name,image',
-               'location:id,name'
-           ])
-           ->where('round', $round)
-           ->get();
+        $games = Game::query()
+            ->select([
+                'id',
+                'tournament_id',
+                'league_id',
+                'home_team_id',
+                'away_team_id',
+                'location_id',
+                'match_date',
+                'match_time',
+                'round',
+            ])
+            ->where('tournament_id', $tournament->id)
+            ->where('round', $round)
+            ->with([
+                'homeTeam:id,name,image',
+                'awayTeam:id,name,image',
+                'location:id,name',
+            ])
+            ->orderBy('match_date')
+            ->orderBy('match_time')
+            ->get();
         $league = $tournament?->league;
         // Al exportar necesitamos saber qué equipo queda libre en rondas con número impar de participantes.
         $tournament->loadMissing('teams:id,name,image');
@@ -981,21 +995,21 @@ class TournamentController extends Controller
 
         $exportable = null;
        if ($type === self::IMG_EXPORT_TYPE){
-
-           $html = view('exports.image.default',[
+           $exportable = SnappyImage::loadView('exports.image.default', [
                'games' => $games,
                'tournament' => $tournament,
                'round' => $round,
                'league' => $league,
                'byeTeam' => $byeTeam,
-           ])->render();
-
-           $exportable =  SnappyImage::loadHTML($html)
+           ])
                ->setOption('width', 794)
                ->setOption('height', 1123)
                ->setOption('format', 'jpg')
-               ->setOption('quality', 100)
+               ->setOption('quality', 85)
                ->setOption('encoding', 'UTF-8')
+               ->setOption('disable-javascript', true)
+               ->setOption('load-error-handling', 'ignore')
+               ->setOption('load-media-error-handling', 'ignore')
                ->setOption('enable-local-file-access', true)
                ->download("jornada-$round-torneo-$tournament->slug.jpg");
        }

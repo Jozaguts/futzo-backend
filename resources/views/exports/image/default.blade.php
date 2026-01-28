@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <title>Jornada {{ $round }} - {{ $league->name }}</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+    @php
+        $logoPath = 'file://' . public_path('images/circular/logo-23-crop_280_300.png');
+    @endphp
     <style>
         html, body {
             width: 794px;
@@ -13,7 +13,7 @@
             margin: 0;
             padding: 0;
             overflow-x: hidden;
-            font-family: "Inter", sans-serif;
+            font-family: "Helvetica Neue", Arial, sans-serif;
             color: #28243D;
 
         }
@@ -22,12 +22,14 @@
         }
         h1{
             font-size: 50px;
-            margin: 3rem 0 0 0;
+            margin: 0;
             text-align: center;
         }
         table{
             border-collapse: separate;
             border-spacing: 0 1rem; /* 0 horizontal, 10px vertical */
+            width: 100%;
+            margin: 0 auto;
         }
         .schedule-container{
             width: 794px;
@@ -43,36 +45,32 @@
             content: "";
             width: 100%;
             height: 100%;
-            background-image: url("{{asset('images/vector-bg.jpg')}}");
             background-size: contain;
             opacity: .2;
             z-index: -1;
         }
-        .drawer {
-            flex: 1 0 20%;
-            display: flex;
-            width: 100%;
-            height: 100%;
-            justify-content: center;
-            align-items: center;
-            background-image: url("{{asset('images/circular/download.svg')}}");
-            background-size: cover;
-            background-repeat: no-repeat;
-            border-top-right-radius: 120px;
-            border-bottom-right-radius: 120px;
-        }
-        .drawer-img-container {
-            width: 90%;
-            object-fit: contain;
-        }
         .schedule{
-            flex: 0 0 80%;
-        }
-        .league-details-container{
+            flex: 1 0 100%;
+            height: 100%;
             display: flex;
-            justify-items: center;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 0 32px 80px;
+            box-sizing: border-box;
+        }
+        .schedule-header{
+            display: flex;
             align-items: center;
             justify-content: center;
+            width: 100%;
+            margin-top: 3rem;
+        }
+        .header-logo{
+            width: 72px;
+            height: 72px;
+            object-fit: contain;
+            margin-right: 16px;
         }
         {{-- END sections --}}
 
@@ -81,6 +79,7 @@
             margin: 0 auto;
             flex-direction: column;
             align-items: center;
+            width: 100%;
         }
         .date {
             font-size: 1rem;
@@ -130,24 +129,33 @@
             font-weight: 600;
             margin: 0.75rem 0 0;
         }
+        .league-details-container{
+            position: absolute;
+            right: 32px;
+            bottom: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            max-width: 60%;
+            text-align: right;
+        }
     </style>
 </head>
 <body>
 <div class="bg-pattern">
 </div>
 <main class="schedule-container">
-    <aside class="drawer">
-        <div class="drawer-img-container">
-            <img src="{{asset('images/circular/logo-24-crop.png')}}" alt="futzo logo" width="100%">
-        </div>
-    </aside>
     <section class="schedule">
-        <h1>Jornada {{$round}}</h1>
+        <div class="schedule-header">
+            <img src="{{$logoPath}}" alt="futzo logo" class="header-logo">
+            <h1>Jornada {{$round}}</h1>
+        </div>
         {{-- Cuando el torneo tiene equipos impares, mostramos quién descansa esa jornada. --}}
         @if($byeTeam)
             <p class="bye-message">{{ $byeTeam->name }} descansa esta jornada.</p>
         @endif
-        @foreach( $games->groupBy(fn($game) => \Carbon\Carbon::parse($game->match_date)->format('l d F')) as $date => $games)
+        @foreach( $games->groupBy(fn($game) => \Carbon\Carbon::parse($game->match_date)->locale('es')->translatedFormat('l d F')) as $date => $games)
             <div class="day">
                 <p class="date">{{$date}}</p>
                 <table>
@@ -174,7 +182,7 @@
             </div>
         @endforeach
         <footer class="league-details-container">
-            <p class="league-name">{{$league->name}}</p> <span class="league-details">{{$tournament->name}} partidos</span>
+            <p class="league-name">{{$league->name}}</p> <span class="league-details">{{$tournament->name}}</span>
         </footer>
     </section>
 </main>

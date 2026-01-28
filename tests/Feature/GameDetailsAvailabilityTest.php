@@ -34,7 +34,7 @@ it('returns available options for the selected date and field', function () {
     ];
 
     $response = $this->postJson('/api/v1/admin/locations', $payload);
-    $response->assertOk();
+    $response->assertCreated();
 
     $locationId = $response->json('id');
     $field = Field::where('location_id', $locationId)->firstOrFail();

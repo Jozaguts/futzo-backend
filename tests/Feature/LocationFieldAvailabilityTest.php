@@ -49,7 +49,7 @@ it('expands 00:00 end time to 24:00 availability windows', function () {
     ];
 
     $response = $this->postJson('/api/v1/admin/locations', $payload);
-    $response->assertOk();
+    $response->assertCreated();
 
     $locationId = $response->json('id');
     $field = Field::where('location_id', $locationId)->firstOrFail();

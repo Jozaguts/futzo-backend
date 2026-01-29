@@ -65,20 +65,34 @@ jobs:
             echo "Computed version: $VERSION"
 
             # PHP / Composer diagnostics and setup
-          if ! php -m | grep -qi '^intl$'; then
-            php -m | grep -qi '^intl$' || { echo "Missing ext-intl on server. Install php8.4-intl."; exit 1; }
-          fi
-            echo "PHP: $(php -v | head -n1)"
+            export PATH="/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:$PATH"
+            PHP_BIN="$(command -v php || true)"
+            if [ -z "$PHP_BIN" ]; then
+              PHP_BIN="/usr/bin/php"
+            fi
+            if [ ! -x "$PHP_BIN" ]; then
+              echo "[deploy] PHP binary not found." >&2
+              exit 1
+            fi
+            echo "[deploy] PHP_BIN=$PHP_BIN"
+            "$PHP_BIN" -v | head -n1
+
+            if ! "$PHP_BIN" -r 'exit(extension_loaded("intl") ? 0 : 1);'; then
+              echo "[deploy] Missing ext-intl for $("$PHP_BIN" -v | head -n1). Install php8.4-intl." >&2
+              exit 1
+            fi
+
             if ! command -v composer >/dev/null 2>&1; then
               echo "Composer not found; attempting install..."
               EXPECTED_SIGNATURE=$(curl -s https://composer.github.io/installer.sig)
-              php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
-              ACTUAL_SIGNATURE=$(php -r "echo hash_file('sha384', 'composer-setup.php');")
+              "$PHP_BIN" -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+              ACTUAL_SIGNATURE=$("$PHP_BIN" -r "echo hash_file('sha384', 'composer-setup.php');")
               if [ "$EXPECTED_SIGNATURE" != "$ACTUAL_SIGNATURE" ]; then echo 'ERROR: Invalid installer signature'; rm composer-setup.php; exit 1; fi
-              php composer-setup.php --install-dir=/usr/local/bin --filename=composer --quiet
+              "$PHP_BIN" composer-setup.php --install-dir=/usr/local/bin --filename=composer --quiet
               rm composer-setup.php
             fi
-            echo "Composer: $(composer --version)"
+            COMPOSER_BIN="$(command -v composer)"
+            echo "Composer: $("$PHP_BIN" "$COMPOSER_BIN" --version)"
             export COMPOSER_MEMORY_LIMIT=-1
 
             # Build new .env content without heredoc to avoid EOL issues
@@ -179,22 +193,22 @@ jobs:
             echo "APP_VERSION=$VERSION" >> .env
 
             # Install dependencies
-            composer install --no-dev --prefer-dist --no-progress --no-interaction --optimize-autoloader --classmap-authoritative
-            php artisan package:discover --ansi
+            "$PHP_BIN" "$COMPOSER_BIN" install --no-dev --prefer-dist --no-progress --no-interaction --optimize-autoloader --classmap-authoritative
+            "$PHP_BIN" artisan package:discover --ansi
 
             # Ensure APP_KEY exists (generate only if missing/empty)
             if ! grep -q '^APP_KEY=' .env || [ -z "$(sed -n 's/^APP_KEY=//p' .env)" ]; then
-              php artisan key:generate --force
+              "$PHP_BIN" artisan key:generate --force
             fi
 
             # Run migrations and optimize caches
-            php artisan config:clear
-            php artisan cache:clear
-            php artisan migrate --force --no-interaction
-            php artisan route:cache
-            php artisan view:cache
-            php artisan config:cache
-            php artisan storage:link 2>/dev/null || true
+            "$PHP_BIN" artisan config:clear
+            "$PHP_BIN" artisan cache:clear
+            "$PHP_BIN" artisan migrate --force --no-interaction
+            "$PHP_BIN" artisan route:cache
+            "$PHP_BIN" artisan view:cache
+            "$PHP_BIN" artisan config:cache
+            "$PHP_BIN" artisan storage:link 2>/dev/null || true
             sudo systemctl restart horizon
 
             # Verifica que Horizon continúe activo tras el despliegue; si falla, registramos el estado y abortamos.

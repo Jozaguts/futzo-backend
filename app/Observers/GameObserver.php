@@ -27,6 +27,8 @@ class GameObserver
             'penalty_winner_team_id' => $game->penalty_winner_team_id,
         ]);
 
+        $this->markTournamentInProgressIfNeeded($game, $originalStatus);
+
         if ($game->status === Game::STATUS_COMPLETED) {
             $winnerTeamId = null;
 
@@ -139,5 +141,37 @@ class GameObserver
             $game->tournament_phase_id,
             $game->id,
         )->onQueue('standings');
+    }
+
+    protected function markTournamentInProgressIfNeeded(Game $game, ?string $originalStatus = null): void
+    {
+        $targetStatuses = [
+            Game::STATUS_IN_PROGRESS,
+            Game::STATUS_COMPLETED,
+        ];
+
+        if (!in_array($game->status, $targetStatuses, true)) {
+            return;
+        }
+
+        if ($originalStatus !== null && in_array($originalStatus, $targetStatuses, true)) {
+            return;
+        }
+
+        $updated = DB::table('tournaments')
+            ->where('id', $game->tournament_id)
+            ->where('status', 'creado')
+            ->update([
+                'status' => 'en curso',
+                'updated_at' => now(),
+            ]);
+
+        if ($updated > 0) {
+            Log::info('GameObserver::tournament-status-updated', [
+                'tournament_id' => $game->tournament_id,
+                'new_status' => 'en curso',
+                'trigger_game_id' => $game->id,
+            ]);
+        }
     }
 }

@@ -6,8 +6,6 @@ use App\Http\Resources\TournamentScheduleCollection;
 use App\Models\Game;
 use App\Models\ScheduleRegenerationLog;
 use App\Models\Tournament;
-use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 
 readonly class BuildTournamentScheduleAction
 {
@@ -16,13 +14,17 @@ readonly class BuildTournamentScheduleAction
     ) {
     }
 
-    public function execute(Tournament|int $tournament, Request $request, int $perPage = 1): array
+    public function execute(Tournament|int $tournament): array
     {
+        $request = request();
         $tournament = $this->resolveTournament($tournament);
 
         $filterBy = $request->get('filterBy', false);
         $search = $request->get('search', false);
         $page = (int) $request->get('page', 1);
+        $perPage = (int) ($request->get('per_page') ?? $request->get('perPage') ?? 1);
+        $perPage = $perPage > 0 ? $perPage : 1;
+        $page = $page > 0 ? $page : 1;
         $skip = ($page - 1) * $perPage;
 
         $activePhase = $tournament->activePhase();

@@ -405,7 +405,7 @@ class TournamentController extends Controller
     public function getTournamentSchedule(Request $request, int $tournamentId, BuildTournamentScheduleAction $buildTournamentSchedule): JsonResponse
     {
         return response()->json(
-            $buildTournamentSchedule->execute($tournamentId, $request)
+            $buildTournamentSchedule->execute($tournamentId)
         );
     }
 
@@ -1052,9 +1052,13 @@ class TournamentController extends Controller
         ]);
     }
 
-    public function getPublicDetails (Tournament $tournament, GetTournamentPublicDetailsAction $action)
+    public function getPublicDetails (Tournament $tournament, GetTournamentPublicDetailsAction $action): array
     {
         return $action->execute($tournament);
+    }
+    public function getPublicSchedule(Request $request, Tournament $tournament): array
+    {
+        return app(BuildTournamentScheduleAction::class)->execute($tournament);
     }
 
 }

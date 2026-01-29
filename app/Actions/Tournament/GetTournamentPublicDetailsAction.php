@@ -2,7 +2,6 @@
 
 namespace App\Actions\Tournament;
 
-use App\Actions\BuildTournamentScheduleAction;
 use App\Http\Resources\LastGamesCollection;
 use App\Http\Resources\NextGamesCollection;
 use App\Models\Tournament;
@@ -23,14 +22,12 @@ class GetTournamentPublicDetailsAction {
         $lastGames = app(GetTournamentLastResultAction::class)->execute($tournament);
         $stats = app(GetTournamentStatsAction::class)->execute($tournament);
         $upcomingMatches = app(GetNextTournamentGamesAction::class)->execute($tournament);
-        $schedule = app(BuildTournamentScheduleAction::class)->execute($tournament, request(), 1);
         return [
             'header' => $header,
             'lastResults' => new LastGamesCollection($lastGames),
             'standings' => $standings,
             'stats' => $stats,
             'upcomingMatches' => new NextGamesCollection($upcomingMatches),
-            'schedule' => $schedule
         ];
     }
 }

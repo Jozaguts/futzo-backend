@@ -11,11 +11,10 @@ class GetTournamentPublicDetailsAction {
     {
         $header = [
             'name' => $tournament->league->name,
-            'phase' => $tournament->activePhase()->name,
+            'tournamentName' => $tournament->name,
             'startDate' => $tournament->start_date->format('d M Y'),
             'location' => '',
             'teams' => $tournament->teams()->count(),
-            'status' => $tournament->status,
             'format' => $tournament->format->name,
         ];
         $standings = app(GetTournamentStandingsAction::class)->execute($tournament);

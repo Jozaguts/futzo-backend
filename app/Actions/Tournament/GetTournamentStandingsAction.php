@@ -22,6 +22,7 @@ final class GetTournamentStandingsAction {
         $query = $tournament
             ->standings()
             ->with('team')
+            ->orderByRaw('CASE WHEN matches_played = 0 THEN 1 ELSE 0 END')
             ->orderBy('rank');
 
         if (is_null($targetPhaseId)) {

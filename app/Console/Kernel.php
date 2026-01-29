@@ -12,7 +12,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        $schedule->command('futzo:sync-tournament-status')->dailyAt('00:00');
+        // Intentionally empty: schedules are defined in routes/console.php.
     }
 
     /**

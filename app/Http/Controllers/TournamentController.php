@@ -980,6 +980,43 @@ class TournamentController extends Controller
         ]);
     }
 
+    public function qrCodeScheduleGenerate(Request $request, Tournament $tournament): JsonResponse
+    {
+        $typeKey = request()->query('key', 'tournament_status');
+        sleep(2);
+        $config = QrConfiguration::query()
+            ->join('qr_types', 'qr_configurations.qr_type_id', '=', 'qr_types.id')
+            ->where('qr_configurations.league_id', $tournament->league_id)
+            ->where('qr_types.key', $typeKey)
+            ->select('qr_configurations.*')
+            ->first();
+
+        if (!$config) {
+            return response()->json(['error' => 'No existe configuración de QR para este tipo.'], 404);
+        }
+
+        $qrValue = $tournament->status_link;
+        $image = QrTemplateRendererService::render([
+            'title' => 'Torneo',
+            'subtitle' => $tournament->name,
+            'description' => 'Escanea para ver los resultados',
+            'background_color' => $config->background_color,
+            'foreground_color' => $config->foreground_color,
+//            'logo' => 'images/vertical/logo-08.png',
+//            'logo' => 'images/horizontal/logo-12.png',
+            'logo' => 'images/text only/logo-18.png',
+            'qr_value' => $qrValue,
+        ]);
+        return response()->json([
+            'image' => $image,
+            'meta' => [
+                'league_id' => $tournament->league_id,
+                'tournament_id' => $tournament->id,
+                'type' => $typeKey,
+            ],
+        ]);
+    }
+
     public function getRoundDetails(Request $request, Tournament $tournament, int $round, HydrateGroupDataForGamesAction $hydrateGroupData): JsonResponse
     {
         $tournament->loadMissing(['configuration', 'teams']);

@@ -49,7 +49,7 @@ class Tournament extends Model implements HasMedia
         'end_date' => 'date',
         'penalty_draw_enabled' => 'boolean',
     ];
-    protected $appends = ['register_link'];
+    protected $appends = ['register_link', 'status_link'];
     public function getSlugOptions(): SlugOptions
     {
         return SlugOptions::create()
@@ -63,6 +63,14 @@ class Tournament extends Model implements HasMedia
             get: static fn($value) => config('app.frontend_url','https://futzo.io') ."/torneos/$slug/equipos/inscripcion"
         );
 
+    }
+
+    protected function statusLink(): Attribute
+    {
+        $slug = $this->slug;
+        return Attribute::make(
+            get: static fn($value) => config('app.frontend_url','https://futzo.io') ."/torneos/$slug/status"
+        );
     }
     protected function startDateToString(): Attribute
     {
